@@ -1,8 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import ExcelJS from 'exceljs';
 import type { Flight, Passenger, Baggage, FraudAlert } from '@police/shared';
-import { formatRoute } from '@police/shared';
+import { formatRoute, FLIGHT_STATUS_LABEL } from '@police/shared';
 import { createClient } from '@/supabase/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 const HUB = process.env.NEXT_PUBLIC_HUB ?? 'FIH';
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -17,6 +18,7 @@ const COLOR = {
   zebra: 'FFF8FAFC',
 };
 
+// ── Helpers Excel ────────────────────────────────────────────
 function sheet(wb: ExcelJS.Workbook, name: string, widths: number[]): ExcelJS.Worksheet {
   const ws = wb.addWorksheet(name, { views: [{ showGridLines: false }], properties: { defaultRowHeight: 18 } });
   ws.columns = widths.map((w) => ({ width: w }));
@@ -77,6 +79,36 @@ function dataRow(
   return r + 1;
 }
 
+/** Récupère TOUTES les lignes d'une table par pages de 1000 (les grandes
+ *  périodes — ex. l'année — peuvent dépasser la limite par requête). */
+async function fetchAll<T>(
+  supabase: SupabaseClient,
+  table: string,
+  columns: string,
+  flightIds: string[],
+): Promise<T[]> {
+  const PAGE = 1000;
+  let out: T[] = [];
+  for (let offset = 0; ; offset += PAGE) {
+    const { data } = await supabase
+      .from(table)
+      .select(columns)
+      .in('flight_id', flightIds)
+      .range(offset, offset + PAGE - 1);
+    const rows = (data as T[] | null) ?? [];
+    out = out.concat(rows);
+    if (rows.length < PAGE) break;
+  }
+  return out;
+}
+
+function pct(num: number, den: number): string {
+  return den > 0 ? `${Math.round((num / den) * 100)} %` : '—';
+}
+function avg(num: number, den: number): string {
+  return den > 0 ? (num / den).toFixed(1) : '—';
+}
+
 export async function GET(request: NextRequest) {
   const sp = request.nextUrl.searchParams;
   const from = sp.get('from') ?? '';
@@ -100,26 +132,28 @@ export async function GET(request: NextRequest) {
     .order('departure_time');
   const flights = (flightsData as Flight[] | null) ?? [];
   const flightIds = flights.map((f) => f.id);
+  const flightById = new Map(flights.map((f) => [f.id, f]));
 
-  let passengers: Pick<Passenger, 'flight_id' | 'declared_baggage_count' | 'boarded'>[] = [];
-  let baggage: Pick<Baggage, 'flight_id' | 'is_confirmed'>[] = [];
+  let passengers: Passenger[] = [];
+  let baggage: Baggage[] = [];
   let alerts: FraudAlert[] = [];
   if (flightIds.length > 0) {
-    const [pax, bags, fraud] = await Promise.all([
-      supabase.from('passengers').select('flight_id, declared_baggage_count, boarded').in('flight_id', flightIds),
-      supabase.from('baggage').select('flight_id, is_confirmed').in('flight_id', flightIds),
-      supabase.from('fraud_alerts').select('*').in('flight_id', flightIds).order('created_at'),
+    [passengers, baggage] = await Promise.all([
+      fetchAll<Passenger>(supabase, 'passengers', '*', flightIds),
+      fetchAll<Baggage>(supabase, 'baggage', '*', flightIds),
     ]);
-    passengers = (pax.data as typeof passengers | null) ?? [];
-    baggage = (bags.data as typeof baggage | null) ?? [];
-    alerts = (fraud.data as FraudAlert[] | null) ?? [];
+    const { data: fraud } = await supabase.from('fraud_alerts').select('*').in('flight_id', flightIds).order('created_at');
+    alerts = (fraud as FraudAlert[] | null) ?? [];
   }
+
+  const passengerById = new Map(passengers.map((p) => [p.id, p]));
 
   // Agrégats par vol.
   const paxByFlight = new Map<string, number>();
   const boardedByFlight = new Map<string, number>();
   const declaredByFlight = new Map<string, number>();
   const confirmedByFlight = new Map<string, number>();
+  const confirmedByPax = new Map<string, number>();
   const alertsByFlight = new Map<string, number>();
   for (const p of passengers) {
     paxByFlight.set(p.flight_id, (paxByFlight.get(p.flight_id) ?? 0) + 1);
@@ -127,9 +161,11 @@ export async function GET(request: NextRequest) {
     declaredByFlight.set(p.flight_id, (declaredByFlight.get(p.flight_id) ?? 0) + p.declared_baggage_count);
   }
   for (const b of baggage) {
-    if (b.is_confirmed) confirmedByFlight.set(b.flight_id, (confirmedByFlight.get(b.flight_id) ?? 0) + 1);
+    if (b.is_confirmed) {
+      confirmedByFlight.set(b.flight_id, (confirmedByFlight.get(b.flight_id) ?? 0) + 1);
+      confirmedByPax.set(b.passenger_id, (confirmedByPax.get(b.passenger_id) ?? 0) + 1);
+    }
   }
-  const flightById = new Map(flights.map((f) => [f.id, f]));
   for (const a of alerts) {
     if (a.flight_id) alertsByFlight.set(a.flight_id, (alertsByFlight.get(a.flight_id) ?? 0) + 1);
   }
@@ -139,9 +175,14 @@ export async function GET(request: NextRequest) {
   const totBoarded = passengers.reduce((s, p) => s + (p.boarded ? 1 : 0), 0);
   const totDeclared = passengers.reduce((s, p) => s + p.declared_baggage_count, 0);
   const totConfirmed = baggage.reduce((s, b) => s + (b.is_confirmed ? 1 : 0), 0);
+  const paxNoBag = passengers.filter((p) => p.declared_baggage_count === 0).length;
   const totAlerts = alerts.length;
   const openAlerts = alerts.filter((a) => !a.resolved).length;
-  const boardRate = totPax > 0 ? Math.round((totBoarded / totPax) * 100) : 0;
+
+  // Répartition vols par statut.
+  const byStatus = { scheduled: 0, boarding: 0, closed: 0, cancelled: 0 } as Record<string, number>;
+  for (const f of flights) byStatus[f.status] = (byStatus[f.status] ?? 0) + 1;
+
   const periodStr = from === to ? from : `${from} au ${to}`;
   const now = new Date().toLocaleString('fr-FR');
 
@@ -150,31 +191,47 @@ export async function GET(request: NextRequest) {
   wb.creator = 'Boarding Scanner';
   wb.created = new Date();
 
-  // FEUILLE 1 — RÉSUMÉ
+  // FEUILLE 1 — RÉSUMÉ (statistiques comptables)
   {
-    const ws = sheet(wb, 'Résumé', [34, 20, 20, 20]);
-    let r = title(ws, 1, `Rapport ${label} — ${periodStr}`, 4);
-    r = meta(ws, r, 'Période', periodStr, 4);
-    r = meta(ws, r, 'Aéroport (hub)', HUB, 4);
-    r = meta(ws, r, 'Édité le', now, 4);
+    const ws = sheet(wb, 'Résumé', [38, 22]);
+    let r = title(ws, 1, `Rapport ${label} — ${periodStr}`, 2);
+    r = meta(ws, r, 'Période', periodStr, 2);
+    r = meta(ws, r, 'Aéroport (hub)', HUB, 2);
+    r = meta(ws, r, 'Édité le', now, 2);
 
-    r = section(ws, r, 'Activité', 4);
+    r = section(ws, r, 'Activité', 2);
     r = dataRow(ws, r, ['Vols traités', flights.length]);
     r = dataRow(ws, r, ['Passagers enregistrés', totPax]);
     r = dataRow(ws, r, ['Passagers embarqués', totBoarded], { success: totBoarded === totPax && totPax > 0 });
-    r = dataRow(ws, r, ["Taux d'embarquement", `${boardRate} %`]);
+    r = dataRow(ws, r, ['Reste à embarquer', totPax - totBoarded], { danger: totPax - totBoarded > 0 });
+    r = dataRow(ws, r, ["Taux d'embarquement", pct(totBoarded, totPax)]);
+    r = dataRow(ws, r, ['Moyenne passagers / vol', avg(totPax, flights.length)]);
 
-    r = section(ws, r, 'Bagages', 4);
+    r = section(ws, r, 'Bagages', 2);
     r = dataRow(ws, r, ['Bagages déclarés', totDeclared]);
     r = dataRow(ws, r, ['Bagages confirmés (chargés)', totConfirmed], { success: true });
+    r = dataRow(ws, r, ['Bagages en attente', Math.max(totDeclared - totConfirmed, 0)], {
+      danger: totDeclared - totConfirmed > 0,
+    });
     r = dataRow(ws, r, ['Écart (déclarés − confirmés)', totDeclared - totConfirmed], {
       danger: totDeclared - totConfirmed !== 0,
     });
+    r = dataRow(ws, r, ['Taux de confirmation', pct(totConfirmed, totDeclared)]);
+    r = dataRow(ws, r, ['Moyenne bagages / passager', avg(totDeclared, totPax)]);
+    r = dataRow(ws, r, ['Passagers sans bagage', paxNoBag]);
 
-    r = section(ws, r, 'Anti-fraude', 4);
+    r = section(ws, r, 'Anti-fraude', 2);
     r = dataRow(ws, r, ['Alertes fraude (total)', totAlerts], { danger: totAlerts > 0 });
     r = dataRow(ws, r, ['Alertes non résolues', openAlerts], { danger: openAlerts > 0 });
     r = dataRow(ws, r, ['Alertes résolues', totAlerts - openAlerts], { success: true });
+    r = dataRow(ws, r, ['Taux de résolution', pct(totAlerts - openAlerts, totAlerts)]);
+    r = dataRow(ws, r, ["Taux d'alerte (alertes / passagers)", pct(totAlerts, totPax)]);
+
+    r = section(ws, r, 'Vols par statut', 2);
+    r = dataRow(ws, r, [FLIGHT_STATUS_LABEL.scheduled, byStatus.scheduled]);
+    r = dataRow(ws, r, [FLIGHT_STATUS_LABEL.boarding, byStatus.boarding]);
+    r = dataRow(ws, r, [FLIGHT_STATUS_LABEL.closed, byStatus.closed]);
+    r = dataRow(ws, r, [FLIGHT_STATUS_LABEL.cancelled, byStatus.cancelled], { danger: byStatus.cancelled > 0 });
   }
 
   // FEUILLE 2 — VOLS
@@ -192,22 +249,87 @@ export async function GET(request: NextRequest) {
         r = dataRow(
           ws,
           r,
-          [
-            f.date,
-            f.flight_number,
-            formatRoute(f),
-            paxByFlight.get(f.id) ?? 0,
-            boardedByFlight.get(f.id) ?? 0,
-            `${conf} / ${decl}`,
-            al,
-          ],
+          [f.date, f.flight_number, formatRoute(f), paxByFlight.get(f.id) ?? 0, boardedByFlight.get(f.id) ?? 0, `${conf} / ${decl}`, al],
           { danger: al > 0, zebra: al === 0 && i % 2 === 1 },
         );
       });
     }
   }
 
-  // FEUILLE 3 — ALERTES FRAUDE
+  // FEUILLE 3 — PASSAGERS (détail)
+  {
+    const ws = sheet(wb, 'Passagers', [12, 12, 26, 12, 8, 8, 12, 10, 18]);
+    let r = title(ws, 1, `Passagers — ${periodStr}`, 9);
+    r = headerRow(ws, r, ['Date vol', 'Vol', 'Passager', 'PNR', 'Siège', 'Classe', 'Bag. conf./décl.', 'Embarqué', 'Scanné le']);
+    if (passengers.length === 0) {
+      r = dataRow(ws, r, ['Aucun passager sur la période', '', '', '', '', '', '', '', '']);
+    } else {
+      // Tri par date de vol puis par nom.
+      const sorted = [...passengers].sort((a, b) => {
+        const fa = flightById.get(a.flight_id)?.date ?? '';
+        const fb = flightById.get(b.flight_id)?.date ?? '';
+        return fa === fb ? a.full_name.localeCompare(b.full_name) : fa.localeCompare(fb);
+      });
+      sorted.forEach((p, i) => {
+        const f = flightById.get(p.flight_id);
+        const conf = confirmedByPax.get(p.id) ?? 0;
+        const manque = conf < p.declared_baggage_count;
+        r = dataRow(
+          ws,
+          r,
+          [
+            f?.date ?? '—',
+            f?.flight_number ?? '—',
+            p.full_name,
+            p.pnr,
+            p.seat ?? '—',
+            p.class ?? '—',
+            `${conf} / ${p.declared_baggage_count}`,
+            p.boarded ? 'Oui' : 'Non',
+            new Date(p.scanned_at).toLocaleString('fr-FR'),
+          ],
+          { danger: manque, zebra: !manque && i % 2 === 1 },
+        );
+      });
+    }
+  }
+
+  // FEUILLE 4 — BAGAGES (détail)
+  {
+    const ws = sheet(wb, 'Bagages', [12, 12, 16, 12, 26, 12, 12, 18]);
+    let r = title(ws, 1, `Bagages — ${periodStr}`, 8);
+    r = headerRow(ws, r, ['Date vol', 'Vol', 'Étiquette', 'Série', 'Passager', 'PNR', 'Statut', 'Scanné le']);
+    if (baggage.length === 0) {
+      r = dataRow(ws, r, ['Aucun bagage sur la période', '', '', '', '', '', '', '']);
+    } else {
+      const sorted = [...baggage].sort((a, b) => {
+        const fa = flightById.get(a.flight_id)?.date ?? '';
+        const fb = flightById.get(b.flight_id)?.date ?? '';
+        return fa === fb ? a.tag_number.localeCompare(b.tag_number) : fa.localeCompare(fb);
+      });
+      sorted.forEach((b, i) => {
+        const f = flightById.get(b.flight_id);
+        const pax = passengerById.get(b.passenger_id);
+        r = dataRow(
+          ws,
+          r,
+          [
+            f?.date ?? '—',
+            f?.flight_number ?? '—',
+            b.tag_number,
+            b.serial_number ?? '—',
+            pax?.full_name ?? '—',
+            pax?.pnr ?? '—',
+            b.is_confirmed ? 'Chargé' : 'En attente',
+            new Date(b.scanned_at).toLocaleString('fr-FR'),
+          ],
+          { success: b.is_confirmed, zebra: !b.is_confirmed && i % 2 === 1 },
+        );
+      });
+    }
+  }
+
+  // FEUILLE 5 — ALERTES FRAUDE
   {
     const ws = sheet(wb, 'Alertes fraude', [12, 12, 22, 16, 28, 8, 18]);
     let r = title(ws, 1, `Alertes fraude — ${periodStr}`, 7);

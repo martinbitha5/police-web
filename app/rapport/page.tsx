@@ -15,13 +15,14 @@ import {
   IconReport,
 } from '@/components/icons';
 
-type Period = 'jour' | 'semaine' | 'mois' | 'annee';
+type Period = 'jour' | 'semaine' | 'mois' | 'annee' | 'perso';
 
 const PERIOD_LABEL: Record<Period, string> = {
   jour: 'Jour',
   semaine: 'Semaine',
   mois: 'Mois',
   annee: 'Année',
+  perso: 'Personnalisé',
 };
 
 function iso(d: Date): string {
@@ -30,11 +31,10 @@ function iso(d: Date): string {
   return `${d.getFullYear()}-${m}-${day}`;
 }
 
-/** Calcule la plage [from, to] (incluse) pour la période choisie, jusqu'à aujourd'hui. */
+/** Calcule la plage [from, to] (incluse) pour les périodes prédéfinies, jusqu'à aujourd'hui. */
 function rangeFor(period: Period): { from: string; to: string } {
   const now = new Date();
   const to = iso(now);
-  if (period === 'jour') return { from: to, to };
   if (period === 'semaine') {
     const d = new Date(now);
     const dow = (d.getDay() + 6) % 7; // lundi = 0
@@ -44,7 +44,10 @@ function rangeFor(period: Period): { from: string; to: string } {
   if (period === 'mois') {
     return { from: iso(new Date(now.getFullYear(), now.getMonth(), 1)), to };
   }
-  return { from: iso(new Date(now.getFullYear(), 0, 1)), to };
+  if (period === 'annee') {
+    return { from: iso(new Date(now.getFullYear(), 0, 1)), to };
+  }
+  return { from: to, to }; // jour (ou défaut)
 }
 
 function frDate(s: string): string {
@@ -72,15 +75,23 @@ export default function RapportPage() {
 function ReportView() {
   const isMobile = useIsMobile();
   const [period, setPeriod] = useState<Period>('jour');
+  const today = iso(new Date());
+  const [customFrom, setCustomFrom] = useState(today);
+  const [customTo, setCustomTo] = useState(today);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const { from, to } = rangeFor(period);
+  // Plage active : champs personnalisés si « Personnalisé », sinon plage calculée.
+  const range =
+    period === 'perso'
+      ? { from: customFrom <= customTo ? customFrom : customTo, to: customFrom <= customTo ? customTo : customFrom }
+      : rangeFor(period);
+  const { from, to } = range;
 
-  const load = useCallback(async (p: Period) => {
+  const load = useCallback(async (rg: { from: string; to: string }) => {
     setLoading(true);
     setStats(null);
-    const { from, to } = rangeFor(p);
+    const { from, to } = rg;
     const supabase = createClient();
 
     const { data: fl } = await supabase.from('flights').select('id').gte('date', from).lte('date', to);
@@ -115,10 +126,10 @@ function ReportView() {
   }, []);
 
   useEffect(() => {
-    void load(period);
-  }, [load, period]);
+    void load({ from, to });
+  }, [load, from, to]);
 
-  const downloadHref = `/api/report/period?from=${from}&to=${to}&label=${PERIOD_LABEL[period]}`;
+  const downloadHref = `/api/report/period?from=${from}&to=${to}&label=${encodeURIComponent(PERIOD_LABEL[period])}`;
   const ecart = stats ? stats.declared - stats.confirmed : 0;
   const boardRate = stats && stats.passengers > 0 ? Math.round((stats.boarded / stats.passengers) * 100) : 0;
 
@@ -138,7 +149,7 @@ function ReportView() {
 
       {/* Sélecteur de période */}
       <div style={s.tabs}>
-        {(['jour', 'semaine', 'mois', 'annee'] as Period[]).map((p) => (
+        {(['jour', 'semaine', 'mois', 'annee', 'perso'] as Period[]).map((p) => (
           <button
             key={p}
             style={{ ...s.tab, ...(period === p ? s.tabActive : {}) }}
@@ -148,6 +159,20 @@ function ReportView() {
           </button>
         ))}
       </div>
+
+      {/* Champs de date personnalisée */}
+      {period === 'perso' ? (
+        <div style={isMobile ? { ...s.customRow, flexDirection: 'column', alignItems: 'stretch' } : s.customRow}>
+          <label style={s.customField}>
+            <span style={s.customLabel}>Du</span>
+            <input type="date" max={today} style={s.dateInput} value={customFrom} onChange={(e) => setCustomFrom(e.target.value || today)} />
+          </label>
+          <label style={s.customField}>
+            <span style={s.customLabel}>Au</span>
+            <input type="date" max={today} style={s.dateInput} value={customTo} onChange={(e) => setCustomTo(e.target.value || today)} />
+          </label>
+        </div>
+      ) : null}
 
       <h2 style={sectionHeading}>Bilan de la période</h2>
 
@@ -164,7 +189,8 @@ function ReportView() {
       <div style={s.note}>
         <IconReport size={18} />
         <span>
-          Le fichier Excel contient le bilan détaillé : résumé statistique, liste des vols de la période et toutes les alertes fraude.
+          Le fichier Excel contient 5 feuilles : <strong>Résumé</strong> (statistiques comptables), <strong>Vols</strong>,{' '}
+          <strong>Passagers</strong> (détail complet), <strong>Bagages</strong> (détail complet) et <strong>Alertes fraude</strong>.
         </span>
       </div>
     </div>
@@ -223,6 +249,21 @@ const s: Record<string, CSSProperties> = {
     fontSize: 14,
   },
   tabActive: { background: 'var(--primary)', borderColor: 'var(--primary)', color: '#fff' },
+
+  customRow: { display: 'flex', gap: 12, marginBottom: 22, alignItems: 'flex-end', flexWrap: 'wrap' },
+  customField: { display: 'flex', flexDirection: 'column', gap: 6 },
+  customLabel: { fontSize: 13, color: 'var(--muted)', fontWeight: 600 },
+  dateInput: {
+    background: 'var(--glass)',
+    backdropFilter: 'var(--glass-blur)',
+    WebkitBackdropFilter: 'var(--glass-blur)',
+    border: '1px solid var(--glass-border)',
+    color: 'var(--text)',
+    borderRadius: 10,
+    padding: '11px 13px',
+    fontSize: 15,
+    colorScheme: 'dark',
+  },
 
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 14, marginBottom: 22 },
   stat: { ...card, display: 'flex', alignItems: 'center', gap: 14, padding: 18 },
