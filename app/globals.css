@@ -1,0 +1,73 @@
+:root {
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --border: #334155;
+  --text: #f1f5f9;
+  --muted: #cbd5e1;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --success: #16a34a;
+  --danger: #dc2626;
+  --warning: #d97706;
+
+  /* Glassmorphism — verre translucide clair, pas noir */
+  --glass: rgba(255, 255, 255, 0.13);
+  --glass-strong: rgba(255, 255, 255, 0.20);
+  --glass-border: rgba(255, 255, 255, 0.22);
+  --glass-blur: blur(18px) saturate(160%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: #7998bb;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  color: var(--text);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  min-height: 100vh;
+  background-color: #7998bb;
+  /* Fond très clair : voile minimal pour laisser la photo du tarmac bien visible */
+  background-image: linear-gradient(160deg, rgba(8, 16, 31, 0.06), rgba(8, 16, 31, 0.22)),
+    url('/IMG_9478.jpeg'), url('/bg.svg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+button {
+  cursor: pointer;
+  font: inherit;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgba(203, 213, 225, 0.7);
+}
+
+select option {
+  background: #0f172a;
+  color: #f1f5f9;
+}

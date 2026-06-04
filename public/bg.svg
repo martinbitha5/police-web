@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0a1326"/>
+      <stop offset="0.55" stop-color="#0e1c3a"/>
+      <stop offset="1" stop-color="#08101f"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.35" r="0.75">
+      <stop offset="0" stop-color="#1d3a6b" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#0a1326" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="b"><feGaussianBlur stdDeviation="14"/></filter>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#sky)"/>
+  <rect width="1920" height="1080" fill="url(#glow)"/>
+  <g filter="url(#b)" opacity="0.85">
+    <circle cx="300" cy="820" r="10" fill="#5fa8ff"/>
+    <circle cx="520" cy="860" r="8" fill="#7ec1ff"/>
+    <circle cx="760" cy="900" r="12" fill="#ffd27a"/>
+    <circle cx="1020" cy="870" r="9" fill="#5fa8ff"/>
+    <circle cx="1280" cy="910" r="11" fill="#ffd27a"/>
+    <circle cx="1520" cy="850" r="8" fill="#7ec1ff"/>
+    <circle cx="1720" cy="890" r="10" fill="#5fa8ff"/>
+    <circle cx="180" cy="300" r="6" fill="#9fd0ff"/>
+    <circle cx="1640" cy="240" r="7" fill="#9fd0ff"/>
+    <circle cx="980" cy="180" r="5" fill="#cfe6ff"/>
+  </g>
+  <g stroke="#2a4a7f" stroke-width="2" opacity="0.25">
+    <path d="M760 1080 L900 700"/>
+    <path d="M1160 1080 L1020 700"/>
+    <path d="M820 880 L1100 880"/>
+    <path d="M850 800 L1070 800"/>
+  </g>
+</svg>
