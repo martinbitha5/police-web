@@ -48,9 +48,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   // La page Comptes est RÉSERVÉE aux admins. Les superviseurs ne la voient pas.
   const isAdmin = profile?.role === 'admin';
   const nav = [
-    { href: '/',        label: 'Tableau de bord', icon: IconDashboard, show: true },
-    { href: '/rapport', label: 'Rapports',         icon: IconReport,    show: true },
-    { href: '/admin',   label: 'Comptes',          icon: IconUsers,     show: isAdmin },
+    { href: '/dashboard', label: 'Tableau de bord', icon: IconDashboard, show: true },
+    { href: '/rapport',   label: 'Rapports',         icon: IconReport,    show: true },
+    { href: '/admin',     label: 'Comptes',          icon: IconUsers,     show: isAdmin },
   ].filter((n) => n.show);
 
   // ── Layout mobile ────────────────────────────────────────────

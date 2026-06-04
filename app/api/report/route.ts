@@ -205,10 +205,7 @@ export async function GET(request: NextRequest) {
       { danger: declaredTotal - confirmedTotal !== 0 });
 
     r = sheetSection(ws, r, 'Alertes fraude', 6);
-    const openAlerts = alerts.filter((a) => !a.resolved).length;
-    r = sheetData(ws, r, ['Total alertes',    alerts.length]);
-    r = sheetData(ws, r, ['Non résolues',     openAlerts],  { danger: openAlerts > 0 });
-    r = sheetData(ws, r, ['Résolues',         alerts.length - openAlerts], { success: true });
+    r = sheetData(ws, r, ['Alertes fraude détectées', alerts.length], { danger: alerts.length > 0 });
 
     r = sheetSection(ws, r, `Statistiques globales journée — ${flight.date}`, 6);
     r = sheetData(ws, r, ['Vols traités',             dayIds.length]);
@@ -277,22 +274,21 @@ export async function GET(request: NextRequest) {
   // FEUILLE 4 — FRAUDE
   // ════════════════════════════════════════════════════════════
   {
-    const ws = makeSheet(wb, 'Alertes fraude', [22, 12, 16, 28, 8, 22]);
-    let r = sheetTitle(ws, `Alertes fraude — ${header}`, 6);
-    r = sheetHeader(ws, r, ['Heure', 'PNR', 'Passager', 'Raison', 'Résolu', 'Étiquette']);
+    const ws = makeSheet(wb, 'Alertes fraude', [22, 12, 16, 30, 22]);
+    let r = sheetTitle(ws, `Alertes fraude — ${header}`, 5);
+    r = sheetHeader(ws, r, ['Heure', 'PNR', 'Passager', 'Raison', 'Étiquette']);
 
     if (alerts.length === 0) {
-      r = sheetData(ws, r, ['Aucune alerte fraude', '', '', '', '', '']);
+      r = sheetData(ws, r, ['Aucune alerte fraude', '', '', '', '']);
     } else {
-      alerts.forEach((a, i) => {
+      alerts.forEach((a) => {
         r = sheetData(ws, r, [
           new Date(a.created_at).toLocaleString('fr-FR'),
           a.pnr            ?? '—',
           a.passenger_name ?? '—',
           a.reason,
-          a.resolved ? 'Oui' : 'Non',
           a.tag_number     ?? '—',
-        ], { danger: !a.resolved, zebra: a.resolved && i % 2 === 1 });
+        ], { danger: true });
       });
     }
   }

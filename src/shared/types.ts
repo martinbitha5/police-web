@@ -143,6 +143,14 @@ export interface Baggage {
   airline_numeric_code: string | null;
   serial_number: string | null;
   is_confirmed: boolean;
+  /** true = bagage chargé en soute pour la destination (fonction « Charger »). */
+  in_hold: boolean;
+  in_hold_at: string | null;
+  in_hold_by: string | null;
+  /** true = bagage restant marqué pour réacheminement sur le prochain vol. */
+  rush: boolean;
+  rush_at: string | null;
+  rush_by: string | null;
   scanned_at: string;
   scanned_by: string | null;
 }
@@ -205,6 +213,27 @@ export interface BaggageScanRejected {
 export type BaggageScanResult = BaggageScanAccepted | BaggageScanRejected;
 
 // ─────────────────────────────────────────────────────────────
+// Actions soute : Charger (in_hold) / Rush (réacheminement)
+// ─────────────────────────────────────────────────────────────
+
+export interface BaggageActionAccepted {
+  status: 'accepted';
+  passengerName: string;
+  tagNumber: string;
+  /** Nombre de bagages de ce passager déjà dans cet état (chargés ou rush). */
+  count: number;
+  declaredCount: number;
+  message: string;
+}
+
+export interface BaggageActionRejected {
+  status: 'rejected';
+  message: string;
+}
+
+export type BaggageActionResult = BaggageActionAccepted | BaggageActionRejected;
+
+// ─────────────────────────────────────────────────────────────
 // Embarquement à la porte (boarding pass scanné au gate)
 // ─────────────────────────────────────────────────────────────
 
@@ -238,13 +267,26 @@ export type BoardingGateResult = BoardingGateAccepted | BoardingGateRejected;
 // Suivi bagage côté passager (app tracking, public)
 // ─────────────────────────────────────────────────────────────
 
-/** État d'un bagage du point de vue passager. */
-export type BaggageStatus = 'loaded' | 'pending';
+/**
+ * État d'un bagage du point de vue passager (du plus avancé au moins avancé) :
+ *  • rush       : restant, marqué pour réacheminement sur le prochain vol.
+ *  • loaded     : chargé en soute pour la destination.
+ *  • registered : étiquette scannée au tapis (enregistré, anti-fraude OK).
+ *  • pending    : déclaré mais pas encore scanné.
+ */
+export type BaggageStatus = 'pending' | 'registered' | 'loaded' | 'rush';
+
+export const BAGGAGE_STATUS_LABEL: Record<BaggageStatus, string> = {
+  pending: 'En attente',
+  registered: 'Enregistré',
+  loaded: 'Chargé en soute',
+  rush: 'Réacheminement',
+} as const;
 
 export interface TrackedBag {
   tagNumber: string;
-  /** true = étiquette physique scannée au tapis (bagage chargé). */
   status: BaggageStatus;
+  /** Date du dernier événement pertinent (chargement, enregistrement…). */
   scannedAt: string | null;
   /** Statut du litige/réclamation si le passager a signalé un problème, sinon null. */
   claimStatus: DisputeStatus | null;

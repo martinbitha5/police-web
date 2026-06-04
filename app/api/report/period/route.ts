@@ -177,7 +177,6 @@ export async function GET(request: NextRequest) {
   const totConfirmed = baggage.reduce((s, b) => s + (b.is_confirmed ? 1 : 0), 0);
   const paxNoBag = passengers.filter((p) => p.declared_baggage_count === 0).length;
   const totAlerts = alerts.length;
-  const openAlerts = alerts.filter((a) => !a.resolved).length;
 
   // Répartition vols par statut.
   const byStatus = { scheduled: 0, boarding: 0, closed: 0, cancelled: 0 } as Record<string, number>;
@@ -221,10 +220,7 @@ export async function GET(request: NextRequest) {
     r = dataRow(ws, r, ['Passagers sans bagage', paxNoBag]);
 
     r = section(ws, r, 'Anti-fraude', 2);
-    r = dataRow(ws, r, ['Alertes fraude (total)', totAlerts], { danger: totAlerts > 0 });
-    r = dataRow(ws, r, ['Alertes non résolues', openAlerts], { danger: openAlerts > 0 });
-    r = dataRow(ws, r, ['Alertes résolues', totAlerts - openAlerts], { success: true });
-    r = dataRow(ws, r, ['Taux de résolution', pct(totAlerts - openAlerts, totAlerts)]);
+    r = dataRow(ws, r, ['Alertes fraude détectées', totAlerts], { danger: totAlerts > 0 });
     r = dataRow(ws, r, ["Taux d'alerte (alertes / passagers)", pct(totAlerts, totPax)]);
 
     r = section(ws, r, 'Vols par statut', 2);
@@ -331,13 +327,13 @@ export async function GET(request: NextRequest) {
 
   // FEUILLE 5 — ALERTES FRAUDE
   {
-    const ws = sheet(wb, 'Alertes fraude', [12, 12, 22, 16, 28, 8, 18]);
-    let r = title(ws, 1, `Alertes fraude — ${periodStr}`, 7);
-    r = headerRow(ws, r, ['Date', 'Vol', 'Passager', 'PNR', 'Raison', 'Résolu', 'Étiquette']);
+    const ws = sheet(wb, 'Alertes fraude', [12, 12, 22, 16, 30, 18]);
+    let r = title(ws, 1, `Alertes fraude — ${periodStr}`, 6);
+    r = headerRow(ws, r, ['Date', 'Vol', 'Passager', 'PNR', 'Raison', 'Étiquette']);
     if (alerts.length === 0) {
-      r = dataRow(ws, r, ['Aucune alerte sur la période', '', '', '', '', '', '']);
+      r = dataRow(ws, r, ['Aucune alerte sur la période', '', '', '', '', '']);
     } else {
-      alerts.forEach((a, i) => {
+      alerts.forEach((a) => {
         const f = a.flight_id ? flightById.get(a.flight_id) : null;
         r = dataRow(
           ws,
@@ -348,10 +344,9 @@ export async function GET(request: NextRequest) {
             a.passenger_name ?? '—',
             a.pnr ?? '—',
             a.reason,
-            a.resolved ? 'Oui' : 'Non',
             a.tag_number ?? '—',
           ],
-          { danger: !a.resolved, zebra: a.resolved && i % 2 === 1 },
+          { danger: true },
         );
       });
     }

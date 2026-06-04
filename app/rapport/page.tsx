@@ -61,7 +61,6 @@ interface Stats {
   declared: number;
   confirmed: number;
   alerts: number;
-  openAlerts: number;
 }
 
 export default function RapportPage() {
@@ -98,7 +97,7 @@ function ReportView() {
     const ids = ((fl as { id: string }[] | null) ?? []).map((f) => f.id);
 
     if (ids.length === 0) {
-      setStats({ flights: 0, passengers: 0, boarded: 0, declared: 0, confirmed: 0, alerts: 0, openAlerts: 0 });
+      setStats({ flights: 0, passengers: 0, boarded: 0, declared: 0, confirmed: 0, alerts: 0 });
       setLoading(false);
       return;
     }
@@ -106,12 +105,11 @@ function ReportView() {
     const [pax, bags, fraud] = await Promise.all([
       supabase.from('passengers').select('declared_baggage_count, boarded').in('flight_id', ids),
       supabase.from('baggage').select('is_confirmed').in('flight_id', ids),
-      supabase.from('fraud_alerts').select('resolved').in('flight_id', ids),
+      supabase.from('fraud_alerts').select('id', { count: 'exact', head: true }).in('flight_id', ids),
     ]);
 
     const passengers = (pax.data as { declared_baggage_count: number; boarded: boolean }[] | null) ?? [];
     const baggage = (bags.data as { is_confirmed: boolean }[] | null) ?? [];
-    const alerts = (fraud.data as { resolved: boolean }[] | null) ?? [];
 
     setStats({
       flights: ids.length,
@@ -119,8 +117,7 @@ function ReportView() {
       boarded: passengers.reduce((s, p) => s + (p.boarded ? 1 : 0), 0),
       declared: passengers.reduce((s, p) => s + p.declared_baggage_count, 0),
       confirmed: baggage.reduce((s, b) => s + (b.is_confirmed ? 1 : 0), 0),
-      alerts: alerts.length,
-      openAlerts: alerts.filter((a) => !a.resolved).length,
+      alerts: fraud.count ?? 0,
     });
     setLoading(false);
   }, []);
@@ -183,7 +180,6 @@ function ReportView() {
         <Stat label="Bagages confirmés" value={stats ? `${stats.confirmed} / ${stats.declared}` : undefined} icon={<IconBag size={20} />} tint="#14b8a6" loading={loading} />
         <Stat label="Écart bagages" value={stats ? ecart : undefined} icon={<IconBag size={20} />} tint="#d97706" danger={ecart !== 0} loading={loading} />
         <Stat label="Alertes fraude" value={stats?.alerts} icon={<IconAlert size={20} />} tint="#dc2626" danger={(stats?.alerts ?? 0) > 0} loading={loading} />
-        <Stat label="Alertes non résolues" value={stats?.openAlerts} icon={<IconAlert size={20} />} tint="#dc2626" danger={(stats?.openAlerts ?? 0) > 0} loading={loading} />
       </div>
 
       <div style={s.note}>
