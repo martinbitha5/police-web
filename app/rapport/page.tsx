@@ -1,0 +1,241 @@
+'use client';
+
+import { useCallback, useEffect, useState, type CSSProperties } from 'react';
+import { createClient } from '@/supabase/client';
+import { AppShell } from '@/components/AppShell';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { card, btnPrimary, sectionHeading } from '@/ui/theme';
+import {
+  IconPlane,
+  IconUser,
+  IconPlaneDepart,
+  IconBag,
+  IconAlert,
+  IconDownload,
+  IconReport,
+} from '@/components/icons';
+
+type Period = 'jour' | 'semaine' | 'mois' | 'annee';
+
+const PERIOD_LABEL: Record<Period, string> = {
+  jour: 'Jour',
+  semaine: 'Semaine',
+  mois: 'Mois',
+  annee: 'Année',
+};
+
+function iso(d: Date): string {
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+
+/** Calcule la plage [from, to] (incluse) pour la période choisie, jusqu'à aujourd'hui. */
+function rangeFor(period: Period): { from: string; to: string } {
+  const now = new Date();
+  const to = iso(now);
+  if (period === 'jour') return { from: to, to };
+  if (period === 'semaine') {
+    const d = new Date(now);
+    const dow = (d.getDay() + 6) % 7; // lundi = 0
+    d.setDate(d.getDate() - dow);
+    return { from: iso(d), to };
+  }
+  if (period === 'mois') {
+    return { from: iso(new Date(now.getFullYear(), now.getMonth(), 1)), to };
+  }
+  return { from: iso(new Date(now.getFullYear(), 0, 1)), to };
+}
+
+function frDate(s: string): string {
+  return new Date(`${s}T00:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+interface Stats {
+  flights: number;
+  passengers: number;
+  boarded: number;
+  declared: number;
+  confirmed: number;
+  alerts: number;
+  openAlerts: number;
+}
+
+export default function RapportPage() {
+  return (
+    <AppShell>
+      <ReportView />
+    </AppShell>
+  );
+}
+
+function ReportView() {
+  const isMobile = useIsMobile();
+  const [period, setPeriod] = useState<Period>('jour');
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const { from, to } = rangeFor(period);
+
+  const load = useCallback(async (p: Period) => {
+    setLoading(true);
+    setStats(null);
+    const { from, to } = rangeFor(p);
+    const supabase = createClient();
+
+    const { data: fl } = await supabase.from('flights').select('id').gte('date', from).lte('date', to);
+    const ids = ((fl as { id: string }[] | null) ?? []).map((f) => f.id);
+
+    if (ids.length === 0) {
+      setStats({ flights: 0, passengers: 0, boarded: 0, declared: 0, confirmed: 0, alerts: 0, openAlerts: 0 });
+      setLoading(false);
+      return;
+    }
+
+    const [pax, bags, fraud] = await Promise.all([
+      supabase.from('passengers').select('declared_baggage_count, boarded').in('flight_id', ids),
+      supabase.from('baggage').select('is_confirmed').in('flight_id', ids),
+      supabase.from('fraud_alerts').select('resolved').in('flight_id', ids),
+    ]);
+
+    const passengers = (pax.data as { declared_baggage_count: number; boarded: boolean }[] | null) ?? [];
+    const baggage = (bags.data as { is_confirmed: boolean }[] | null) ?? [];
+    const alerts = (fraud.data as { resolved: boolean }[] | null) ?? [];
+
+    setStats({
+      flights: ids.length,
+      passengers: passengers.length,
+      boarded: passengers.reduce((s, p) => s + (p.boarded ? 1 : 0), 0),
+      declared: passengers.reduce((s, p) => s + p.declared_baggage_count, 0),
+      confirmed: baggage.reduce((s, b) => s + (b.is_confirmed ? 1 : 0), 0),
+      alerts: alerts.length,
+      openAlerts: alerts.filter((a) => !a.resolved).length,
+    });
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    void load(period);
+  }, [load, period]);
+
+  const downloadHref = `/api/report/period?from=${from}&to=${to}&label=${PERIOD_LABEL[period]}`;
+  const ecart = stats ? stats.declared - stats.confirmed : 0;
+  const boardRate = stats && stats.passengers > 0 ? Math.round((stats.boarded / stats.passengers) * 100) : 0;
+
+  return (
+    <div style={isMobile ? { ...s.content, ...s.contentMobile } : s.content}>
+      <div style={isMobile ? { ...s.head, ...s.headMobile } : s.head}>
+        <div>
+          <h1 style={s.title}>Rapports</h1>
+          <div style={s.sub}>
+            {period === 'jour' ? frDate(to) : `Du ${frDate(from)} au ${frDate(to)}`}
+          </div>
+        </div>
+        <a style={{ ...btnPrimary, ...(loading ? { opacity: 0.6, pointerEvents: 'none' } : {}) }} href={downloadHref} download>
+          <IconDownload size={16} /> Télécharger Excel
+        </a>
+      </div>
+
+      {/* Sélecteur de période */}
+      <div style={s.tabs}>
+        {(['jour', 'semaine', 'mois', 'annee'] as Period[]).map((p) => (
+          <button
+            key={p}
+            style={{ ...s.tab, ...(period === p ? s.tabActive : {}) }}
+            onClick={() => setPeriod(p)}
+          >
+            {PERIOD_LABEL[p]}
+          </button>
+        ))}
+      </div>
+
+      <h2 style={sectionHeading}>Bilan de la période</h2>
+
+      <div style={isMobile ? { ...s.grid, gridTemplateColumns: 'repeat(2, 1fr)' } : s.grid}>
+        <Stat label="Vols traités" value={stats?.flights} icon={<IconPlane size={20} />} tint="#2563eb" loading={loading} />
+        <Stat label="Passagers" value={stats?.passengers} icon={<IconUser size={20} />} tint="#0ea5e9" loading={loading} />
+        <Stat label="Embarqués" value={stats ? `${stats.boarded} (${boardRate}%)` : undefined} icon={<IconPlaneDepart size={20} />} tint="#22c55e" loading={loading} />
+        <Stat label="Bagages confirmés" value={stats ? `${stats.confirmed} / ${stats.declared}` : undefined} icon={<IconBag size={20} />} tint="#14b8a6" loading={loading} />
+        <Stat label="Écart bagages" value={stats ? ecart : undefined} icon={<IconBag size={20} />} tint="#d97706" danger={ecart !== 0} loading={loading} />
+        <Stat label="Alertes fraude" value={stats?.alerts} icon={<IconAlert size={20} />} tint="#dc2626" danger={(stats?.alerts ?? 0) > 0} loading={loading} />
+        <Stat label="Alertes non résolues" value={stats?.openAlerts} icon={<IconAlert size={20} />} tint="#dc2626" danger={(stats?.openAlerts ?? 0) > 0} loading={loading} />
+      </div>
+
+      <div style={s.note}>
+        <IconReport size={18} />
+        <span>
+          Le fichier Excel contient le bilan détaillé : résumé statistique, liste des vols de la période et toutes les alertes fraude.
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  icon,
+  tint,
+  danger,
+  loading,
+}: {
+  label: string;
+  value: number | string | undefined;
+  icon: React.ReactNode;
+  tint: string;
+  danger?: boolean;
+  loading?: boolean;
+}) {
+  return (
+    <div style={s.stat}>
+      <div style={{ ...s.statIcon, background: `${tint}22`, color: tint }}>{icon}</div>
+      <div style={{ minWidth: 0 }}>
+        <div style={s.statLabel}>{label}</div>
+        <div style={{ fontSize: 24, fontWeight: 800, color: danger ? 'var(--danger)' : 'var(--text)', lineHeight: 1.1 }}>
+          {loading ? '…' : (value ?? '—')}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const s: Record<string, CSSProperties> = {
+  content: { padding: 28, maxWidth: 1160, margin: '0 auto', width: '100%' },
+  contentMobile: { padding: '16px 14px' },
+
+  head: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 20, flexWrap: 'wrap' },
+  headMobile: { flexDirection: 'column', gap: 12 },
+  title: { margin: 0, fontSize: 28, fontWeight: 800, textShadow: '0 2px 10px rgba(0,0,0,0.65)' },
+  sub: { color: '#cbd5e1', fontSize: 14, marginTop: 4, textShadow: '0 1px 6px rgba(0,0,0,0.6)' },
+
+  tabs: { display: 'flex', gap: 8, marginBottom: 22, flexWrap: 'wrap' },
+  tab: {
+    flex: '1 1 auto',
+    minWidth: 80,
+    background: 'var(--glass)',
+    backdropFilter: 'var(--glass-blur)',
+    WebkitBackdropFilter: 'var(--glass-blur)',
+    border: '1px solid var(--glass-border)',
+    color: 'var(--text)',
+    borderRadius: 10,
+    padding: '11px 14px',
+    fontWeight: 700,
+    fontSize: 14,
+  },
+  tabActive: { background: 'var(--primary)', borderColor: 'var(--primary)', color: '#fff' },
+
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 14, marginBottom: 22 },
+  stat: { ...card, display: 'flex', alignItems: 'center', gap: 14, padding: 18 },
+  statIcon: { width: 44, height: 44, borderRadius: 12, display: 'grid', placeItems: 'center', flexShrink: 0 },
+  statLabel: { color: 'var(--muted)', fontSize: 13, marginBottom: 4 },
+
+  note: {
+    ...card,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    color: 'var(--muted)',
+    fontSize: 14,
+    lineHeight: 1.5,
+  },
+};
