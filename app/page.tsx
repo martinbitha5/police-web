@@ -354,32 +354,80 @@ function FlightDetail({
       {unresolved.length > 0 ? <FraudAlerts alerts={unresolved} /> : null}
 
       <h2 style={sectionHeading}>Passagers</h2>
-      <div style={s.tableWrap}>
-        <table style={s.table}>
-          <thead>
-            <tr>
-              <th style={s.th}>Passager</th>
-              <th style={s.th}>Siège</th>
-              <th style={s.th}>Classe</th>
-              <th style={s.th}>Route</th>
-              <th style={s.th}>PNR</th>
-              <th style={s.th}>Bagages</th>
-              <th style={s.th}>Embarqué</th>
-            </tr>
-          </thead>
-          <tbody>
-            {passengers.length === 0 ? (
+      {isMobile ? (
+        // Mobile : cartes empilées (un tableau à 7 colonnes serait illisible).
+        passengers.length === 0 ? (
+          <div style={s.tdEmpty}>Aucun passager scanné pour le moment.</div>
+        ) : (
+          <div style={s.paxCardList}>
+            {passengers.map((p) => (
+              <PassengerCardMobile key={p.id} p={p} fallbackRoute={formatRoute(flight, '→')} />
+            ))}
+          </div>
+        )
+      ) : (
+        <div style={s.tableWrap}>
+          <table style={s.table}>
+            <thead>
               <tr>
-                <td style={s.tdEmpty} colSpan={7}>
-                  Aucun passager scanné pour le moment.
-                </td>
+                <th style={s.th}>Passager</th>
+                <th style={s.th}>Siège</th>
+                <th style={s.th}>Classe</th>
+                <th style={s.th}>Route</th>
+                <th style={s.th}>PNR</th>
+                <th style={s.th}>Bagages</th>
+                <th style={s.th}>Embarqué</th>
               </tr>
-            ) : (
-              passengers.map((p) => <PassengerRowView key={p.id} p={p} fallbackRoute={formatRoute(flight, '→')} />)
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {passengers.length === 0 ? (
+                <tr>
+                  <td style={s.tdEmpty} colSpan={7}>
+                    Aucun passager scanné pour le moment.
+                  </td>
+                </tr>
+              ) : (
+                passengers.map((p) => <PassengerRowView key={p.id} p={p} fallbackRoute={formatRoute(flight, '→')} />)
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PassengerCardMobile({ p, fallbackRoute }: { p: PassengerRow; fallbackRoute: string }) {
+  const complete = p.declared_baggage_count > 0 && p.confirmedCount >= p.declared_baggage_count;
+  const bagColor = p.declared_baggage_count === 0 ? 'var(--muted)' : complete ? '#4ade80' : '#fbbf24';
+  return (
+    <div style={s.paxCard}>
+      <div style={s.paxCardHead}>
+        <span style={s.paxCardName}>{p.full_name}</span>
+        {p.boarded ? (
+          <span style={{ ...badge, color: '#4ade80', borderColor: '#4ade80' }}>
+            <span style={{ ...s.statusDot, background: '#4ade80' }} /> Embarqué
+          </span>
+        ) : (
+          <span style={{ ...badge, color: 'var(--muted)', borderColor: 'var(--glass-border)' }}>En attente</span>
+        )}
       </div>
+      <div style={s.paxCardRoute}>{p.route ?? fallbackRoute}</div>
+      <div style={s.paxCardMeta}>
+        <PaxMeta label="Siège" value={p.seat ?? '—'} />
+        <PaxMeta label="Classe" value={p.class ?? '—'} />
+        <PaxMeta label="PNR" value={p.pnr} />
+        <PaxMeta label="Bagages" value={`${p.confirmedCount}/${p.declared_baggage_count}`} color={bagColor} />
+      </div>
+    </div>
+  );
+}
+
+function PaxMeta({ label, value, color }: { label: string; value: string; color?: string }) {
+  return (
+    <div style={s.paxMeta}>
+      <span style={s.paxMetaLabel}>{label}</span>
+      <span style={{ ...s.paxMetaValue, ...(color ? { color, fontWeight: 700 } : {}) }}>{value}</span>
     </div>
   );
 }
@@ -696,7 +744,17 @@ const s: Record<string, CSSProperties> = {
   alert: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, background: 'rgba(220, 38, 38, 0.12)', backdropFilter: 'var(--glass-blur)', WebkitBackdropFilter: 'var(--glass-blur)', border: '1px solid var(--danger)', borderRadius: 12, padding: 14 },
   resolveBtn: { background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 12px', whiteSpace: 'nowrap', fontWeight: 600 },
 
-  tableWrap: { ...card, padding: 0, overflow: 'hidden' },
+  tableWrap: { ...card, padding: 0, overflowX: 'auto' },
+
+  paxCardList: { display: 'flex', flexDirection: 'column', gap: 10 },
+  paxCard: { ...card, padding: 14, display: 'flex', flexDirection: 'column', gap: 8 },
+  paxCardHead: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
+  paxCardName: { fontWeight: 700, fontSize: 15 },
+  paxCardRoute: { color: 'var(--muted)', fontSize: 13, fontWeight: 600 },
+  paxCardMeta: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 },
+  paxMeta: { display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 },
+  paxMetaLabel: { color: 'var(--muted)', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.4, fontWeight: 600 },
+  paxMetaValue: { fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   table: { width: '100%', borderCollapse: 'collapse', background: 'transparent' },
   th: { textAlign: 'left', padding: 14, color: 'var(--muted)', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: '1px solid var(--glass-border)' },
   td: { padding: 14, borderBottom: '1px solid rgba(255,255,255,0.06)' },
