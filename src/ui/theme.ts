@@ -5,7 +5,9 @@ export const glass: CSSProperties = {
   background: 'var(--glass)',
   backdropFilter: 'var(--glass-blur)',
   WebkitBackdropFilter: 'var(--glass-blur)',
-  border: '1px solid var(--glass-border)',
+  borderWidth: 1,
+  borderStyle: 'solid',
+  borderColor: 'var(--glass-border)',
 };
 
 export const glassStrong: CSSProperties = { ...glass, background: 'var(--glass-strong)' };
@@ -73,7 +75,9 @@ export const badge: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
   gap: 6,
-  border: '1px solid',
+  borderWidth: 1,
+  borderStyle: 'solid',
+  borderColor: 'transparent',
   borderRadius: 999,
   padding: '3px 10px',
   fontSize: 12,

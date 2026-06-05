@@ -726,7 +726,7 @@ const s: Record<string, CSSProperties> = {
   flightCardFoot: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 },
   alertPill: { display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--danger)', color: '#fff', borderRadius: 20, padding: '2px 9px', fontSize: 12, fontWeight: 600 },
 
-  emptyCard: { ...card, border: '1px dashed var(--glass-border)', padding: '44px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'var(--text)' },
+  emptyCard: { ...card, borderStyle: 'dashed', padding: '44px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'var(--text)' },
 
   statusDot: { width: 8, height: 8, borderRadius: '50%', flexShrink: 0, display: 'inline-block' },
 
