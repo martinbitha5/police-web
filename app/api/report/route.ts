@@ -17,6 +17,14 @@ const COLOR = {
   warning:  'FFD97706',
 };
 
+/** Libellé du statut soute d'un bagage (du plus avancé au moins avancé). */
+function bagStatusLabel(b: { rush: boolean; in_hold: boolean; is_confirmed: boolean }): string {
+  if (b.rush) return 'Réacheminement';
+  if (b.in_hold) return 'Chargé en soute';
+  if (b.is_confirmed) return 'Enregistré';
+  return 'En attente';
+}
+
 // ── Helpers feuille ──────────────────────────────────────────
 
 function makeSheet(
@@ -157,6 +165,8 @@ export async function GET(request: NextRequest) {
   }
   const declaredTotal  = passengers.reduce((s, p) => s + p.declared_baggage_count, 0);
   const confirmedTotal = [...confirmedByPax.values()].reduce((s, n) => s + n, 0);
+  const inHoldTotal    = baggage.filter((b) => b.in_hold).length;
+  const rushTotal      = baggage.filter((b) => b.rush).length;
   const boardedTotal   = passengers.reduce((s, p) => s + (p.boarded ? 1 : 0), 0);
 
   // Stats globales du jour
@@ -201,6 +211,8 @@ export async function GET(request: NextRequest) {
     r = sheetData(ws, r, ['Bagages déclarés',  declaredTotal]);
     r = sheetData(ws, r, ['Bagages confirmés', confirmedTotal],
       { success: confirmedTotal === declaredTotal });
+    r = sheetData(ws, r, ['Chargés en soute', inHoldTotal], { success: inHoldTotal > 0 });
+    r = sheetData(ws, r, ['Rush (réacheminés)', rushTotal], { danger: rushTotal > 0 });
     r = sheetData(ws, r, ['Écart (déclarés − confirmés)', declaredTotal - confirmedTotal],
       { danger: declaredTotal - confirmedTotal !== 0 });
 
@@ -248,7 +260,7 @@ export async function GET(request: NextRequest) {
   // FEUILLE 3 — BAGAGES
   // ════════════════════════════════════════════════════════════
   {
-    const ws = makeSheet(wb, 'Bagages', [16, 12, 28, 12, 12, 22]);
+    const ws = makeSheet(wb, 'Bagages', [16, 12, 28, 12, 16, 22]);
     let r = sheetTitle(ws, `Bagages — ${header}`, 6);
     r = sheetHeader(ws, r, ['Étiquette', 'Série', 'Passager', 'PNR', 'Statut', 'Scanné le']);
 
@@ -256,16 +268,16 @@ export async function GET(request: NextRequest) {
       r = sheetData(ws, r, ['Aucun bagage enregistré', '', '', '', '', '']);
     } else {
       baggage.forEach((b, i) => {
-        const pax    = paxById.get(b.passenger_id);
-        const loaded = b.is_confirmed;
+        const pax = paxById.get(b.passenger_id);
+        const label = bagStatusLabel(b);
         r = sheetData(ws, r, [
           b.tag_number,
           b.serial_number  ?? '—',
           pax?.full_name   ?? '—',
           pax?.pnr         ?? '—',
-          loaded ? 'Chargé' : 'En attente',
+          label,
           new Date(b.scanned_at).toLocaleString('fr-FR'),
-        ], { success: loaded, warning: !loaded && i % 2 === 0, zebra: !loaded && i % 2 === 1 });
+        ], { danger: b.rush, success: b.in_hold && !b.rush, zebra: !b.rush && !b.in_hold && i % 2 === 1 });
       });
     }
   }

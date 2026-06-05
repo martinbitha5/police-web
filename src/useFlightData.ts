@@ -14,6 +14,8 @@ export interface FlightData {
   alerts: FraudAlert[];
   baggageDeclared: number;
   baggageConfirmed: number;
+  baggageInHold: number;
+  baggageRush: number;
   boardedCount: number;
   reload: () => void;
 }
@@ -23,6 +25,8 @@ export function useFlightData(flightId: string | null): FlightData {
   const [alerts, setAlerts] = useState<FraudAlert[]>([]);
   const [baggageDeclared, setDeclared] = useState(0);
   const [baggageConfirmed, setConfirmed] = useState(0);
+  const [baggageInHold, setInHold] = useState(0);
+  const [baggageRush, setRush] = useState(0);
   const [boardedCount, setBoarded] = useState(0);
 
   const load = useCallback(async () => {
@@ -31,18 +35,22 @@ export function useFlightData(flightId: string | null): FlightData {
 
     const [{ data: pax }, { data: bags }, { data: fraud }] = await Promise.all([
       supabase.from('passengers').select('*').eq('flight_id', flightId).order('full_name'),
-      supabase.from('baggage').select('passenger_id, is_confirmed').eq('flight_id', flightId),
+      supabase.from('baggage').select('passenger_id, is_confirmed, in_hold, rush').eq('flight_id', flightId),
       supabase.from('fraud_alerts').select('*').eq('flight_id', flightId).order('created_at', { ascending: false }),
     ]);
 
-    const baggage = (bags as Pick<Baggage, 'passenger_id' | 'is_confirmed'>[] | null) ?? [];
+    const baggage = (bags as Pick<Baggage, 'passenger_id' | 'is_confirmed' | 'in_hold' | 'rush'>[] | null) ?? [];
     const confirmedByPax = new Map<string, number>();
     let confirmedTotal = 0;
+    let inHoldTotal = 0;
+    let rushTotal = 0;
     for (const b of baggage) {
       if (b.is_confirmed) {
         confirmedByPax.set(b.passenger_id, (confirmedByPax.get(b.passenger_id) ?? 0) + 1);
         confirmedTotal += 1;
       }
+      if (b.in_hold) inHoldTotal += 1;
+      if (b.rush) rushTotal += 1;
     }
 
     const paxRows = (pax as Passenger[] | null) ?? [];
@@ -76,6 +84,8 @@ export function useFlightData(flightId: string | null): FlightData {
     setPassengers(rows);
     setAlerts((fraud as FraudAlert[] | null) ?? []);
     setConfirmed(confirmedTotal);
+    setInHold(inHoldTotal);
+    setRush(rushTotal);
     setDeclared(rows.reduce((sum, p) => sum + p.declared_baggage_count, 0));
     setBoarded(rows.reduce((sum, p) => sum + (p.boarded ? 1 : 0), 0));
   }, [flightId]);
@@ -97,7 +107,7 @@ export function useFlightData(flightId: string | null): FlightData {
     };
   }, [flightId, load]);
 
-  return { passengers, alerts, baggageDeclared, baggageConfirmed, boardedCount, reload: load };
+  return { passengers, alerts, baggageDeclared, baggageConfirmed, baggageInHold, baggageRush, boardedCount, reload: load };
 }
 
 export type { Flight };

@@ -303,7 +303,7 @@ function FlightDetail({
   onUpdated: () => void;
   isMobile: boolean;
 }) {
-  const { passengers, alerts, baggageDeclared, baggageConfirmed, boardedCount } = useFlightData(flight.id);
+  const { passengers, alerts, baggageDeclared, baggageConfirmed, baggageInHold, baggageRush, boardedCount } = useFlightData(flight.id);
 
   async function changeStatus(status: Flight['status']) {
     await createClient().from('flights').update({ status }).eq('id', flight.id);
@@ -346,6 +346,8 @@ function FlightDetail({
         <Stat label="Passagers" value={String(passengers.length)} icon={<IconUser size={20} />} tint="#2563eb" />
         <Stat label="Embarqués" value={`${boardedCount} / ${passengers.length}`} icon={<IconPlaneDepart size={20} />} tint="#22c55e" />
         <Stat label="Bagages confirmés" value={`${baggageConfirmed} / ${baggageDeclared}`} icon={<IconBag size={20} />} tint="#14b8a6" />
+        <Stat label="Chargés en soute" value={`${baggageInHold} / ${baggageConfirmed}`} icon={<IconBag size={20} />} tint="#0ea5e9" />
+        <Stat label="Rush (réacheminés)" value={String(baggageRush)} icon={<IconBag size={20} />} tint="#d97706" danger={baggageRush > 0} />
         <Stat label="Alertes fraude" value={String(alerts.length)} icon={<IconAlert size={20} />} tint="#dc2626" danger={alerts.length > 0} />
       </div>
 

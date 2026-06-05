@@ -175,6 +175,8 @@ export async function GET(request: NextRequest) {
   const totBoarded = passengers.reduce((s, p) => s + (p.boarded ? 1 : 0), 0);
   const totDeclared = passengers.reduce((s, p) => s + p.declared_baggage_count, 0);
   const totConfirmed = baggage.reduce((s, b) => s + (b.is_confirmed ? 1 : 0), 0);
+  const totInHold = baggage.reduce((s, b) => s + (b.in_hold ? 1 : 0), 0);
+  const totRush = baggage.reduce((s, b) => s + (b.rush ? 1 : 0), 0);
   const paxNoBag = passengers.filter((p) => p.declared_baggage_count === 0).length;
   const totAlerts = alerts.length;
 
@@ -208,7 +210,9 @@ export async function GET(request: NextRequest) {
 
     r = section(ws, r, 'Bagages', 2);
     r = dataRow(ws, r, ['Bagages déclarés', totDeclared]);
-    r = dataRow(ws, r, ['Bagages confirmés (chargés)', totConfirmed], { success: true });
+    r = dataRow(ws, r, ['Bagages enregistrés (confirmés)', totConfirmed], { success: true });
+    r = dataRow(ws, r, ['Chargés en soute', totInHold], { success: totInHold > 0 });
+    r = dataRow(ws, r, ['Rush (réacheminés)', totRush], { danger: totRush > 0 });
     r = dataRow(ws, r, ['Bagages en attente', Math.max(totDeclared - totConfirmed, 0)], {
       danger: totDeclared - totConfirmed > 0,
     });
@@ -216,6 +220,7 @@ export async function GET(request: NextRequest) {
       danger: totDeclared - totConfirmed !== 0,
     });
     r = dataRow(ws, r, ['Taux de confirmation', pct(totConfirmed, totDeclared)]);
+    r = dataRow(ws, r, ['Taux de chargement soute', pct(totInHold, totConfirmed)]);
     r = dataRow(ws, r, ['Moyenne bagages / passager', avg(totDeclared, totPax)]);
     r = dataRow(ws, r, ['Passagers sans bagage', paxNoBag]);
 
@@ -306,6 +311,7 @@ export async function GET(request: NextRequest) {
       sorted.forEach((b, i) => {
         const f = flightById.get(b.flight_id);
         const pax = passengerById.get(b.passenger_id);
+        const label = b.rush ? 'Réacheminement' : b.in_hold ? 'Chargé en soute' : b.is_confirmed ? 'Enregistré' : 'En attente';
         r = dataRow(
           ws,
           r,
@@ -316,10 +322,10 @@ export async function GET(request: NextRequest) {
             b.serial_number ?? '—',
             pax?.full_name ?? '—',
             pax?.pnr ?? '—',
-            b.is_confirmed ? 'Chargé' : 'En attente',
+            label,
             new Date(b.scanned_at).toLocaleString('fr-FR'),
           ],
-          { success: b.is_confirmed, zebra: !b.is_confirmed && i % 2 === 1 },
+          { danger: b.rush, success: b.in_hold && !b.rush, zebra: !b.rush && !b.in_hold && i % 2 === 1 },
         );
       });
     }
