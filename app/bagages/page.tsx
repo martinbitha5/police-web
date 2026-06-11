@@ -33,6 +33,9 @@ export default function BagagesPage() {
   );
 }
 
+type SouteFilter = 'all' | 'avant' | 'arriere' | 'none';
+type StatusFilter = 'all' | 'rush' | 'in_hold' | 'confirmed' | 'pending';
+
 function BagagesContent() {
   const profile = useSession();
   const airportCode = profile?.airport_code ?? 'FIH';
@@ -42,6 +45,11 @@ function BagagesContent() {
   const [bags, setBags] = useState<BagRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [detail, setDetail] = useState<BagRow | null>(null);
+
+  // Filtres
+  const [search, setSearch] = useState('');
+  const [souteFilter, setSouteFilter] = useState<SouteFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
   // Charge les vols du jour
   useEffect(() => {
@@ -97,10 +105,36 @@ function BagagesContent() {
 
   const flight = flights.find((f) => f.id === selectedId);
 
-  // Compteurs soute
+  // Compteurs soute (sur tous les bagages, pas sur les filtrés)
   const avantCount = bags.filter((b) => b.soute === 'avant').length;
   const arriereCount = bags.filter((b) => b.soute === 'arriere').length;
   const nonScanneCount = bags.filter((b) => !b.soute && b.is_confirmed).length;
+
+  // Filtrage client-side
+  const q = search.trim().toLowerCase();
+  const visibleBags = bags.filter((b) => {
+    if (q) {
+      const matchTag = b.tag_number.includes(q);
+      const matchName = b.passengerName.toLowerCase().includes(q);
+      const matchPnr = b.pnr.toLowerCase().includes(q);
+      if (!matchTag && !matchName && !matchPnr) return false;
+    }
+    if (souteFilter === 'avant' && b.soute !== 'avant') return false;
+    if (souteFilter === 'arriere' && b.soute !== 'arriere') return false;
+    if (souteFilter === 'none' && b.soute !== null) return false;
+    if (statusFilter === 'rush' && !b.rush) return false;
+    if (statusFilter === 'in_hold' && !b.in_hold) return false;
+    if (statusFilter === 'confirmed' && (!b.is_confirmed || b.in_hold || b.rush)) return false;
+    if (statusFilter === 'pending' && b.is_confirmed) return false;
+    return true;
+  });
+
+  function resetFilters() {
+    setSearch('');
+    setSouteFilter('all');
+    setStatusFilter('all');
+  }
+  const hasFilter = q !== '' || souteFilter !== 'all' || statusFilter !== 'all';
 
   return (
     <div style={s.page}>
@@ -115,7 +149,7 @@ function BagagesContent() {
         <select
           style={s.select}
           value={selectedId ?? ''}
-          onChange={(e) => setSelectedId(e.target.value || null)}
+          onChange={(e) => { setSelectedId(e.target.value || null); resetFilters(); }}
         >
           {flights.length === 0 && <option value="">Aucun vol aujourd'hui</option>}
           {flights.map((f) => (
@@ -136,6 +170,57 @@ function BagagesContent() {
         </div>
       )}
 
+      {/* Barre recherche + filtres */}
+      {selectedId && (
+        <div style={s.toolbar}>
+          {/* Champ recherche */}
+          <input
+            style={s.searchInput}
+            type="text"
+            placeholder="Rechercher par étiquette, passager ou PNR…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+
+          {/* Filtre soute */}
+          <div style={s.filterGroup}>
+            <span style={s.filterLabel}>Soute</span>
+            {(['all', 'avant', 'arriere', 'none'] as SouteFilter[]).map((v) => (
+              <FilterPill
+                key={v}
+                active={souteFilter === v}
+                onClick={() => setSouteFilter(v)}
+                color={v === 'avant' ? 'var(--primary)' : v === 'arriere' ? '#0891b2' : undefined}
+              >
+                {v === 'all' ? 'Tous' : v === 'avant' ? 'Avant' : v === 'arriere' ? 'Arrière' : 'Non scannés'}
+              </FilterPill>
+            ))}
+          </div>
+
+          {/* Filtre statut */}
+          <div style={s.filterGroup}>
+            <span style={s.filterLabel}>Statut</span>
+            {(['all', 'in_hold', 'confirmed', 'rush', 'pending'] as StatusFilter[]).map((v) => (
+              <FilterPill
+                key={v}
+                active={statusFilter === v}
+                onClick={() => setStatusFilter(v)}
+                color={v === 'rush' ? '#d97706' : v === 'in_hold' ? 'var(--success)' : undefined}
+              >
+                {v === 'all' ? 'Tous' : v === 'in_hold' ? 'Chargé' : v === 'confirmed' ? 'Enregistré' : v === 'rush' ? 'Rush' : 'En attente'}
+              </FilterPill>
+            ))}
+          </div>
+
+          {/* Réinitialiser */}
+          {hasFilter && (
+            <button style={s.resetBtn} onClick={resetFilters}>
+              <IconClose size={13} /> Réinitialiser
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Table */}
       {selectedId && (
         <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
@@ -143,6 +228,8 @@ function BagagesContent() {
             <div style={s.empty}>Chargement…</div>
           ) : bags.length === 0 ? (
             <div style={s.empty}>Aucun bagage enregistré pour ce vol.</div>
+          ) : visibleBags.length === 0 ? (
+            <div style={s.empty}>Aucun résultat pour ces critères.</div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
               <table style={s.table}>
@@ -156,7 +243,7 @@ function BagagesContent() {
                   </tr>
                 </thead>
                 <tbody>
-                  {bags.map((b) => (
+                  {visibleBags.map((b) => (
                     <tr
                       key={b.id}
                       style={s.tr}
@@ -165,16 +252,17 @@ function BagagesContent() {
                       <Td mono>{b.tag_number}</Td>
                       <Td>{b.passengerName}</Td>
                       <Td mono>{b.pnr}</Td>
-                      <Td>
-                        <SouteBadge soute={b.soute} />
-                      </Td>
-                      <Td>
-                        <StatusBadge bag={b} />
-                      </Td>
+                      <Td><SouteBadge soute={b.soute} /></Td>
+                      <Td><StatusBadge bag={b} /></Td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              {hasFilter && (
+                <div style={s.resultCount}>
+                  {visibleBags.length} résultat{visibleBags.length !== 1 ? 's' : ''} sur {bags.length}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -193,6 +281,39 @@ function BagagesContent() {
 }
 
 // ── Sous-composants ──────────────────────────────────────────────
+
+function FilterPill({
+  children,
+  active,
+  color,
+  onClick,
+}: {
+  children: ReactNode;
+  active: boolean;
+  color?: string;
+  onClick: () => void;
+}) {
+  const activeColor = color ?? 'var(--text)';
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        border: `1px solid ${active ? activeColor : 'var(--glass-border)'}`,
+        borderRadius: 999,
+        padding: '4px 12px',
+        fontSize: 12,
+        fontWeight: 600,
+        cursor: 'pointer',
+        background: active ? `${activeColor}18` : 'transparent',
+        color: active ? activeColor : 'var(--muted)',
+        transition: 'all 0.15s',
+        whiteSpace: 'nowrap' as const,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
 
 function CounterCard({ label, value, color }: { label: string; value: number; color: string }) {
   return (
@@ -314,6 +435,35 @@ const s: Record<string, CSSProperties> = {
     colorScheme: 'dark',
   },
   counters: { display: 'flex', gap: 14, flexWrap: 'wrap' },
+  toolbar: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 },
+  searchInput: {
+    background: 'rgba(255,255,255,0.07)',
+    border: '1px solid var(--glass-border)',
+    borderRadius: 10,
+    padding: '9px 14px',
+    color: 'var(--text)',
+    fontSize: 14,
+    flex: '1 1 240px',
+    minWidth: 200,
+    colorScheme: 'dark',
+  },
+  filterGroup: { display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const },
+  filterLabel: { fontSize: 12, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: 0.4, marginRight: 2 },
+  resetBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 5,
+    background: 'transparent',
+    border: '1px solid var(--danger)',
+    color: 'var(--danger)',
+    borderRadius: 999,
+    padding: '4px 12px',
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: 'pointer',
+    whiteSpace: 'nowrap' as const,
+  },
+  resultCount: { padding: '10px 16px', fontSize: 13, color: 'var(--muted)', borderTop: '1px solid var(--glass-border)', textAlign: 'right' as const },
   table: { width: '100%', borderCollapse: 'collapse' },
   th: {
     textAlign: 'left' as const,
