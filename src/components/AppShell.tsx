@@ -9,8 +9,6 @@ import { glassStrong } from '@/ui/theme';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { IconDashboard, IconUsers, IconLogout, IconReport } from './icons';
 
-const HUB = process.env.NEXT_PUBLIC_HUB ?? 'FIH';
-
 function formatToday(): string {
   const s = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   return s.charAt(0).toUpperCase() + s.slice(1);
@@ -62,7 +60,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <header style={m.topBar}>
             <div style={m.topBrand}>
               <span style={m.topBrandName}>Police Bagage</span>
-              <span style={m.topBrandHub}>Hub {HUB}</span>
+              <span style={m.topBrandHub}>{profile?.airport_code ?? '—'} · {profile?.airline_code ?? 'ET'}</span>
             </div>
             <div style={m.topRight}>
               {profile ? (
@@ -122,7 +120,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div style={d.brandBox}>
             <div>
               <div style={d.brand}>Police Bagage</div>
-              <div style={d.brandSub}>Hub {HUB}</div>
+              <div style={d.brandSub}>{profile?.airport_code ?? '—'} · {profile?.airline_code ?? 'ET'}</div>
             </div>
           </div>
 

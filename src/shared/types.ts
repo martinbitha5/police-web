@@ -13,7 +13,7 @@ export type FlightStatus = 'scheduled' | 'boarding' | 'closed' | 'cancelled';
 export const FLIGHT_STATUS_LABEL: Record<FlightStatus, string> = {
   scheduled: 'Programmé',
   boarding: 'Embarquement',
-  closed: 'Fermé',
+  closed: 'Porte fermée',
   cancelled: 'Annulé',
 } as const;
 
@@ -90,6 +90,8 @@ export interface Profile {
   full_name: string;
   role: UserRole;
   gate: string | null;
+  airport_code: string | null;
+  airline_code: string | null;
   created_at: string;
 }
 

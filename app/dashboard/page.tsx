@@ -21,12 +21,10 @@ import {
   IconClose,
 } from '@/components/icons';
 
-const HUB = process.env.NEXT_PUBLIC_HUB ?? 'FIH';
-
 const STATUS_LABEL: Record<Flight['status'], string> = {
   scheduled: 'Programmé',
   boarding: 'Embarquement',
-  closed: 'Fermé',
+  closed: 'Porte fermée',
   cancelled: 'Annulé',
 };
 const STATUS_COLOR: Record<Flight['status'], string> = {
@@ -56,8 +54,9 @@ export default function DashboardPage() {
 }
 
 function Dashboard() {
-  const profile  = useSession();
-  const isMobile = useIsMobile();
+  const profile    = useSession();
+  const isMobile   = useIsMobile();
+  const airportCode = profile?.airport_code ?? 'FIH';
   const [flights, setFlights] = useState<Flight[]>([]);
   const [alertsByFlight, setAlertsByFlight] = useState<Record<string, number>>({});
   const [recentAlerts, setRecentAlerts] = useState<FraudAlert[]>([]);
@@ -70,6 +69,7 @@ function Dashboard() {
       .from('flights')
       .select('*')
       .eq('date', today())
+      .or(`origin.eq.${airportCode},destination.eq.${airportCode}`)
       .order('departure_time', { ascending: true });
     const list = (fl as Flight[] | null) ?? [];
     setFlights(list);
@@ -92,12 +92,13 @@ function Dashboard() {
     }
   }
 
-  useEffect(() => {
-    loadFlights();
-  }, []);
+  // Recharge quand le profil est connu (profile.id passe de undefined → UUID)
+  // ou quand l'airport_code change (changement de site).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (profile !== null) void loadFlights(); }, [profile?.id, airportCode]);
 
-  const departures = useMemo(() => flights.filter((f) => f.origin === HUB), [flights]);
-  const arrivals = useMemo(() => flights.filter((f) => f.destination === HUB), [flights]);
+  const departures = useMemo(() => flights.filter((f) => f.origin === airportCode), [flights, airportCode]);
+  const arrivals   = useMemo(() => flights.filter((f) => f.destination === airportCode), [flights, airportCode]);
   const selected = flights.find((f) => f.id === selectedId) ?? null;
   const canManage = profile?.role === 'admin' || profile?.role === 'supervisor';
   const totalAlerts = Object.values(alertsByFlight).reduce((a, b) => a + b, 0);
@@ -105,9 +106,10 @@ function Dashboard() {
   return (
     <div style={isMobile ? { ...s.content, ...s.contentMobile } : s.content}>
       {selected ? (
-        <FlightDetail flight={selected} onBack={() => setSelectedId(null)} canManage={canManage} onUpdated={loadFlights} isMobile={isMobile} />
+        <FlightDetail hub={airportCode} flight={selected} onBack={() => setSelectedId(null)} canManage={canManage} onUpdated={loadFlights} isMobile={isMobile} />
       ) : (
         <Overview
+          hub={airportCode}
           flights={flights}
           departures={departures}
           arrivals={arrivals}
@@ -123,6 +125,7 @@ function Dashboard() {
 
       {showForm ? (
         <FlightFormModal
+          hub={airportCode}
           onClose={() => setShowForm(false)}
           onCreated={async (id) => {
             setShowForm(false);
@@ -140,6 +143,7 @@ function Dashboard() {
 // ─────────────────────────────────────────────────────────────
 
 function Overview({
+  hub,
   flights,
   departures,
   arrivals,
@@ -151,6 +155,7 @@ function Overview({
   onSelect,
   onAdd,
 }: {
+  hub: string;
   flights: Flight[];
   departures: Flight[];
   arrivals: Flight[];
@@ -225,8 +230,8 @@ function Overview({
         </div>
       ) : (
         <>
-          <FlightSection title="Départs" icon={<IconPlaneDepart size={16} />} flights={departures} alerts={alerts} onSelect={onSelect} />
-          <FlightSection title="Arrivées" icon={<IconPlaneArrive size={16} />} flights={arrivals} alerts={alerts} onSelect={onSelect} />
+          <FlightSection hub={hub} title="Départs" icon={<IconPlaneDepart size={16} />} flights={departures} alerts={alerts} onSelect={onSelect} />
+          <FlightSection hub={hub} title="Arrivées" icon={<IconPlaneArrive size={16} />} flights={arrivals} alerts={alerts} onSelect={onSelect} />
         </>
       )}
     </div>
@@ -234,12 +239,14 @@ function Overview({
 }
 
 function FlightSection({
+  hub,
   title,
   icon,
   flights,
   alerts,
   onSelect,
 }: {
+  hub: string;
   title: string;
   icon: React.ReactNode;
   flights: Flight[];
@@ -256,7 +263,7 @@ function FlightSection({
       ) : (
         <div style={s.cardGrid}>
           {flights.map((f) => (
-            <FlightCard key={f.id} flight={f} alertCount={alerts[f.id] ?? 0} onSelect={() => onSelect(f.id)} />
+            <FlightCard key={f.id} hub={hub} flight={f} alertCount={alerts[f.id] ?? 0} onSelect={() => onSelect(f.id)} />
           ))}
         </div>
       )}
@@ -264,7 +271,7 @@ function FlightSection({
   );
 }
 
-function FlightCard({ flight, alertCount, onSelect }: { flight: Flight; alertCount: number; onSelect: () => void }) {
+function FlightCard({ hub, flight, alertCount, onSelect }: { hub: string; flight: Flight; alertCount: number; onSelect: () => void }) {
   return (
     <button style={s.flightCard} onClick={onSelect}>
       <div style={s.flightCardTop}>
@@ -274,7 +281,7 @@ function FlightCard({ flight, alertCount, onSelect }: { flight: Flight; alertCou
       <div style={s.flightCardRoute}>{formatRoute(flight)}</div>
       <div style={s.flightCardFoot}>
         <span style={{ color: 'var(--muted)', fontSize: 13 }}>
-          {flight.origin === HUB ? `Départ ${formatTime(flight.departure_time)}` : `Arrivée ${formatTime(flight.arrival_time)}`}
+          {flight.origin === hub ? `Départ ${formatTime(flight.departure_time)}` : `Arrivée ${formatTime(flight.arrival_time)}`}
         </span>
         {alertCount > 0 ? (
           <span style={s.alertPill}>
@@ -291,12 +298,14 @@ function FlightCard({ flight, alertCount, onSelect }: { flight: Flight; alertCou
 // ─────────────────────────────────────────────────────────────
 
 function FlightDetail({
+  hub,
   flight,
   onBack,
   canManage,
   onUpdated,
   isMobile,
 }: {
+  hub: string;
   flight: Flight;
   onBack: () => void;
   canManage: boolean;
@@ -324,7 +333,7 @@ function FlightDetail({
             <StatusBadge status={flight.status} />
           </div>
           <div style={s.pageSub}>
-            {flight.origin === HUB ? `Départ ${formatTime(flight.departure_time)}` : `Arrivée ${formatTime(flight.arrival_time)}`} · {formatToday()}
+            {flight.origin === hub ? `Départ ${formatTime(flight.departure_time)}` : `Arrivée ${formatTime(flight.arrival_time)}`} · {formatToday()}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -332,7 +341,7 @@ function FlightDetail({
             <select style={s.statusSelect} value={flight.status} onChange={(e) => changeStatus(e.target.value as Flight['status'])}>
               <option value="scheduled">Programmé</option>
               <option value="boarding">Embarquement</option>
-              <option value="closed">Fermé</option>
+              <option value="closed">Porte fermée</option>
               <option value="cancelled">Annulé</option>
             </select>
           ) : null}
@@ -504,11 +513,8 @@ function Stat({ label, value, icon, tint, danger }: { label: string; value: stri
 // Modale création de vol
 // ─────────────────────────────────────────────────────────────
 
-type FlightDirection = 'departure' | 'arrival';
-
-function FlightFormModal({ onClose, onCreated }: { onClose: () => void; onCreated: (id: string) => void }) {
+function FlightFormModal({ hub, onClose, onCreated }: { hub: string; onClose: () => void; onCreated: (id: string) => void }) {
   const [form, setForm] = useState({
-    direction: 'departure' as FlightDirection,
     flight_number: '',
     other_airport: '',
     stops: [] as string[],
@@ -523,8 +529,6 @@ function FlightFormModal({ onClose, onCreated }: { onClose: () => void; onCreate
     setForm((f) => ({ ...f, [key]: value }));
   }
 
-  const isDeparture = form.direction === 'departure';
-
   function addStop() {
     set('stops', [...form.stops, '']);
   }
@@ -537,7 +541,7 @@ function FlightFormModal({ onClose, onCreated }: { onClose: () => void; onCreate
 
   const cleanStops = form.stops.map((v) => v.trim().toUpperCase()).filter((v) => v.length > 0);
   const endAirport = form.other_airport.trim().toUpperCase() || '???';
-  const routePreview = isDeparture ? [HUB, ...cleanStops, endAirport] : [endAirport, ...cleanStops, HUB];
+  const routePreview = [hub, ...cleanStops, endAirport];
 
   function toTimestamp(time: string): string | null {
     if (!time) return null;
@@ -550,15 +554,14 @@ function FlightFormModal({ onClose, onCreated }: { onClose: () => void; onCreate
     setError(null);
     const other = form.other_airport.trim().toUpperCase();
     const stops = form.stops.map((v) => v.trim().toUpperCase()).filter((v) => v.length > 0);
-    const ts = toTimestamp(form.time);
     const payload = {
       flight_number: form.flight_number.trim().toUpperCase(),
-      origin: isDeparture ? HUB : other,
-      destination: isDeparture ? other : HUB,
+      origin: hub,
+      destination: other,
       stops,
       date: form.date,
-      departure_time: isDeparture ? ts : null,
-      arrival_time: isDeparture ? null : ts,
+      departure_time: toTimestamp(form.time),
+      arrival_time: null,
       status: form.status,
     };
     const { data, error: err } = await createClient().from('flights').insert(payload).select('id').single();
@@ -574,30 +577,10 @@ function FlightFormModal({ onClose, onCreated }: { onClose: () => void; onCreate
     <div style={s.overlay} onClick={onClose}>
       <form style={s.modal} onClick={(e) => e.stopPropagation()} onSubmit={submit}>
         <div style={s.modalHead}>
-          <h2 style={{ margin: 0, fontSize: 20 }}>Nouveau vol du jour</h2>
+          <h2 style={{ margin: 0, fontSize: 20 }}>Nouveau vol — départ {hub}</h2>
           <button type="button" style={s.modalClose} onClick={onClose} aria-label="Fermer">
             <IconClose size={18} />
           </button>
-        </div>
-
-        <div style={s.field}>
-          <label style={s.label}>Type de vol</label>
-          <div style={s.toggle}>
-            <button
-              type="button"
-              style={{ ...s.toggleBtn, ...(isDeparture ? s.toggleBtnActive : {}) }}
-              onClick={() => set('direction', 'departure')}
-            >
-              Départ ({HUB} →)
-            </button>
-            <button
-              type="button"
-              style={{ ...s.toggleBtn, ...(!isDeparture ? s.toggleBtnActive : {}) }}
-              onClick={() => set('direction', 'arrival')}
-            >
-              Arrivée (→ {HUB})
-            </button>
-          </div>
         </div>
 
         <div style={s.field}>
@@ -606,8 +589,8 @@ function FlightFormModal({ onClose, onCreated }: { onClose: () => void; onCreate
         </div>
 
         <div style={s.field}>
-          <label style={s.label}>{isDeparture ? `Destination finale (depuis ${HUB})` : `Provenance (vers ${HUB})`}</label>
-          <input style={s.input} placeholder="FBM" value={form.other_airport} onChange={(e) => set('other_airport', e.target.value)} required />
+          <label style={s.label}>Destination finale</label>
+          <input style={s.input} placeholder="FBM" value={form.other_airport} onChange={(e) => set('other_airport', e.target.value.toUpperCase())} required />
         </div>
 
         <div style={s.field}>
@@ -646,7 +629,7 @@ function FlightFormModal({ onClose, onCreated }: { onClose: () => void; onCreate
             <input style={s.input} type="date" value={form.date} onChange={(e) => set('date', e.target.value)} required />
           </div>
           <div style={s.field}>
-            <label style={s.label}>{isDeparture ? 'Heure de départ' : "Heure d'arrivée"}</label>
+            <label style={s.label}>Heure de départ</label>
             <input style={s.input} type="time" value={form.time} onChange={(e) => set('time', e.target.value)} />
           </div>
         </div>
@@ -656,7 +639,7 @@ function FlightFormModal({ onClose, onCreated }: { onClose: () => void; onCreate
           <select style={s.input} value={form.status} onChange={(e) => set('status', e.target.value as Flight['status'])}>
             <option value="scheduled">Programmé</option>
             <option value="boarding">Embarquement</option>
-            <option value="closed">Fermé</option>
+            <option value="closed">Porte fermée</option>
             <option value="cancelled">Annulé</option>
           </select>
         </div>

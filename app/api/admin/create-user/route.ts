@@ -9,6 +9,8 @@ interface Body {
   full_name: string;
   role: UserRole;
   gate?: string;
+  airport_code?: string;
+  airline_code?: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -38,7 +40,13 @@ export async function POST(request: NextRequest) {
     email: body.email,
     password: body.password,
     email_confirm: true,
-    user_metadata: { full_name: body.full_name, role: body.role, gate: body.gate ?? null },
+    user_metadata: {
+      full_name:    body.full_name,
+      role:         body.role,
+      gate:         body.gate         ?? null,
+      airport_code: body.airport_code ?? 'FIH',
+      airline_code: body.airline_code ?? 'ET',
+    },
   });
 
   if (error) {

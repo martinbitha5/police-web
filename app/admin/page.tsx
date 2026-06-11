@@ -33,7 +33,7 @@ function AdminGuard() {
   return <AccountManager />;
 }
 
-const EMPTY = { email: '', password: '', full_name: '', role: 'agent' as UserRole, gate: '' };
+const EMPTY = { email: '', password: '', full_name: '', role: 'agent' as UserRole, gate: '', airport_code: '', airline_code: 'ET' };
 
 function AccountManager() {
   const [form, setForm] = useState(EMPTY);
@@ -120,6 +120,16 @@ function AccountManager() {
                 <input style={input} placeholder="Gate 3" value={form.gate} onChange={(e) => update('gate', e.target.value)} />
               </Field>
             ) : null}
+            {form.role !== 'agent' ? (
+              <>
+                <Field label="Aéroport (code IATA)">
+                  <input style={input} placeholder="FIH, FBM, GMN…" value={form.airport_code} onChange={(e) => update('airport_code', e.target.value.toUpperCase())} maxLength={4} />
+                </Field>
+                <Field label="Compagnie (code IATA)">
+                  <input style={input} placeholder="ET" value={form.airline_code} onChange={(e) => update('airline_code', e.target.value.toUpperCase())} maxLength={3} />
+                </Field>
+              </>
+            ) : null}
 
             {message ? (
               <p style={{ ...s.msg, color: message.ok ? 'var(--success)' : 'var(--danger)' }}>{message.text}</p>
@@ -177,6 +187,7 @@ function UserRow({ user }: { user: Profile }) {
       <div style={s.userMain}>
         <div style={s.userName}>{user.full_name}</div>
         <div style={s.userMeta}>
+          {user.airport_code ? `${user.airport_code}${user.airline_code ? ' · ' + user.airline_code : ''} · ` : ''}
           {user.gate ? `${user.gate} · ` : ''}
           Créé le {created}
         </div>
