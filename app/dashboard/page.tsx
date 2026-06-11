@@ -186,7 +186,7 @@ function Overview({
         <Stat label="Départs" value={String(departures.length)} icon={<IconPlaneDepart size={20} />} tint="#0ea5e9" />
         <Stat label="Arrivées" value={String(arrivals.length)} icon={<IconPlaneArrive size={20} />} tint="#14b8a6" />
         <Stat
-          label="Alertes fraude"
+          label="Bagages écartés"
           value={String(totalAlerts)}
           icon={<IconAlert size={20} />}
           tint="#dc2626"
@@ -198,7 +198,7 @@ function Overview({
         <div style={s.alertBanner}>
           <div style={s.alertBannerHead}>
             <IconAlert size={18} />
-            <strong>{totalAlerts} alerte{totalAlerts > 1 ? 's' : ''} fraude détectée{totalAlerts > 1 ? 's' : ''}</strong>
+            <strong>{totalAlerts} bagage{totalAlerts > 1 ? 's' : ''} écarté{totalAlerts > 1 ? 's' : ''}</strong>
           </div>
           <div style={s.alertBannerList}>
             {recentAlerts.map((a) => {
@@ -357,7 +357,7 @@ function FlightDetail({
         <Stat label="Bagages confirmés" value={`${baggageConfirmed} / ${baggageDeclared}`} icon={<IconBag size={20} />} tint="#14b8a6" />
         <Stat label="Chargés en soute" value={`${baggageInHold} / ${baggageConfirmed}`} icon={<IconBag size={20} />} tint="#0ea5e9" />
         <Stat label="Rush (réacheminés)" value={String(baggageRush)} icon={<IconBag size={20} />} tint="#d97706" danger={baggageRush > 0} />
-        <Stat label="Alertes fraude" value={String(alerts.length)} icon={<IconAlert size={20} />} tint="#dc2626" danger={alerts.length > 0} />
+        <Stat label="Bagages écartés" value={String(alerts.length)} icon={<IconAlert size={20} />} tint="#dc2626" danger={alerts.length > 0} />
       </div>
 
       {alerts.length > 0 ? <FraudAlerts alerts={alerts} /> : null}
@@ -474,7 +474,7 @@ function FraudAlerts({ alerts }: { alerts: FraudAlert[] }) {
       {alerts.map((a) => (
         <div key={a.id} style={s.alert}>
           <span style={s.alertTag}>
-            <IconAlert size={15} /> FRAUDE
+            <IconAlert size={15} /> ÉCARTÉ
           </span>
           <div style={{ flex: 1 }}>
             <strong>{a.passenger_name ?? 'Passager inconnu'}</strong> · PNR {a.pnr ?? '—'} · Tag {a.tag_number ?? '—'}
