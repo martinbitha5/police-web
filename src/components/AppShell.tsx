@@ -7,7 +7,7 @@ import type { Profile } from '@police/shared';
 import { createClient } from '@/supabase/client';
 import { glassStrong } from '@/ui/theme';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { IconDashboard, IconUsers, IconLogout, IconReport } from './icons';
+import { IconDashboard, IconUsers, IconLogout, IconReport, IconBag } from './icons';
 
 function formatToday(): string {
   const s = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -47,6 +47,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isAdmin = profile?.role === 'admin';
   const nav = [
     { href: '/dashboard', label: 'Tableau de bord', icon: IconDashboard, show: true },
+    { href: '/bagages',   label: 'Bagages',          icon: IconBag,       show: true },
     { href: '/rapport',   label: 'Rapports',         icon: IconReport,    show: true },
     { href: '/admin',     label: 'Comptes',          icon: IconUsers,     show: isAdmin },
   ].filter((n) => n.show);
