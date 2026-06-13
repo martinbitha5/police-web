@@ -45,7 +45,8 @@ export default function Landing() {
       <header className="lp-topbar">
         <div className="lp-topbar-inner">
           <div style={s.brandBox}>
-            <span style={s.brandMark}>PB</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Police Bagage" style={s.brandLogo} />
             <span style={s.brandName}>Police Bagage</span>
           </div>
           <nav style={s.topNav}>
@@ -137,7 +138,8 @@ export default function Landing() {
       <footer className="lp-footer">
         <div className="lp-footer-inner">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ ...s.brandMark, width: 28, height: 28, fontSize: 11 }}>PB</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Police Bagage" style={{ width: 28, height: 28, borderRadius: 7, objectFit: 'cover', display: 'block' }} />
             <span style={{ color: '#cfd8e6', fontWeight: 600 }}>Police Bagage · ATS Handling</span>
           </div>
           <span>Accès réservé au personnel autorisé</span>
@@ -251,19 +253,7 @@ const s: Record<string, CSSProperties> = {
   page: { minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' },
 
   brandBox: { display: 'flex', alignItems: 'center', gap: 10 },
-  brandMark: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    background: 'var(--primary)',
-    color: '#fff',
-    display: 'grid',
-    placeItems: 'center',
-    fontWeight: 800,
-    fontSize: 12.5,
-    letterSpacing: 0.5,
-    flexShrink: 0,
-  },
+  brandLogo: { width: 32, height: 32, borderRadius: 8, objectFit: 'cover' as const, display: 'block', flexShrink: 0 },
   brandName: { fontWeight: 700, fontSize: 16, letterSpacing: -0.2, color: '#f1f5fb' },
   topNav: { display: 'flex', alignItems: 'center', gap: 14 },
   hubChip: {

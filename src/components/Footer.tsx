@@ -9,7 +9,7 @@ export function Footer() {
         {/* Logo + nom */}
         <div style={s.brand}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/air.png" alt="Air Congo" height={32} style={{ objectFit: 'contain', display: 'block' }} />
+          <img src="/logo.png" alt="Police Bagage" height={32} style={{ objectFit: 'contain', display: 'block', borderRadius: 7 }} />
           <span style={s.brandName}>Police Bagage</span>
         </div>
 
