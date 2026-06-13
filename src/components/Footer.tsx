@@ -18,7 +18,6 @@ export function Footer() {
           <span style={s.partnerLabel}>Partenaire</span>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/air.png" alt="Air Congo" style={s.partnerLogo} />
-          <span style={s.partnerName}>Air Congo</span>
         </div>
 
         {/* Liens partenaires */}
@@ -105,14 +104,8 @@ const s: Record<string, CSSProperties> = {
     paddingRight: 4,
   },
   partnerLogo: {
-    height: 26,
+    height: 24,
     objectFit: 'contain' as const,
     display: 'block',
-    borderRadius: 4,
-  },
-  partnerName: {
-    fontSize: 13,
-    fontWeight: 600,
-    color: 'var(--text)',
   },
 };

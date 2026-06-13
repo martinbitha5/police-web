@@ -154,11 +154,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           {/* Partenaire */}
           <div style={d.partnerBox}>
             <span style={d.partnerLabel}>Partenaire</span>
-            <div style={d.partnerRow}>
+            <span style={d.partnerPill}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/air.png" alt="Air Congo" style={d.partnerLogo} />
-              <span style={d.partnerName}>Air Congo</span>
-            </div>
+            </span>
           </div>
 
           <div style={d.user}>
@@ -378,21 +377,17 @@ const d: Record<string, CSSProperties> = {
     letterSpacing: 1.2,
     color: 'var(--side-muted)',
   },
-  partnerRow: {
-    display: 'flex',
+  partnerPill: {
+    display: 'inline-flex',
     alignItems: 'center',
-    gap: 8,
+    alignSelf: 'flex-start' as const,
+    background: '#fff',
+    borderRadius: 7,
+    padding: '7px 11px',
   },
   partnerLogo: {
-    height: 24,
+    height: 22,
     objectFit: 'contain' as const,
     display: 'block',
-    borderRadius: 4,
-    flexShrink: 0,
-  },
-  partnerName: {
-    fontSize: 12.5,
-    fontWeight: 600,
-    color: 'var(--side-muted)',
   },
 };

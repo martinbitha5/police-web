@@ -155,20 +155,20 @@ export default function Landing() {
         <div style={s.partnerDivider} />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/air.png" alt="Air Congo" style={s.partnerLogo} />
-        <span style={s.partnerName}>Air Congo</span>
       </section>
 
       {/* Pied de page */}
       <footer className="lp-footer">
         <div className="lp-footer-inner">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.png" alt="Police Bagage" style={{ width: 28, height: 28, borderRadius: 7, objectFit: 'cover', display: 'block' }} />
             <span style={{ color: '#cfd8e6', fontWeight: 600 }}>Police Bagage</span>
-            <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 16 }}>·</span>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/air.png" alt="Air Congo" style={{ height: 26, objectFit: 'contain', display: 'block', borderRadius: 4 }} />
-            <span style={{ color: '#9fb0cc', fontWeight: 500, fontSize: 13 }}>Air Congo</span>
+            <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: 16 }}>·</span>
+            <span style={s.footerAirPill}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/air.png" alt="Air Congo" style={{ height: 20, objectFit: 'contain', display: 'block' }} />
+            </span>
           </div>
           <span>Accès réservé au personnel autorisé</span>
         </div>
@@ -369,15 +369,15 @@ const s: Record<string, CSSProperties> = {
     background: 'var(--border)',
   },
   partnerLogo: {
-    height: 40,
+    height: 38,
     objectFit: 'contain' as const,
     display: 'block',
-    borderRadius: 6,
   },
-  partnerName: {
-    fontSize: 15,
-    fontWeight: 700,
-    color: 'var(--text)',
-    letterSpacing: -0.2,
+  footerAirPill: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    background: '#fff',
+    borderRadius: 6,
+    padding: '5px 9px',
   },
 };
