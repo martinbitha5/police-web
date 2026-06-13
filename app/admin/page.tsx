@@ -231,9 +231,9 @@ const s: Record<string, CSSProperties> = {
     alignItems: 'center',
     gap: 12,
     padding: '12px 14px',
-    borderRadius: 12,
-    border: '1px solid var(--glass-border)',
-    background: 'rgba(255,255,255,0.03)',
+    borderRadius: 10,
+    border: '1px solid var(--border)',
+    background: 'var(--surface)',
   },
   userAvatar: {
     width: 38,

@@ -260,22 +260,24 @@ export async function GET(request: NextRequest) {
   // FEUILLE 3 — BAGAGES
   // ════════════════════════════════════════════════════════════
   {
-    const ws = makeSheet(wb, 'Bagages', [16, 12, 28, 12, 16, 22]);
-    let r = sheetTitle(ws, `Bagages — ${header}`, 6);
-    r = sheetHeader(ws, r, ['Étiquette', 'Série', 'Passager', 'PNR', 'Statut', 'Scanné le']);
+    const ws = makeSheet(wb, 'Bagages', [16, 12, 28, 12, 16, 14, 22]);
+    let r = sheetTitle(ws, `Bagages — ${header}`, 7);
+    r = sheetHeader(ws, r, ['Étiquette', 'Série', 'Passager', 'PNR', 'Statut', 'Soute', 'Scanné le']);
 
     if (baggage.length === 0) {
-      r = sheetData(ws, r, ['Aucun bagage enregistré', '', '', '', '', '']);
+      r = sheetData(ws, r, ['Aucun bagage enregistré', '', '', '', '', '', '']);
     } else {
       baggage.forEach((b, i) => {
         const pax = paxById.get(b.passenger_id);
-        const label = bagStatusLabel(b);
+        const statusLabel = bagStatusLabel(b);
+        const souteLabel = b.soute === 'avant' ? 'Soute avant' : b.soute === 'arriere' ? 'Soute arrière' : '—';
         r = sheetData(ws, r, [
           b.tag_number,
           b.serial_number  ?? '—',
           pax?.full_name   ?? '—',
           pax?.pnr         ?? '—',
-          label,
+          statusLabel,
+          souteLabel,
           new Date(b.scanned_at).toLocaleString('fr-FR'),
         ], { danger: b.rush, success: b.in_hold && !b.rush, zebra: !b.rush && !b.in_hold && i % 2 === 1 });
       });

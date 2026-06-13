@@ -337,7 +337,7 @@ function SouteBadge({ soute }: { soute: SoutePosition | null }) {
 function StatusBadge({ bag }: { bag: Baggage }) {
   if (bag.rush) return <span style={{ ...badge, borderColor: '#d97706', color: '#d97706', background: '#fef3c718', fontSize: 12 }}>Rush</span>;
   if (bag.in_hold) return <span style={{ ...badge, borderColor: 'var(--success)', color: 'var(--success)', background: '#dcfce718', fontSize: 12 }}>Chargé</span>;
-  if (bag.is_confirmed) return <span style={{ ...badge, borderColor: 'var(--muted)', color: 'var(--text)', background: 'rgba(255,255,255,0.06)', fontSize: 12 }}>Enregistré</span>;
+  if (bag.is_confirmed) return <span style={{ ...badge, borderColor: 'var(--border-strong)', color: 'var(--text)', background: 'var(--surface-alt)', fontSize: 12 }}>Enregistré</span>;
   return <span style={{ ...badge, borderColor: 'var(--border)', color: 'var(--muted)', fontSize: 12 }}>En attente</span>;
 }
 
@@ -424,28 +424,28 @@ const s: Record<string, CSSProperties> = {
   header: { display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', justifyContent: 'space-between' },
   title: { margin: 0, fontSize: 22, fontWeight: 800 },
   select: {
-    background: 'rgba(255,255,255,0.07)',
-    border: '1px solid var(--glass-border)',
-    borderRadius: 10,
+    background: 'var(--surface)',
+    border: '1px solid var(--border-strong)',
+    borderRadius: 8,
     padding: '9px 13px',
     color: 'var(--text)',
     fontSize: 14,
     fontWeight: 600,
     minWidth: 280,
-    colorScheme: 'dark',
+    boxShadow: 'var(--shadow-sm)',
   },
   counters: { display: 'flex', gap: 14, flexWrap: 'wrap' },
   toolbar: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 },
   searchInput: {
-    background: 'rgba(255,255,255,0.07)',
-    border: '1px solid var(--glass-border)',
-    borderRadius: 10,
+    background: 'var(--surface)',
+    border: '1px solid var(--border-strong)',
+    borderRadius: 8,
     padding: '9px 14px',
     color: 'var(--text)',
     fontSize: 14,
     flex: '1 1 240px',
     minWidth: 200,
-    colorScheme: 'dark',
+    boxShadow: 'var(--shadow-sm)',
   },
   filterGroup: { display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const },
   filterLabel: { fontSize: 12, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: 0.4, marginRight: 2 },
@@ -479,7 +479,7 @@ const s: Record<string, CSSProperties> = {
     padding: '13px 16px',
     fontSize: 14,
     color: 'var(--text)',
-    borderBottom: '1px solid rgba(255,255,255,0.06)',
+    borderBottom: '1px solid var(--border)',
     verticalAlign: 'middle' as const,
   },
   tr: { cursor: 'pointer', transition: 'background 0.15s' },
@@ -489,8 +489,7 @@ const s: Record<string, CSSProperties> = {
   overlay: {
     position: 'fixed' as const,
     inset: 0,
-    background: 'rgba(0,0,0,0.55)',
-    backdropFilter: 'blur(4px)',
+    background: 'rgba(16,24,40,0.5)',
     zIndex: 50,
     display: 'flex',
     alignItems: 'center',
@@ -498,13 +497,13 @@ const s: Record<string, CSSProperties> = {
     padding: 16,
   },
   modal: {
-    background: '#1e293b',
-    border: '1px solid var(--glass-border)',
-    borderRadius: 20,
+    background: 'var(--surface)',
+    border: '1px solid var(--border)',
+    borderRadius: 12,
     width: '100%',
     maxWidth: 480,
     overflow: 'hidden',
-    boxShadow: '0 24px 60px rgba(0,0,0,0.45)',
+    boxShadow: 'var(--shadow-lg)',
   },
   modalHeader: {
     display: 'flex',

@@ -1,5 +1,8 @@
 import type { ReactNode } from 'react';
+import { Inter } from 'next/font/google';
 import './globals.css';
+
+const inter = Inter({ subsets: ['latin'], display: 'swap', variable: '--font-inter' });
 
 export const metadata = {
   title: 'Boarding Scanner — Superviseur',
@@ -12,7 +15,7 @@ const CHUNK_RECOVERY = `(function(){function c(m){return /ChunkLoadError|Loading
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="fr">
+    <html lang="fr" className={inter.variable}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: CHUNK_RECOVERY }} />
       </head>

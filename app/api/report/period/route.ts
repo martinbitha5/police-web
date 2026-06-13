@@ -297,11 +297,11 @@ export async function GET(request: NextRequest) {
 
   // FEUILLE 4 — BAGAGES (détail)
   {
-    const ws = sheet(wb, 'Bagages', [12, 12, 16, 12, 26, 12, 12, 18]);
-    let r = title(ws, 1, `Bagages — ${periodStr}`, 8);
-    r = headerRow(ws, r, ['Date vol', 'Vol', 'Étiquette', 'Série', 'Passager', 'PNR', 'Statut', 'Scanné le']);
+    const ws = sheet(wb, 'Bagages', [12, 12, 16, 12, 26, 12, 12, 14, 18]);
+    let r = title(ws, 1, `Bagages — ${periodStr}`, 9);
+    r = headerRow(ws, r, ['Date vol', 'Vol', 'Étiquette', 'Série', 'Passager', 'PNR', 'Statut', 'Soute', 'Scanné le']);
     if (baggage.length === 0) {
-      r = dataRow(ws, r, ['Aucun bagage sur la période', '', '', '', '', '', '', '']);
+      r = dataRow(ws, r, ['Aucun bagage sur la période', '', '', '', '', '', '', '', '']);
     } else {
       const sorted = [...baggage].sort((a, b) => {
         const fa = flightById.get(a.flight_id)?.date ?? '';
@@ -311,7 +311,8 @@ export async function GET(request: NextRequest) {
       sorted.forEach((b, i) => {
         const f = flightById.get(b.flight_id);
         const pax = passengerById.get(b.passenger_id);
-        const label = b.rush ? 'Réacheminement' : b.in_hold ? 'Chargé en soute' : b.is_confirmed ? 'Enregistré' : 'En attente';
+        const statusLabel = b.rush ? 'Réacheminement' : b.in_hold ? 'Chargé en soute' : b.is_confirmed ? 'Enregistré' : 'En attente';
+        const souteLabel = b.soute === 'avant' ? 'Soute avant' : b.soute === 'arriere' ? 'Soute arrière' : '—';
         r = dataRow(
           ws,
           r,
@@ -322,7 +323,8 @@ export async function GET(request: NextRequest) {
             b.serial_number ?? '—',
             pax?.full_name ?? '—',
             pax?.pnr ?? '—',
-            label,
+            statusLabel,
+            souteLabel,
             new Date(b.scanned_at).toLocaleString('fr-FR'),
           ],
           { danger: b.rush, success: b.in_hold && !b.rush, zebra: !b.rush && !b.in_hold && i % 2 === 1 },
