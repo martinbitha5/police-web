@@ -34,7 +34,8 @@ export default function LoginPage() {
         <SideArt />
         <div style={styles.sideTop}>
           <div style={styles.brandBox}>
-            <span style={styles.brandMark}>PB</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Police Bagage" style={styles.brandLogo} />
             <span style={styles.brandName}>Police Bagage</span>
           </div>
         </div>
@@ -146,17 +147,12 @@ const styles: Record<string, React.CSSProperties> = {
 
   sideTop: { display: 'flex', position: 'relative' },
   brandBox: { display: 'flex', alignItems: 'center', gap: 10 },
-  brandMark: {
+  brandLogo: {
     width: 34,
     height: 34,
     borderRadius: 8,
-    background: 'var(--primary)',
-    color: '#fff',
-    display: 'grid',
-    placeItems: 'center',
-    fontWeight: 800,
-    fontSize: 13,
-    letterSpacing: 0.5,
+    objectFit: 'cover' as const,
+    display: 'block',
   },
   brandName: { fontWeight: 700, fontSize: 16 },
   sideBody: { margin: 'auto 0', paddingBottom: 40, position: 'relative' },

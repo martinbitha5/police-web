@@ -60,8 +60,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           {/* Barre du haut */}
           <header style={m.topBar}>
             <div style={m.topBrand}>
-              <span style={m.topBrandName}>Police Bagage</span>
-              <span style={m.topBrandHub}>{profile?.airport_code ?? '—'} · {profile?.airline_code ?? 'ET'}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logo.png" alt="Police Bagage" style={m.topLogo} />
+                <div>
+                  <span style={m.topBrandName}>Police Bagage</span>
+                  <span style={m.topBrandHub}>{profile?.airport_code ?? '—'} · {profile?.airline_code ?? 'ET'}</span>
+                </div>
+              </div>
             </div>
             <div style={m.topRight}>
               {profile ? (
@@ -120,7 +126,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div style={d.layout}>
         <aside style={d.sidebar}>
           <div style={d.brandBox}>
-            <div style={d.brandMark}>PB</div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Police Bagage" style={d.brandLogo} />
             <div>
               <div style={d.brand}>Police Bagage</div>
               <div style={d.brandSub}>{profile?.airport_code ?? '—'} · {profile?.airline_code ?? 'ET'}</div>
@@ -198,9 +205,10 @@ const m: Record<string, CSSProperties> = {
     background: 'var(--surface)',
     borderBottom: '1px solid var(--border)',
   },
-  topBrand: { display: 'flex', flexDirection: 'column', gap: 1 },
-  topBrandName: { fontWeight: 800, fontSize: 16, letterSpacing: -0.3, color: 'var(--text)' },
-  topBrandHub: { color: 'var(--muted)', fontSize: 11, fontWeight: 600 },
+  topBrand: { display: 'flex', alignItems: 'center', gap: 1 },
+  topLogo: { width: 30, height: 30, borderRadius: 7, objectFit: 'cover' as const, display: 'block', flexShrink: 0 },
+  topBrandName: { display: 'block', fontWeight: 800, fontSize: 15, letterSpacing: -0.3, color: 'var(--text)' },
+  topBrandHub: { display: 'block', color: 'var(--muted)', fontSize: 11, fontWeight: 600 },
   topRight: { display: 'flex', alignItems: 'center', gap: 10 },
   topAvatar: {
     width: 34,
@@ -268,17 +276,12 @@ const d: Record<string, CSSProperties> = {
     flexShrink: 0,
   },
   brandBox: { display: 'flex', alignItems: 'center', gap: 11, padding: '0 8px 22px' },
-  brandMark: {
+  brandLogo: {
     width: 34,
     height: 34,
     borderRadius: 8,
-    background: 'var(--primary)',
-    color: '#fff',
-    display: 'grid',
-    placeItems: 'center',
-    fontWeight: 800,
-    fontSize: 13,
-    letterSpacing: 0.5,
+    objectFit: 'cover' as const,
+    display: 'block',
     flexShrink: 0,
   },
   brand: { fontWeight: 700, fontSize: 15, letterSpacing: -0.2, color: 'var(--side-text)' },
