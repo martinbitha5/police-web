@@ -7,6 +7,7 @@ import type { Profile } from '@police/shared';
 import { createClient } from '@/supabase/client';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { IconDashboard, IconUsers, IconLogout, IconReport, IconBag } from './icons';
+import { Footer } from './Footer';
 
 function formatToday(): string {
   const s = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -106,6 +107,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           {/* Contenu principal */}
           <main style={m.main}>
             {authed ? children : <div style={m.loading}>Chargement…</div>}
+            <Footer />
           </main>
         </div>
       </SessionCtx.Provider>
@@ -157,7 +159,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         </aside>
 
         <main style={d.main}>
-          {authed ? children : <div style={d.centered}>Chargement…</div>}
+          <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
+            <div style={{ flex: 1 }}>
+              {authed ? children : <div style={d.centered}>Chargement…</div>}
+            </div>
+            <Footer />
+          </div>
         </main>
       </div>
     </SessionCtx.Provider>
