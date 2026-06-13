@@ -13,6 +13,14 @@ export function Footer() {
           <span style={s.brandName}>Police Bagage</span>
         </div>
 
+        {/* Séparateur + partenaire */}
+        <div style={s.partnerBlock}>
+          <span style={s.partnerLabel}>Partenaire</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/air.png" alt="Air Congo" style={s.partnerLogo} />
+          <span style={s.partnerName}>Air Congo</span>
+        </div>
+
         {/* Liens partenaires */}
         <div style={s.links}>
           <a href="https://fih-rva.com" target="_blank" rel="noopener noreferrer" style={s.link}>
@@ -79,5 +87,32 @@ const s: Record<string, CSSProperties> = {
     fontSize: 12,
     marginLeft: 'auto',
     whiteSpace: 'nowrap',
+  },
+
+  partnerBlock: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    paddingLeft: 20,
+    borderLeft: '1px solid var(--border)',
+  },
+  partnerLabel: {
+    fontSize: 11,
+    fontWeight: 700,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 1.2,
+    color: 'var(--muted)',
+    paddingRight: 4,
+  },
+  partnerLogo: {
+    height: 26,
+    objectFit: 'contain' as const,
+    display: 'block',
+    borderRadius: 4,
+  },
+  partnerName: {
+    fontSize: 13,
+    fontWeight: 600,
+    color: 'var(--text)',
   },
 };

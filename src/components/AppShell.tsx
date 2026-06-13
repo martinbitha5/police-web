@@ -151,6 +151,16 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           <div style={d.dateBox}>{formatToday()}</div>
 
+          {/* Partenaire */}
+          <div style={d.partnerBox}>
+            <span style={d.partnerLabel}>Partenaire</span>
+            <div style={d.partnerRow}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/air.png" alt="Air Congo" style={d.partnerLogo} />
+              <span style={d.partnerName}>Air Congo</span>
+            </div>
+          </div>
+
           <div style={d.user}>
             <div style={d.userRow}>
               <div style={d.avatar}>{(profile?.full_name ?? '?').charAt(0).toUpperCase()}</div>
@@ -353,4 +363,36 @@ const d: Record<string, CSSProperties> = {
 
   main: { flex: 1, overflow: 'auto', minWidth: 0 },
   centered: { color: 'var(--muted)', display: 'grid', placeItems: 'center', height: '60vh' },
+
+  partnerBox: {
+    borderTop: '1px solid var(--side-border)',
+    padding: '12px 12px 10px',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: 7,
+  },
+  partnerLabel: {
+    fontSize: 10,
+    fontWeight: 700,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 1.2,
+    color: 'var(--side-muted)',
+  },
+  partnerRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+  },
+  partnerLogo: {
+    height: 24,
+    objectFit: 'contain' as const,
+    display: 'block',
+    borderRadius: 4,
+    flexShrink: 0,
+  },
+  partnerName: {
+    fontSize: 12.5,
+    fontWeight: 600,
+    color: 'var(--side-muted)',
+  },
 };

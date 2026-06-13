@@ -96,6 +96,21 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Section photo opérationnelle */}
+      <section style={s.photoSection}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/IMG_9478.jpeg" alt="Piste aéroportuaire de Kinshasa" style={s.photoImg} />
+        <div style={s.photoOverlay} />
+        <div style={s.photoContent}>
+          <div style={s.photoKicker}>Sur le terrain</div>
+          <h2 style={s.photoTitle}>Chaque vol, chaque bagage,<br />sous contrôle.</h2>
+          <p style={s.photoText}>
+            De l'enregistrement au chargement en soute, nos agents équipés de
+            terminaux Zebra tracent chaque étiquette en temps réel.
+          </p>
+        </div>
+      </section>
+
       {/* Capacités */}
       <section className="lp-section">
         <div className="lp-section-inner">
@@ -134,13 +149,26 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Bande partenaires */}
+      <section style={s.partnerBand}>
+        <span style={s.partnerLabel}>Partenaire opérationnel</span>
+        <div style={s.partnerDivider} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/air.png" alt="Air Congo" style={s.partnerLogo} />
+        <span style={s.partnerName}>Air Congo</span>
+      </section>
+
       {/* Pied de page */}
       <footer className="lp-footer">
         <div className="lp-footer-inner">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.png" alt="Police Bagage" style={{ width: 28, height: 28, borderRadius: 7, objectFit: 'cover', display: 'block' }} />
-            <span style={{ color: '#cfd8e6', fontWeight: 600 }}>Police Bagage · ATS Handling</span>
+            <span style={{ color: '#cfd8e6', fontWeight: 600 }}>Police Bagage</span>
+            <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 16 }}>·</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/air.png" alt="Air Congo" style={{ height: 26, objectFit: 'contain', display: 'block', borderRadius: 4 }} />
+            <span style={{ color: '#9fb0cc', fontWeight: 500, fontSize: 13 }}>Air Congo</span>
           </div>
           <span>Accès réservé au personnel autorisé</span>
         </div>
@@ -264,5 +292,92 @@ const s: Record<string, CSSProperties> = {
     fontWeight: 700,
     color: '#9fb0cc',
     letterSpacing: 0.3,
+  },
+
+  /* Section photo */
+  photoSection: {
+    position: 'relative' as const,
+    height: 420,
+    overflow: 'hidden' as const,
+    display: 'flex',
+    alignItems: 'center',
+  },
+  photoImg: {
+    position: 'absolute' as const,
+    inset: 0,
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover' as const,
+    objectPosition: 'center 60%',
+  },
+  photoOverlay: {
+    position: 'absolute' as const,
+    inset: 0,
+    background: 'linear-gradient(90deg, rgba(10,17,31,0.93) 0%, rgba(10,17,31,0.75) 40%, rgba(10,17,31,0.3) 70%, transparent 100%)',
+  },
+  photoContent: {
+    position: 'relative' as const,
+    zIndex: 1,
+    padding: '0 60px',
+    maxWidth: 580,
+  },
+  photoKicker: {
+    fontSize: 12,
+    fontWeight: 700,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 2,
+    color: '#7da8e8',
+    marginBottom: 14,
+  },
+  photoTitle: {
+    margin: 0,
+    fontSize: 34,
+    fontWeight: 800,
+    lineHeight: 1.2,
+    letterSpacing: -0.8,
+    color: '#f1f5fb',
+  },
+  photoText: {
+    margin: '16px 0 0',
+    fontSize: 15,
+    lineHeight: 1.7,
+    color: '#9fb0cc',
+    maxWidth: 420,
+  },
+
+  /* Bande partenaires */
+  partnerBand: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+    padding: '28px 24px',
+    background: 'var(--surface)',
+    borderTop: '1px solid var(--border)',
+    borderBottom: '1px solid var(--border)',
+  },
+  partnerLabel: {
+    fontSize: 12,
+    fontWeight: 700,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 1.5,
+    color: 'var(--muted)',
+  },
+  partnerDivider: {
+    width: 1,
+    height: 28,
+    background: 'var(--border)',
+  },
+  partnerLogo: {
+    height: 40,
+    objectFit: 'contain' as const,
+    display: 'block',
+    borderRadius: 6,
+  },
+  partnerName: {
+    fontSize: 15,
+    fontWeight: 700,
+    color: 'var(--text)',
+    letterSpacing: -0.2,
   },
 };
