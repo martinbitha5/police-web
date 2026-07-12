@@ -56,58 +56,44 @@ export default function Landing() {
         </div>
       </header>
 
-      {/* Héro */}
+      {/* Héro — panneau texte navy / photo coupée en diagonale */}
       <section className="lp-hero">
-        <HeroArt />
-        <div className="lp-hero-inner">
-          <div className="lp-kicker">Plateforme de supervision aéroportuaire</div>
-          <h1 className="lp-title">
-            Le contrôle des bagages et de l’embarquement, <em>du comptoir à la soute</em>.
-          </h1>
-          <p className="lp-tagline">
-            Police Bagage relie les agents de terrain équipés de terminaux de scan au poste de
-            supervision. Chaque passager, chaque bagage et chaque alerte de fraude est tracé en
-            temps réel sur l’ensemble des vols du jour.
-          </p>
-          <div className="lp-actions">
-            <Link href="/login" className="lp-cta">Accéder à la supervision</Link>
-            <a href="#fonctionnement" className="lp-cta-ghost">Voir le fonctionnement</a>
-          </div>
-        </div>
+        <div className="lp-hero-grid">
+          <div className="lp-hero-copy">
+            <div className="lp-kicker">Plateforme de supervision aéroportuaire</div>
+            <h1 className="lp-title">
+              Le contrôle des bagages et de l’embarquement, <em>du comptoir à la soute</em>.
+            </h1>
+            <p className="lp-tagline">
+              Police Bagage relie les agents de terrain équipés de terminaux de scan au poste de
+              supervision. Chaque passager, chaque bagage et chaque alerte de fraude est tracé en
+              temps réel sur l’ensemble des vols du jour.
+            </p>
+            <div className="lp-actions">
+              <Link href="/login" className="lp-cta">Accéder à la supervision</Link>
+              <a href="#fonctionnement" className="lp-cta-ghost">Voir le fonctionnement</a>
+            </div>
 
-        {/* Bandeau de faits */}
-        <div className="lp-facts">
-          <div className="lp-fact">
-            <div className="lp-fact-value">Temps réel</div>
-            <div className="lp-fact-label">Synchronisation continue entre le terrain et la supervision</div>
+            <div className="lp-stats">
+              <div className="lp-stat">
+                <div className="lp-stat-value">Temps réel</div>
+                <div className="lp-stat-label">Terrain et supervision synchronisés en continu</div>
+              </div>
+              <div className="lp-stat">
+                <div className="lp-stat-value">5 règles</div>
+                <div className="lp-stat-label">de rejet bagage appliquées sans exception</div>
+              </div>
+              <div className="lp-stat">
+                <div className="lp-stat-value">100 %</div>
+                <div className="lp-stat-label">des étiquettes confrontées à la déclaration</div>
+              </div>
+            </div>
           </div>
-          <div className="lp-fact">
-            <div className="lp-fact-value">5 règles</div>
-            <div className="lp-fact-label">de rejet bagage appliquées sans aucune exception</div>
-          </div>
-          <div className="lp-fact">
-            <div className="lp-fact-value">100 %</div>
-            <div className="lp-fact-label">des étiquettes confrontées à la déclaration du passager</div>
-          </div>
-          <div className="lp-fact">
-            <div className="lp-fact-value">Excel</div>
-            <div className="lp-fact-label">rapports détaillés par vol, par jour ou par période</div>
-          </div>
-        </div>
-      </section>
 
-      {/* Section photo opérationnelle */}
-      <section style={s.photoSection}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/IMG_9478.jpeg" alt="Piste aéroportuaire de Kinshasa" style={s.photoImg} />
-        <div style={s.photoOverlay} />
-        <div style={s.photoContent}>
-          <div style={s.photoKicker}>Sur le terrain</div>
-          <h2 style={s.photoTitle}>Chaque vol, chaque bagage,<br />sous contrôle.</h2>
-          <p style={s.photoText}>
-            De l'enregistrement au chargement en soute, nos agents équipés de
-            terminaux Zebra tracent chaque étiquette en temps réel.
-          </p>
+          <div className="lp-hero-media">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/IMG_9478.jpeg" alt="Avion au contact et chargement des bagages sur le tarmac" />
+          </div>
         </div>
       </section>
 
@@ -177,37 +163,6 @@ export default function Landing() {
   );
 }
 
-/** Filigrane technique discret — grille + quelques repères, sans effet lumineux. */
-function HeroArt() {
-  return (
-    <svg className="lp-hero-art" viewBox="0 0 1200 620" preserveAspectRatio="xMidYMid slice" aria-hidden>
-      {/* Grille fine */}
-      <g stroke="#1c2942" strokeWidth="1">
-        <line x1="0" y1="155" x2="1200" y2="155" />
-        <line x1="0" y1="310" x2="1200" y2="310" />
-        <line x1="0" y1="465" x2="1200" y2="465" />
-        <line x1="300" y1="0" x2="300" y2="620" />
-        <line x1="600" y1="0" x2="600" y2="620" />
-        <line x1="900" y1="0" x2="900" y2="620" />
-      </g>
-
-      {/* Deux liaisons discrètes, en pointillé */}
-      <g fill="none" stroke="#26365a" strokeWidth="1.2" strokeDasharray="3 8">
-        <path d="M 140 520 Q 540 200 1000 280" />
-        <path d="M 60 380 Q 460 140 920 170" />
-      </g>
-
-      {/* Repères sobres */}
-      <g fill="#2c4172">
-        <circle cx="1000" cy="280" r="3" />
-        <circle cx="140" cy="520" r="3" />
-        <circle cx="920" cy="170" r="3" />
-        <circle cx="60" cy="380" r="3" />
-      </g>
-    </svg>
-  );
-}
-
 // ── Icônes ───────────────────────────────────────────────────
 
 function IconScan() {
@@ -264,57 +219,6 @@ const s: Record<string, CSSProperties> = {
     fontWeight: 700,
     color: '#9fb0cc',
     letterSpacing: 0.3,
-  },
-
-  /* Section photo */
-  photoSection: {
-    position: 'relative' as const,
-    height: 420,
-    overflow: 'hidden' as const,
-    display: 'flex',
-    alignItems: 'center',
-  },
-  photoImg: {
-    position: 'absolute' as const,
-    inset: 0,
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover' as const,
-    objectPosition: 'center 60%',
-  },
-  photoOverlay: {
-    position: 'absolute' as const,
-    inset: 0,
-    background: 'linear-gradient(90deg, rgba(10,17,31,0.93) 0%, rgba(10,17,31,0.75) 40%, rgba(10,17,31,0.3) 70%, transparent 100%)',
-  },
-  photoContent: {
-    position: 'relative' as const,
-    zIndex: 1,
-    padding: '0 60px',
-    maxWidth: 580,
-  },
-  photoKicker: {
-    fontSize: 12,
-    fontWeight: 700,
-    textTransform: 'uppercase' as const,
-    letterSpacing: 2,
-    color: '#7da8e8',
-    marginBottom: 14,
-  },
-  photoTitle: {
-    margin: 0,
-    fontSize: 34,
-    fontWeight: 800,
-    lineHeight: 1.2,
-    letterSpacing: -0.8,
-    color: '#f1f5fb',
-  },
-  photoText: {
-    margin: '16px 0 0',
-    fontSize: 15,
-    lineHeight: 1.7,
-    color: '#9fb0cc',
-    maxWidth: 420,
   },
 
   /* Bande partenaires */
