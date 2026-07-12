@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import ExcelJS from 'exceljs';
-import type { Flight, Passenger, Baggage, FraudAlert, PassengerLeg } from '@police/shared';
+import type { Flight, Passenger, Baggage, FraudAlert, PassengerLeg, Profile } from '@police/shared';
 import { formatRoute } from '@police/shared';
 import { createClient } from '@/supabase/server';
 
@@ -119,6 +119,17 @@ export async function GET(request: NextRequest) {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) {
     return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+  }
+
+  // Le rapport contient des données passagers et alertes fraude : réservé au
+  // personnel de supervision (jamais un compte agent, mobile uniquement).
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', auth.user.id)
+    .single<Pick<Profile, 'role'>>();
+  if (profile?.role !== 'admin' && profile?.role !== 'supervisor') {
+    return NextResponse.json({ error: 'Réservé aux superviseurs et administrateurs' }, { status: 403 });
   }
 
   const { data: flight } = await supabase.from('flights').select('*').eq('id', flightId).single<Flight>();

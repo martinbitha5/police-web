@@ -414,7 +414,7 @@ function PassengerCardMobile({ p, fallbackRoute }: { p: PassengerRow; fallbackRo
       <div style={s.paxCardHead}>
         <span style={s.paxCardName}>{p.full_name}</span>
         {p.boarded ? (
-          <span style={{ ...badge, color: 'var(--success)', borderColor: '#bbe0c8', background: 'var(--success-soft)' }}>
+          <span style={{ ...badge, color: 'var(--success)' }}>
             <span style={{ ...s.statusDot, background: 'var(--success)' }} /> Embarqué
           </span>
         ) : (
@@ -456,7 +456,7 @@ function PassengerRowView({ p, fallbackRoute }: { p: PassengerRow; fallbackRoute
       </td>
       <td style={s.td}>
         {p.boarded ? (
-          <span style={{ ...badge, color: 'var(--success)', borderColor: '#bbe0c8', background: 'var(--success-soft)' }}>
+          <span style={{ ...badge, color: 'var(--success)' }}>
             <span style={{ ...s.statusDot, background: 'var(--success)' }} />
             Embarqué
           </span>
@@ -490,7 +490,7 @@ function FraudAlerts({ alerts }: { alerts: FraudAlert[] }) {
 
 function StatusBadge({ status }: { status: Flight['status'] }) {
   return (
-    <span style={{ ...badge, color: STATUS_COLOR[status], borderColor: STATUS_COLOR[status] }}>
+    <span style={{ ...badge, color: STATUS_COLOR[status] }}>
       <span style={{ ...s.statusDot, background: STATUS_COLOR[status] }} />
       {STATUS_LABEL[status]}
     </span>

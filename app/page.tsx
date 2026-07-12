@@ -177,26 +177,12 @@ export default function Landing() {
   );
 }
 
-/** Routes aériennes en filigrane — arcs + points de repère. */
+/** Filigrane technique discret — grille + quelques repères, sans effet lumineux. */
 function HeroArt() {
   return (
     <svg className="lp-hero-art" viewBox="0 0 1200 620" preserveAspectRatio="xMidYMid slice" aria-hidden>
-      <defs>
-        <linearGradient id="arc" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="#3b66d8" stopOpacity="0" />
-          <stop offset="0.5" stopColor="#3b66d8" stopOpacity="0.55" />
-          <stop offset="1" stopColor="#3b66d8" stopOpacity="0" />
-        </linearGradient>
-        <radialGradient id="glow" cx="0.78" cy="0.18" r="0.6">
-          <stop offset="0" stopColor="#1d3a78" stopOpacity="0.55" />
-          <stop offset="1" stopColor="#1d3a78" stopOpacity="0" />
-        </radialGradient>
-      </defs>
-
-      <rect width="1200" height="620" fill="url(#glow)" />
-
-      {/* Grille discrète */}
-      <g stroke="#22304d" strokeWidth="1" opacity="0.4">
+      {/* Grille fine */}
+      <g stroke="#1c2942" strokeWidth="1">
         <line x1="0" y1="155" x2="1200" y2="155" />
         <line x1="0" y1="310" x2="1200" y2="310" />
         <line x1="0" y1="465" x2="1200" y2="465" />
@@ -205,32 +191,18 @@ function HeroArt() {
         <line x1="900" y1="0" x2="900" y2="620" />
       </g>
 
-      {/* Arcs de routes */}
-      <g fill="none" stroke="url(#arc)" strokeWidth="1.6">
-        <path d="M 80 470 Q 420 120 860 210" />
-        <path d="M 200 540 Q 650 260 1130 330" />
-        <path d="M 30 300 Q 380 60 760 130" />
-        <path d="M 480 560 Q 820 380 1180 460" />
-      </g>
-      <g fill="none" stroke="#2c4172" strokeWidth="1.2" strokeDasharray="2 7" opacity="0.8">
+      {/* Deux liaisons discrètes, en pointillé */}
+      <g fill="none" stroke="#26365a" strokeWidth="1.2" strokeDasharray="3 8">
         <path d="M 140 520 Q 540 200 1000 280" />
         <path d="M 60 380 Q 460 140 920 170" />
       </g>
 
-      {/* Points de repère (aéroports) */}
-      <g fill="#5d83e0">
-        <circle cx="80" cy="470" r="3.5" />
-        <circle cx="860" cy="210" r="3.5" />
-        <circle cx="30" cy="300" r="3" />
-        <circle cx="760" cy="130" r="3" />
-        <circle cx="1130" cy="330" r="3.5" />
-        <circle cx="200" cy="540" r="3" />
-        <circle cx="1180" cy="460" r="3" />
-      </g>
-      <g fill="none" stroke="#5d83e0" strokeWidth="1" opacity="0.5">
-        <circle cx="860" cy="210" r="9" />
-        <circle cx="80" cy="470" r="9" />
-        <circle cx="1130" cy="330" r="9" />
+      {/* Repères sobres */}
+      <g fill="#2c4172">
+        <circle cx="1000" cy="280" r="3" />
+        <circle cx="140" cy="520" r="3" />
+        <circle cx="920" cy="170" r="3" />
+        <circle cx="60" cy="380" r="3" />
       </g>
     </svg>
   );

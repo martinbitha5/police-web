@@ -328,17 +328,17 @@ function SouteBadge({ soute }: { soute: SoutePosition | null }) {
   if (!soute) return <span style={{ color: 'var(--muted)', fontSize: 13 }}>—</span>;
   const color = soute === 'avant' ? 'var(--primary)' : '#0891b2';
   return (
-    <span style={{ ...badge, borderColor: color, color, background: `${soute === 'avant' ? '#2563eb' : '#0891b2'}18`, fontSize: 12 }}>
+    <span style={{ ...badge, color, fontSize: 12 }}>
       {SOUTE_LABEL[soute]}
     </span>
   );
 }
 
 function StatusBadge({ bag }: { bag: Baggage }) {
-  if (bag.rush) return <span style={{ ...badge, borderColor: '#d97706', color: '#d97706', background: '#fef3c718', fontSize: 12 }}>Rush</span>;
-  if (bag.in_hold) return <span style={{ ...badge, borderColor: 'var(--success)', color: 'var(--success)', background: '#dcfce718', fontSize: 12 }}>Chargé</span>;
-  if (bag.is_confirmed) return <span style={{ ...badge, borderColor: 'var(--border-strong)', color: 'var(--text)', background: 'var(--surface-alt)', fontSize: 12 }}>Enregistré</span>;
-  return <span style={{ ...badge, borderColor: 'var(--border)', color: 'var(--muted)', fontSize: 12 }}>En attente</span>;
+  if (bag.rush) return <span style={{ ...badge, color: '#b45309', fontSize: 12 }}>Rush</span>;
+  if (bag.in_hold) return <span style={{ ...badge, color: 'var(--success)', fontSize: 12 }}>Chargé</span>;
+  if (bag.is_confirmed) return <span style={{ ...badge, color: 'var(--text)', fontSize: 12 }}>Enregistré</span>;
+  return <span style={{ ...badge, color: 'var(--muted)', fontSize: 12 }}>En attente</span>;
 }
 
 function DetailModal({ bag, flight, onClose }: { bag: BagRow; flight: Flight | null; onClose: () => void }) {
