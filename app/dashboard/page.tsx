@@ -673,7 +673,7 @@ const s: Record<string, CSSProperties> = {
   statIcon: { width: 44, height: 44, borderRadius: 12, display: 'grid', placeItems: 'center', flexShrink: 0 },
   statLabel: { color: 'var(--muted)', fontSize: 13, marginBottom: 4 },
 
-  alertBanner: { ...card, borderColor: '#f1c5c5', background: 'var(--danger-soft)', marginBottom: 24, padding: 18 },
+  alertBanner: { ...card, borderColor: 'rgba(248,113,113,0.35)', background: 'var(--danger-soft)', marginBottom: 24, padding: 18 },
   alertBannerHead: { display: 'flex', alignItems: 'center', gap: 8, color: 'var(--danger)', marginBottom: 12 },
   alertBannerList: { display: 'flex', flexDirection: 'column', gap: 6 },
   alertBannerItem: {
@@ -721,7 +721,7 @@ const s: Record<string, CSSProperties> = {
   statusSelect: { background: 'var(--surface)', border: '1px solid var(--border-strong)', color: 'var(--text)', borderRadius: 8, padding: '9px 12px', boxShadow: 'var(--shadow-sm)' },
 
   alertsBox: { display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 },
-  alert: { display: 'flex', alignItems: 'center', gap: 12, background: 'var(--danger-soft)', border: '1px solid #f1c5c5', borderRadius: 10, padding: 14 },
+  alert: { display: 'flex', alignItems: 'center', gap: 12, background: 'var(--danger-soft)', border: '1px solid rgba(248,113,113,0.35)', borderRadius: 10, padding: 14 },
   alertTag: { display: 'inline-flex', alignItems: 'center', gap: 5, color: '#fff', background: 'var(--danger)', borderRadius: 8, padding: '4px 9px', fontSize: 12, fontWeight: 800, letterSpacing: 0.5, whiteSpace: 'nowrap', flexShrink: 0 },
 
   tableWrap: { ...card, padding: 0, overflowX: 'auto' },

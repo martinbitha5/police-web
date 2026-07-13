@@ -190,7 +190,7 @@ function BagagesContent() {
                 key={v}
                 active={souteFilter === v}
                 onClick={() => setSouteFilter(v)}
-                color={v === 'avant' ? 'var(--primary)' : v === 'arriere' ? '#0891b2' : undefined}
+                color={v === 'avant' ? 'var(--primary)' : v === 'arriere' ? '#22d3ee' : undefined}
               >
                 {v === 'all' ? 'Tous' : v === 'avant' ? 'Avant' : v === 'arriere' ? 'Arrière' : 'Non scannés'}
               </FilterPill>
@@ -205,7 +205,7 @@ function BagagesContent() {
                 key={v}
                 active={statusFilter === v}
                 onClick={() => setStatusFilter(v)}
-                color={v === 'rush' ? '#d97706' : v === 'in_hold' ? 'var(--success)' : undefined}
+                color={v === 'rush' ? '#fbbf24' : v === 'in_hold' ? 'var(--success)' : undefined}
               >
                 {v === 'all' ? 'Tous' : v === 'in_hold' ? 'Chargé' : v === 'confirmed' ? 'Enregistré' : v === 'rush' ? 'Rush' : 'En attente'}
               </FilterPill>
@@ -326,7 +326,7 @@ function CounterCard({ label, value, color }: { label: string; value: number; co
 
 function SouteBadge({ soute }: { soute: SoutePosition | null }) {
   if (!soute) return <span style={{ color: 'var(--muted)', fontSize: 13 }}>—</span>;
-  const color = soute === 'avant' ? 'var(--primary)' : '#0891b2';
+  const color = soute === 'avant' ? 'var(--primary)' : '#22d3ee';
   return (
     <span style={{ ...badge, color, fontSize: 12 }}>
       {SOUTE_LABEL[soute]}
@@ -335,7 +335,7 @@ function SouteBadge({ soute }: { soute: SoutePosition | null }) {
 }
 
 function StatusBadge({ bag }: { bag: Baggage }) {
-  if (bag.rush) return <span style={{ ...badge, color: '#b45309', fontSize: 12 }}>Rush</span>;
+  if (bag.rush) return <span style={{ ...badge, color: 'var(--warning)', fontSize: 12 }}>Rush</span>;
   if (bag.in_hold) return <span style={{ ...badge, color: 'var(--success)', fontSize: 12 }}>Chargé</span>;
   if (bag.is_confirmed) return <span style={{ ...badge, color: 'var(--text)', fontSize: 12 }}>Enregistré</span>;
   return <span style={{ ...badge, color: 'var(--muted)', fontSize: 12 }}>En attente</span>;

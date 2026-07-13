@@ -180,7 +180,7 @@ const styles: Record<string, React.CSSProperties> = {
   error: {
     color: 'var(--danger)',
     background: 'var(--danger-soft)',
-    border: '1px solid #f1c5c5',
+    border: '1px solid rgba(248,113,113,0.35)',
     borderRadius: 8,
     padding: '10px 12px',
     margin: 0,

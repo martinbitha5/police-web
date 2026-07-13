@@ -1,42 +1,42 @@
 :root {
-  /* Palette claire — logiciel d'opérations, sobre et net */
-  --bg: #f4f5f7;
-  --surface: #ffffff;
-  --surface-alt: #f9fafb;
-  --border: #e3e6ea;
-  --border-strong: #d3d8de;
-  --text: #15181d;
-  --muted: #5c6470;
-  --faint: #8b939e;
+  /* Spatial UI — fond ambiant profond, surfaces en verre dépoli translucide */
+  --bg: #060a13;
+  --surface: rgba(255, 255, 255, 0.055);
+  --surface-alt: rgba(255, 255, 255, 0.03);
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.17);
+  --text: #eef2f9;
+  --muted: #a3adbf;
+  --faint: #778093;
 
-  --primary: #1e4ed8;
-  --primary-hover: #1a44bd;
-  --primary-soft: #eef2fd;
-  --success: #15803d;
-  --success-soft: #ecfdf3;
-  --danger: #b91c1c;
-  --danger-soft: #fef2f2;
-  --warning: #b45309;
-  --warning-soft: #fffbeb;
+  --primary: #4f7df9;
+  --primary-hover: #6b91fa;
+  --primary-soft: rgba(79, 125, 249, 0.15);
+  --success: #4ade80;
+  --success-soft: rgba(74, 222, 128, 0.12);
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.12);
+  --warning: #fbbf24;
+  --warning-soft: rgba(251, 191, 36, 0.12);
 
-  /* Marine profonde — sidebar, héro, panneaux d'identité */
-  --side-bg: #0c1322;
-  --side-bg-2: #131f36;
-  --side-border: #1d2940;
+  /* Marine profonde — héro, volet login (panneaux d'identité opaques) */
+  --side-bg: #0a1120;
+  --side-bg-2: #101b31;
+  --side-border: rgba(255, 255, 255, 0.08);
   --side-text: #e7ebf2;
   --side-muted: #8e99ad;
-  --side-active: #1b2a45;
+  --side-active: rgba(255, 255, 255, 0.07);
 
-  /* Compatibilité : anciens tokens "glass" remappés sur le thème clair */
-  --glass: #ffffff;
-  --glass-strong: #ffffff;
-  --glass-border: #e3e6ea;
-  --glass-blur: none;
+  /* Verre dépoli — les panneaux flottants du spatial UI */
+  --glass: rgba(255, 255, 255, 0.055);
+  --glass-strong: rgba(255, 255, 255, 0.085);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-blur: blur(22px) saturate(150%);
 
-  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
-  --shadow-md: 0 1px 3px rgba(16, 24, 40, 0.07), 0 4px 12px rgba(16, 24, 40, 0.05);
-  --shadow-lg: 0 8px 24px rgba(16, 24, 40, 0.12);
-  --shadow-xl: 0 20px 50px rgba(12, 19, 34, 0.25);
+  --shadow-sm: 0 2px 10px rgba(2, 6, 16, 0.35);
+  --shadow-md: 0 8px 30px rgba(2, 6, 16, 0.45);
+  --shadow-lg: 0 16px 50px rgba(2, 6, 16, 0.55);
+  --shadow-xl: 0 24px 70px rgba(2, 6, 16, 0.65);
 }
 
 * {
@@ -56,7 +56,13 @@ body {
   font-size: 14px;
   line-height: 1.5;
   min-height: 100vh;
-  background: var(--bg);
+  /* Ambiance spatiale : halos bleutés diffus sur fond très sombre, fixes au
+     défilement — les panneaux en verre flottent au-dessus. */
+  background:
+    radial-gradient(1100px 700px at 85% -10%, rgba(79, 125, 249, 0.16), transparent 60%),
+    radial-gradient(900px 650px at -15% 110%, rgba(56, 130, 246, 0.1), transparent 55%),
+    linear-gradient(160deg, #070c16 0%, #0a1424 55%, #081020 100%);
+  background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -108,7 +114,7 @@ textarea::placeholder {
 }
 
 select option {
-  background: #ffffff;
+  background: #0d1626;
   color: var(--text);
 }
 
@@ -124,12 +130,12 @@ select option {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #c9ced6;
+  background: rgba(255, 255, 255, 0.16);
   border-radius: 6px;
-  border: 2px solid var(--bg);
+  border: 2px solid #0a1424;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #aab2bd;
+  background: rgba(255, 255, 255, 0.28);
 }
 
 /* Lignes de tableau — survol discret sur tout le back-office */
@@ -137,7 +143,7 @@ tbody tr {
   transition: background-color 0.12s ease;
 }
 tbody tr:hover {
-  background: var(--surface-alt);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -383,9 +389,11 @@ tbody tr:hover {
 }
 
 .lp-cap {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
   padding: 26px 24px;
   box-shadow: var(--shadow-sm);
   transition: border-color 0.16s ease, box-shadow 0.16s ease;
@@ -511,14 +519,16 @@ tbody tr:hover {
 .lg-card {
   width: 400px;
   max-width: 100%;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
   padding: 36px 32px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg);
 }
 
 .lg-btn {

@@ -1,22 +1,26 @@
 import type { CSSProperties } from 'react';
 
-// Tokens de style partagés — thème clair professionnel.
-// Les noms "glass" sont conservés pour compatibilité : ils rendent
-// désormais des surfaces blanches nettes (plus aucun flou).
+// Tokens de style partagés — Spatial UI : panneaux en verre dépoli
+// translucide flottant sur un fond ambiant sombre.
 export const glass: CSSProperties = {
-  background: 'var(--surface)',
+  background: 'var(--glass)',
   borderWidth: 1,
   borderStyle: 'solid',
-  borderColor: 'var(--border)',
+  borderColor: 'var(--glass-border)',
+  backdropFilter: 'var(--glass-blur)',
+  WebkitBackdropFilter: 'var(--glass-blur)',
 };
 
-export const glassStrong: CSSProperties = { ...glass };
+export const glassStrong: CSSProperties = {
+  ...glass,
+  background: 'var(--glass-strong)',
+};
 
 export const card: CSSProperties = {
   ...glass,
-  borderRadius: 10,
+  borderRadius: 16,
   padding: 20,
-  boxShadow: 'var(--shadow-sm)',
+  boxShadow: 'var(--shadow-md)',
 };
 
 export const btnPrimary: CSSProperties = {
@@ -25,39 +29,39 @@ export const btnPrimary: CSSProperties = {
   gap: 8,
   background: 'var(--primary)',
   color: '#fff',
-  border: '1px solid var(--primary)',
-  borderRadius: 8,
+  border: '1px solid rgba(255,255,255,0.2)',
+  borderRadius: 10,
   padding: '9px 16px',
   fontWeight: 600,
   fontSize: 14,
   textDecoration: 'none',
   whiteSpace: 'nowrap',
+  boxShadow: '0 6px 20px rgba(79, 125, 249, 0.3)',
 };
 
 export const btnGhost: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
   gap: 8,
-  background: 'var(--surface)',
+  background: 'rgba(255,255,255,0.06)',
   color: 'var(--text)',
   border: '1px solid var(--border-strong)',
-  borderRadius: 8,
+  borderRadius: 10,
   padding: '9px 16px',
   fontWeight: 600,
   fontSize: 14,
   textDecoration: 'none',
   whiteSpace: 'nowrap',
-  boxShadow: 'var(--shadow-sm)',
 };
 
 export const input: CSSProperties = {
-  background: 'var(--surface)',
+  background: 'rgba(255,255,255,0.05)',
   border: '1px solid var(--border-strong)',
-  borderRadius: 8,
+  borderRadius: 10,
   padding: '10px 12px',
   color: 'var(--text)',
   fontSize: 14,
-  colorScheme: 'light',
+  colorScheme: 'dark',
   width: '100%',
 };
 
@@ -85,11 +89,11 @@ export const badge: CSSProperties = {
   fontWeight: 600,
 };
 
-// Couleurs par rôle (gestion des comptes).
+// Couleurs par rôle (gestion des comptes) — éclaircies pour fond sombre.
 export const ROLE_COLOR: Record<string, string> = {
-  admin: '#6d28d9',
-  supervisor: '#1e4ed8',
-  agent: '#15803d',
+  admin: '#a78bfa',
+  supervisor: '#7da2f5',
+  agent: '#4ade80',
 };
 
 export const ROLE_LABEL: Record<string, string> = {
