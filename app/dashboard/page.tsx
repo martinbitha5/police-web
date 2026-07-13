@@ -7,7 +7,7 @@ import { formatRoute } from '@police/shared';
 import { createClient } from '@/supabase/client';
 import { useFlightData, type PassengerRow } from '@/useFlightData';
 import { AppShell, useSession } from '@/components/AppShell';
-import { card, btnPrimary, btnGhost, sectionHeading, badge } from '@/ui/theme';
+import { card, btnPrimary, btnGhost, sectionHeading, badge, modalOverlay, modalPanel } from '@/ui/theme';
 import {
   IconPlane,
   IconPlaneDepart,
@@ -740,8 +740,8 @@ const s: Record<string, CSSProperties> = {
   td: { padding: 14, borderBottom: '1px solid var(--border)' },
   tdEmpty: { padding: '32px 14px', textAlign: 'center', color: 'var(--muted)' },
 
-  overlay: { position: 'fixed', inset: 0, background: 'rgba(16,24,40,0.5)', display: 'grid', placeItems: 'center', zIndex: 10, padding: 16 },
-  modal: { width: 460, maxWidth: '100%', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 24, display: 'flex', flexDirection: 'column', gap: 14, maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--shadow-lg)' },
+  overlay: { ...modalOverlay },
+  modal: { ...modalPanel, width: 460, maxWidth: '100%', padding: 24, display: 'flex', flexDirection: 'column', gap: 14, maxHeight: '90vh', overflowY: 'auto' },
   modalHead: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
   modalClose: { background: 'transparent', border: 'none', color: 'var(--muted)', display: 'grid', placeItems: 'center', padding: 4 },
   row: { display: 'flex', gap: 12 },

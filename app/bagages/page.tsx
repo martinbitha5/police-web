@@ -5,7 +5,7 @@ import type { Flight, Baggage, Passenger, SoutePosition } from '@police/shared';
 import { SOUTE_LABEL } from '@police/shared';
 import { createClient } from '@/supabase/client';
 import { AppShell, useSession } from '@/components/AppShell';
-import { card, badge } from '@/ui/theme';
+import { card, badge, modalOverlay, modalPanel } from '@/ui/theme';
 import { IconBag, IconClose, IconPlane } from '@/components/icons';
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -486,24 +486,12 @@ const s: Record<string, CSSProperties> = {
   empty: { padding: 32, textAlign: 'center' as const, color: 'var(--muted)' },
 
   // Modal
-  overlay: {
-    position: 'fixed' as const,
-    inset: 0,
-    background: 'rgba(16,24,40,0.5)',
-    zIndex: 50,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-  },
+  overlay: { ...modalOverlay },
   modal: {
-    background: 'var(--surface)',
-    border: '1px solid var(--border)',
-    borderRadius: 12,
+    ...modalPanel,
     width: '100%',
     maxWidth: 480,
     overflow: 'hidden',
-    boxShadow: 'var(--shadow-lg)',
   },
   modalHeader: {
     display: 'flex',

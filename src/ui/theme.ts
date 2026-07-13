@@ -54,6 +54,32 @@ export const btnGhost: CSSProperties = {
   whiteSpace: 'nowrap',
 };
 
+// Modales — voile flouté derrière, panneau presque opaque devant.
+// Sans cela, un panneau translucide laisse transparaître le contenu de la
+// page et devient illisible.
+export const modalOverlay: CSSProperties = {
+  position: 'fixed',
+  inset: 0,
+  background: 'var(--overlay)',
+  backdropFilter: 'blur(10px)',
+  WebkitBackdropFilter: 'blur(10px)',
+  zIndex: 50,
+  display: 'grid',
+  placeItems: 'center',
+  padding: 16,
+};
+
+export const modalPanel: CSSProperties = {
+  background: 'var(--panel)',
+  backdropFilter: 'var(--glass-blur)',
+  WebkitBackdropFilter: 'var(--glass-blur)',
+  borderWidth: 1,
+  borderStyle: 'solid',
+  borderColor: 'var(--glass-border)',
+  borderRadius: 18,
+  boxShadow: 'var(--shadow-xl)',
+};
+
 export const input: CSSProperties = {
   background: 'rgba(255,255,255,0.05)',
   border: '1px solid var(--border-strong)',

@@ -205,7 +205,7 @@ function IconChart() {
 }
 
 const s: Record<string, CSSProperties> = {
-  page: { minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' },
+  page: { minHeight: '100vh', display: 'flex', flexDirection: 'column' },
 
   brandBox: { display: 'flex', alignItems: 'center', gap: 10 },
   brandLogo: { width: 32, height: 32, borderRadius: 8, objectFit: 'cover' as const, display: 'block', flexShrink: 0 },

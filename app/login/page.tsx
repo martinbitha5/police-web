@@ -143,7 +143,7 @@ function SideArt() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  page: { minHeight: '100vh', display: 'flex', background: 'var(--bg)' },
+  page: { minHeight: '100vh', display: 'flex' },
 
   sideTop: { display: 'flex', position: 'relative' },
   brandBox: { display: 'flex', alignItems: 'center', gap: 10 },

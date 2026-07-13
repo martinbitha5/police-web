@@ -201,7 +201,7 @@ function HamburgerIcon({ open }: { open: boolean }) {
 
 // ── Styles mobile ───────────────────────────────────────────────
 const m: Record<string, CSSProperties> = {
-  root: { display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--bg)' },
+  root: { display: 'flex', flexDirection: 'column', minHeight: '100vh' },
 
   topBar: {
     position: 'sticky',
