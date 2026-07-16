@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Profile, UserRole } from '@police/shared';
 import { AppShell, useSession } from '@/components/AppShell';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import { card, btnPrimary, btnGhost, input, label, sectionHeading, badge, modalOverlay, modalPanel, ROLE_COLOR, ROLE_LABEL } from '@/ui/theme';
 import { IconPlus, IconUser, IconClose, IconTrash } from '@/components/icons';
 
@@ -40,6 +41,7 @@ const EMPTY = { email: '', password: '', full_name: '', role: 'agent' as UserRol
 
 function AccountManager() {
   const me = useSession();
+  const isMobile = useIsMobile();
   const [form, setForm] = useState(EMPTY);
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -108,7 +110,7 @@ function AccountManager() {
   }
 
   return (
-    <div style={s.page}>
+    <div style={isMobile ? { ...s.page, padding: '20px 16px' } : s.page}>
       <header style={s.head}>
         <div>
           <h1 style={s.title}>Gestion des comptes</h1>
@@ -116,7 +118,7 @@ function AccountManager() {
         </div>
       </header>
 
-      <div style={s.grid}>
+      <div style={isMobile ? { ...s.grid, gridTemplateColumns: '1fr' } : s.grid}>
         <section style={s.formCard}>
           <div style={sectionHeading}>Créer un compte</div>
           <form onSubmit={onSubmit} style={s.form}>
