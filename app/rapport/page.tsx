@@ -174,12 +174,12 @@ function ReportView() {
       <h2 style={sectionHeading}>Bilan de la période</h2>
 
       <div style={isMobile ? { ...s.grid, gridTemplateColumns: 'repeat(2, 1fr)' } : s.grid}>
-        <Stat label="Vols traités" value={stats?.flights} icon={<IconPlane size={20} />} tint="#2563eb" loading={loading} />
-        <Stat label="Passagers" value={stats?.passengers} icon={<IconUser size={20} />} tint="#0ea5e9" loading={loading} />
-        <Stat label="Embarqués" value={stats ? `${stats.boarded} (${boardRate}%)` : undefined} icon={<IconPlaneDepart size={20} />} tint="#22c55e" loading={loading} />
-        <Stat label="Bagages confirmés" value={stats ? `${stats.confirmed} / ${stats.declared}` : undefined} icon={<IconBag size={20} />} tint="#14b8a6" loading={loading} />
-        <Stat label="Écart bagages" value={stats ? ecart : undefined} icon={<IconBag size={20} />} tint="#d97706" danger={ecart !== 0} loading={loading} />
-        <Stat label="Alertes fraude" value={stats?.alerts} icon={<IconAlert size={20} />} tint="#dc2626" danger={(stats?.alerts ?? 0) > 0} loading={loading} />
+        <Stat label="Vols traités" value={stats?.flights} icon={<IconPlane size={20} />} loading={loading} />
+        <Stat label="Passagers" value={stats?.passengers} icon={<IconUser size={20} />} loading={loading} />
+        <Stat label="Embarqués" value={stats ? `${stats.boarded} (${boardRate}%)` : undefined} icon={<IconPlaneDepart size={20} />} loading={loading} />
+        <Stat label="Bagages confirmés" value={stats ? `${stats.confirmed} / ${stats.declared}` : undefined} icon={<IconBag size={20} />} loading={loading} />
+        <Stat label="Écart bagages" value={stats ? ecart : undefined} icon={<IconBag size={20} />} danger={ecart !== 0} loading={loading} />
+        <Stat label="Alertes fraude" value={stats?.alerts} icon={<IconAlert size={20} />} danger={(stats?.alerts ?? 0) > 0} loading={loading} />
       </div>
 
       <div style={s.note}>
@@ -197,23 +197,21 @@ function Stat({
   label,
   value,
   icon,
-  tint,
   danger,
   loading,
 }: {
   label: string;
   value: number | string | undefined;
   icon: React.ReactNode;
-  tint: string;
   danger?: boolean;
   loading?: boolean;
 }) {
   return (
     <div style={s.stat}>
-      <div style={{ ...s.statIcon, background: `${tint}22`, color: tint }}>{icon}</div>
+      <div style={s.statIcon}>{icon}</div>
       <div style={{ minWidth: 0 }}>
         <div style={s.statLabel}>{label}</div>
-        <div style={{ fontSize: 24, fontWeight: 800, color: danger ? 'var(--danger)' : 'var(--text)', lineHeight: 1.1 }}>
+        <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.03em', color: danger ? 'var(--negative)' : 'var(--content-primary)', lineHeight: 1.1 }}>
           {loading ? '…' : (value ?? '—')}
         </div>
       </div>
@@ -227,50 +225,61 @@ const s: Record<string, CSSProperties> = {
 
   head: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 20, flexWrap: 'wrap' },
   headMobile: { flexDirection: 'column', gap: 12 },
-  title: { margin: 0, fontSize: 26, fontWeight: 800, letterSpacing: -0.5 },
-  sub: { color: 'var(--muted)', fontSize: 14, marginTop: 4 },
+  title: { margin: 0, fontSize: 26, fontWeight: 600, letterSpacing: '-0.03em', color: 'var(--content-primary)' },
+  sub: { color: 'var(--content-secondary)', fontSize: 14, marginTop: 4 },
 
   tabs: { display: 'flex', gap: 8, marginBottom: 22, flexWrap: 'wrap' },
   tab: {
     flex: '1 1 auto',
     minWidth: 80,
-    background: 'var(--surface)',
+    background: 'transparent',
     borderWidth: 1,
     borderStyle: 'solid',
-    borderColor: 'var(--border-strong)',
-    color: 'var(--muted)',
-    borderRadius: 8,
-    padding: '10px 14px',
-    fontWeight: 700,
+    borderColor: 'var(--border-neutral)',
+    color: 'var(--content-secondary)',
+    borderRadius: 9999,
+    padding: '10px 16px',
+    fontWeight: 600,
     fontSize: 14,
-    boxShadow: 'var(--shadow-sm)',
   },
-  tabActive: { background: 'var(--primary)', borderColor: 'var(--primary)', color: '#fff' },
+  tabActive: { background: 'var(--interactive-primary)', borderColor: 'var(--interactive-primary)', color: '#fff' },
 
   customRow: { display: 'flex', gap: 12, marginBottom: 22, alignItems: 'flex-end', flexWrap: 'wrap' },
   customField: { display: 'flex', flexDirection: 'column', gap: 6 },
-  customLabel: { fontSize: 13, color: 'var(--muted)', fontWeight: 600 },
+  customLabel: { fontSize: 13, color: 'var(--content-secondary)', fontWeight: 600 },
   dateInput: {
-    background: 'var(--surface)',
-    border: '1px solid var(--border-strong)',
-    color: 'var(--text)',
-    borderRadius: 8,
+    background: 'var(--bg-elevated)',
+    border: '1px solid var(--border-neutral)',
+    color: 'var(--content-primary)',
+    borderRadius: 10,
     padding: '10px 13px',
     fontSize: 14,
-    boxShadow: 'var(--shadow-sm)',
   },
 
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 14, marginBottom: 22 },
   stat: { ...card, display: 'flex', alignItems: 'center', gap: 14, padding: 18 },
-  statIcon: { width: 44, height: 44, borderRadius: 12, display: 'grid', placeItems: 'center', flexShrink: 0 },
-  statLabel: { color: 'var(--muted)', fontSize: 13, marginBottom: 4 },
+  statIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 9999,
+    background: 'var(--bg-neutral)',
+    boxShadow: 'inset 0 0 0 1px var(--border-neutral)',
+    color: 'var(--brand-forest)',
+    display: 'grid',
+    placeItems: 'center',
+    flexShrink: 0,
+  },
+  statLabel: { color: 'var(--content-secondary)', fontSize: 13, marginBottom: 4 },
 
   note: {
-    ...card,
+    background: 'var(--bg-neutral)',
+    border: 'none',
+    borderRadius: 16,
+    padding: 20,
     display: 'flex',
     alignItems: 'center',
     gap: 12,
-    color: 'var(--muted)',
+    color: 'var(--content-secondary)',
     fontSize: 14,
     lineHeight: 1.5,
   },

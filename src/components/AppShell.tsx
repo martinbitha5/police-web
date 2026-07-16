@@ -57,7 +57,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     return (
       <SessionCtx.Provider value={profile}>
         <div style={m.root}>
-          {/* Barre du haut */}
+          {/* Barre du haut — blanche, sticky */}
           <header style={m.topBar}>
             <div style={m.topBrand}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -141,7 +141,6 @@ export function AppShell({ children }: { children: ReactNode }) {
               const Icon = n.icon;
               return (
                 <Link key={n.href} href={n.href} style={{ ...d.navItem, ...(active ? d.navItemActive : {}) }}>
-                  {active ? <span style={d.navAccent} /> : null}
                   <Icon size={17} />
                   <span>{n.label}</span>
                 </Link>
@@ -189,7 +188,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 /** Icône hamburger / croix animée. */
 function HamburgerIcon({ open }: { open: boolean }) {
-  const bar: CSSProperties = { width: 22, height: 2.5, borderRadius: 2, background: 'var(--text)', transition: 'all 0.2s' };
+  const bar: CSSProperties = { width: 22, height: 2.5, borderRadius: 2, background: 'var(--content-primary)', transition: 'all 0.2s' };
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 5, padding: 2 }}>
       <span style={{ ...bar, transform: open ? 'rotate(45deg) translate(5px, 5px)' : 'none' }} />
@@ -201,7 +200,7 @@ function HamburgerIcon({ open }: { open: boolean }) {
 
 // ── Styles mobile ───────────────────────────────────────────────
 const m: Record<string, CSSProperties> = {
-  root: { display: 'flex', flexDirection: 'column', minHeight: '100vh' },
+  root: { display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--bg-screen)' },
 
   topBar: {
     position: 'sticky',
@@ -211,22 +210,20 @@ const m: Record<string, CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: '13px 16px',
-    background: 'rgba(9, 14, 26, 0.65)',
-    backdropFilter: 'var(--glass-blur)',
-    WebkitBackdropFilter: 'var(--glass-blur)',
-    borderBottom: '1px solid var(--glass-border)',
+    background: 'var(--bg-screen)',
+    borderBottom: '1px solid var(--border-neutral)',
   },
   topBrand: { display: 'flex', alignItems: 'center', gap: 1 },
   topLogo: { width: 30, height: 30, borderRadius: 7, objectFit: 'cover' as const, display: 'block', flexShrink: 0 },
-  topBrandName: { display: 'block', fontWeight: 800, fontSize: 15, letterSpacing: -0.3, color: 'var(--text)' },
-  topBrandHub: { display: 'block', color: 'var(--muted)', fontSize: 11, fontWeight: 600 },
+  topBrandName: { display: 'block', fontWeight: 700, fontSize: 15, letterSpacing: '-0.03em', color: 'var(--content-primary)' },
+  topBrandHub: { display: 'block', color: 'var(--content-secondary)', fontSize: 11, fontWeight: 600 },
   topRight: { display: 'flex', alignItems: 'center', gap: 10 },
   topAvatar: {
     width: 34,
     height: 34,
     borderRadius: '50%',
-    background: 'var(--side-bg)',
-    color: '#fff',
+    background: 'var(--bg-neutral)',
+    color: 'var(--brand-forest)',
     display: 'grid',
     placeItems: 'center',
     fontWeight: 700,
@@ -244,54 +241,46 @@ const m: Record<string, CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: 4,
-    background: 'rgba(10, 16, 30, 0.92)',
-    backdropFilter: 'var(--glass-blur)',
-    WebkitBackdropFilter: 'var(--glass-blur)',
-    borderBottom: '1px solid var(--glass-border)',
-    boxShadow: 'var(--shadow-lg)',
+    background: 'var(--bg-screen)',
+    borderBottom: '1px solid var(--border-neutral)',
+    boxShadow: 'var(--shadow-card)',
   },
-  drawerUser: { display: 'flex', alignItems: 'center', gap: 12, padding: '6px 6px 14px', borderBottom: '1px solid var(--border)', marginBottom: 6 },
+  drawerUser: { display: 'flex', alignItems: 'center', gap: 12, padding: '6px 6px 14px', borderBottom: '1px solid var(--border-neutral)', marginBottom: 6 },
   drawerAvatar: {
     width: 42,
     height: 42,
     borderRadius: '50%',
-    background: 'var(--side-bg)',
-    color: '#fff',
+    background: 'var(--bg-neutral)',
+    color: 'var(--brand-forest)',
     display: 'grid',
     placeItems: 'center',
     fontWeight: 700,
     fontSize: 16,
     flexShrink: 0,
   },
-  drawerName: { fontWeight: 700, fontSize: 15, color: 'var(--text)' },
-  drawerRole: { color: 'var(--muted)', fontSize: 12, textTransform: 'capitalize', marginTop: 2 },
-  drawerItem: { display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 8, color: 'var(--muted)', fontSize: 15, fontWeight: 600, textDecoration: 'none' },
-  drawerItemActive: { background: 'var(--primary-soft)', color: 'var(--primary)' },
-  drawerLogout: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'transparent', border: '1px solid var(--border-strong)', color: 'var(--danger)', borderRadius: 8, padding: '11px', fontWeight: 600, fontSize: 14, marginTop: 8 },
+  drawerName: { fontWeight: 700, fontSize: 15, color: 'var(--content-primary)' },
+  drawerRole: { color: 'var(--content-secondary)', fontSize: 12, textTransform: 'capitalize', marginTop: 2 },
+  drawerItem: { display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 9999, color: 'var(--content-secondary)', fontSize: 15, fontWeight: 600, textDecoration: 'none' },
+  drawerItemActive: { background: 'var(--bg-neutral-hover)', color: 'var(--brand-forest)' },
+  drawerLogout: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'transparent', border: '1px solid var(--border-neutral)', color: 'var(--negative)', borderRadius: 9999, padding: '11px', fontWeight: 600, fontSize: 14, marginTop: 8 },
 
   main: { flex: 1, padding: '0 0 24px' },
-  loading: { color: 'var(--muted)', display: 'grid', placeItems: 'center', height: '60vh' },
+  loading: { color: 'var(--content-secondary)', display: 'grid', placeItems: 'center', height: '60vh' },
 };
 
 // ── Styles desktop ──────────────────────────────────────────────
 const d: Record<string, CSSProperties> = {
-  // Spatial UI : la sidebar est un panneau de verre flottant, détaché des
-  // bords, au-dessus du fond ambiant (le fond vient du body, pas du layout).
-  layout: { display: 'flex', minHeight: '100vh', padding: 14, gap: 14 },
+  layout: { display: 'flex', minHeight: '100vh', background: 'var(--bg-screen)' },
   sidebar: {
-    width: 252,
-    background: 'rgba(10, 17, 32, 0.55)',
-    backdropFilter: 'var(--glass-blur)',
-    WebkitBackdropFilter: 'var(--glass-blur)',
-    border: '1px solid var(--glass-border)',
-    borderRadius: 18,
-    boxShadow: 'var(--shadow-lg)',
+    width: 260,
+    background: 'var(--bg-screen)',
+    borderRight: '1px solid var(--border-neutral)',
     padding: '20px 12px 16px',
     display: 'flex',
     flexDirection: 'column',
     position: 'sticky',
-    top: 14,
-    height: 'calc(100vh - 28px)',
+    top: 0,
+    height: '100vh',
     flexShrink: 0,
   },
   brandBox: { display: 'flex', alignItems: 'center', gap: 11, padding: '0 8px 22px' },
@@ -303,78 +292,68 @@ const d: Record<string, CSSProperties> = {
     display: 'block',
     flexShrink: 0,
   },
-  brand: { fontWeight: 700, fontSize: 15, letterSpacing: -0.2, color: 'var(--side-text)' },
-  brandSub: { color: 'var(--side-muted)', fontSize: 11.5, marginTop: 1, fontWeight: 600 },
+  brand: { fontWeight: 700, fontSize: 15, letterSpacing: '-0.03em', color: 'var(--content-primary)' },
+  brandSub: { color: 'var(--content-secondary)', fontSize: 11.5, marginTop: 1, fontWeight: 600 },
 
   navLabel: {
-    color: 'var(--side-muted)',
+    color: 'var(--content-tertiary)',
     fontSize: 10.5,
     fontWeight: 700,
     textTransform: 'uppercase',
     letterSpacing: 1,
-    padding: '0 12px 8px',
+    padding: '0 16px 8px',
   },
   nav: { display: 'flex', flexDirection: 'column', gap: 2 },
   navItem: {
-    position: 'relative',
     display: 'flex',
     alignItems: 'center',
     gap: 11,
-    padding: '10px 12px',
-    borderRadius: 7,
-    color: 'var(--side-muted)',
-    fontSize: 13.5,
-    fontWeight: 600,
+    padding: '10px 16px',
+    borderRadius: 9999,
+    color: 'var(--content-secondary)',
+    fontSize: 14,
+    fontWeight: 500,
     textDecoration: 'none',
   },
-  navItemActive: { background: 'var(--side-active)', color: 'var(--side-text)' },
-  navAccent: {
-    position: 'absolute',
-    left: 0,
-    top: 8,
-    bottom: 8,
-    width: 3,
-    borderRadius: 3,
-    background: 'var(--primary)',
-  },
+  navItemActive: { background: 'var(--bg-neutral-hover)', color: 'var(--brand-forest)', fontWeight: 600 },
 
-  dateBox: { marginTop: 'auto', color: 'var(--side-muted)', fontSize: 12, padding: '0 12px 12px' },
-  user: { display: 'flex', flexDirection: 'column', gap: 10, borderTop: '1px solid var(--side-border)', paddingTop: 14 },
+  dateBox: { marginTop: 'auto', color: 'var(--content-tertiary)', fontSize: 12, padding: '0 16px 12px' },
+  user: { display: 'flex', flexDirection: 'column', gap: 10, borderTop: '1px solid var(--border-neutral)', paddingTop: 14 },
   userRow: { display: 'flex', alignItems: 'center', gap: 10, padding: '0 4px' },
   avatar: {
     width: 36,
     height: 36,
     borderRadius: '50%',
-    background: 'var(--side-active)',
-    border: '1px solid var(--side-border)',
-    color: 'var(--side-text)',
+    background: 'var(--bg-neutral)',
+    boxShadow: 'inset 0 0 0 1px var(--border-neutral)',
+    color: 'var(--brand-forest)',
     display: 'grid',
     placeItems: 'center',
     fontWeight: 700,
     fontSize: 14,
     flexShrink: 0,
   },
-  userName: { fontWeight: 600, fontSize: 13.5, color: 'var(--side-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-  userRole: { color: 'var(--side-muted)', fontSize: 11.5, textTransform: 'capitalize' },
+  userName: { fontWeight: 600, fontSize: 13.5, color: 'var(--content-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+  userRole: { color: 'var(--content-secondary)', fontSize: 11.5, textTransform: 'capitalize' },
   logout: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     background: 'transparent',
-    border: '1px solid var(--side-border)',
-    color: 'var(--side-muted)',
-    borderRadius: 7,
+    border: '1px solid var(--border-neutral)',
+    color: 'var(--content-secondary)',
+    borderRadius: 9999,
     padding: '8px 10px',
     fontWeight: 600,
     fontSize: 13,
   },
 
-  main: { flex: 1, overflow: 'auto', minWidth: 0 },
-  centered: { color: 'var(--muted)', display: 'grid', placeItems: 'center', height: '60vh' },
+  main: { flex: 1, overflow: 'auto', minWidth: 0, background: 'var(--bg-screen)' },
+  centered: { color: 'var(--content-secondary)', display: 'grid', placeItems: 'center', height: '60vh' },
 
   partnerBox: {
-    borderTop: '1px solid var(--side-border)',
+    borderTop: '1px solid var(--border-neutral)',
     padding: '12px 12px 10px',
     display: 'flex',
     flexDirection: 'column' as const,
@@ -385,15 +364,15 @@ const d: Record<string, CSSProperties> = {
     fontWeight: 700,
     textTransform: 'uppercase' as const,
     letterSpacing: 1.2,
-    color: 'var(--side-muted)',
+    color: 'var(--content-tertiary)',
   },
   partnerPill: {
     display: 'inline-flex',
     alignItems: 'center',
     alignSelf: 'flex-start' as const,
-    background: '#fff',
-    borderRadius: 7,
-    padding: '7px 11px',
+    background: 'var(--bg-neutral)',
+    borderRadius: 9999,
+    padding: '7px 13px',
   },
   partnerLogo: {
     height: 22,

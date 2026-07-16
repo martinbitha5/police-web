@@ -11,31 +11,31 @@ export const metadata = {
 const CAPABILITIES: { icon: ReactNode; title: string; desc: string }[] = [
   {
     icon: <IconScan />,
-    title: 'Contrôle d’embarquement',
-    desc: 'Chaque boarding pass est scanné et vérifié contre le vol en cours. Les passagers embarqués sont comptés en direct.',
+    title: 'Contrôlez l’embarquement',
+    desc: 'Scannez chaque boarding pass. Le passager est vérifié contre le vol en cours et compté en direct.',
   },
   {
     icon: <IconTag />,
-    title: 'Traçabilité bagages',
-    desc: 'Enregistrement, chargement en soute et réacheminement : chaque étiquette est suivie du comptoir jusqu’à l’avion.',
+    title: 'Suivez chaque bagage',
+    desc: 'Du comptoir à l’avion, chaque étiquette est tracée : enregistrement, chargement en soute, réacheminement.',
   },
   {
     icon: <IconShield />,
-    title: 'Détection de fraude',
-    desc: 'Tout bagage non déclaré au check-in est intercepté avant la soute et signalé immédiatement au superviseur.',
+    title: 'Interceptez la fraude',
+    desc: 'Un bagage non déclaré au check-in ? Il est bloqué avant la soute et signalé immédiatement au superviseur.',
   },
   {
     icon: <IconChart />,
-    title: 'Rapports d’exploitation',
-    desc: 'Bilans Excel par vol ou par période : passagers, bagages, écarts et alertes, prêts à archiver.',
+    title: 'Éditez vos rapports',
+    desc: 'Téléchargez vos bilans Excel par vol ou par période : passagers, bagages, écarts et alertes, prêts à archiver.',
   },
 ];
 
 const STEPS = [
-  { n: 'ÉTAPE 1', title: 'Check-in', desc: 'L’agent scanne le boarding pass. Le passager et ses bagages déclarés entrent dans le système.' },
-  { n: 'ÉTAPE 2', title: 'Tri bagages', desc: 'Chaque étiquette est scannée sur le tapis et confrontée à la déclaration du passager.' },
-  { n: 'ÉTAPE 3', title: 'Embarquement', desc: 'Contrôle à la porte : seuls les passagers du vol passent, le comptage est automatique.' },
-  { n: 'ÉTAPE 4', title: 'Supervision', desc: 'Le superviseur suit les vols en temps réel et reçoit chaque alerte avec le détail du bagage.' },
+  { n: 'ÉTAPE 1', title: 'Check-in', desc: 'Scannez le boarding pass. Le passager et ses bagages déclarés entrent dans le système.' },
+  { n: 'ÉTAPE 2', title: 'Tri bagages', desc: 'Scannez chaque étiquette sur le tapis. Elle est confrontée à la déclaration du passager.' },
+  { n: 'ÉTAPE 3', title: 'Embarquement', desc: 'Contrôlez à la porte : seuls les passagers du vol passent, le comptage est automatique.' },
+  { n: 'ÉTAPE 4', title: 'Supervision', desc: 'Suivez vos vols en temps réel. Chaque alerte arrive avec le détail du bagage.' },
 ];
 
 export default function Landing() {
@@ -51,27 +51,26 @@ export default function Landing() {
           </div>
           <nav style={s.topNav}>
             <span style={s.hubChip}>Hub {HUB}</span>
-            <Link href="/login" className="lp-login-btn">Se connecter</Link>
+            <Link href="/login" className="lp-login-btn">Connexion</Link>
           </nav>
         </div>
       </header>
 
-      {/* Héro — panneau texte navy / photo coupée en diagonale */}
+      {/* Héro — 2 colonnes, titre display, visuel arrondi */}
       <section className="lp-hero">
         <div className="lp-hero-grid">
           <div className="lp-hero-copy">
-            <div className="lp-kicker">Plateforme de supervision aéroportuaire</div>
             <h1 className="lp-title">
-              Le contrôle des bagages et de l’embarquement, <em>du comptoir à la soute</em>.
+              Chaque bagage suivi, du comptoir à la soute.
             </h1>
             <p className="lp-tagline">
-              Police Bagage relie les agents de terrain équipés de terminaux de scan au poste de
-              supervision. Chaque passager, chaque bagage et chaque alerte de fraude est tracé en
-              temps réel sur l’ensemble des vols du jour.
+              Suivez vos vols, vos passagers et chaque étiquette bagage en temps réel.
+              Les bagages non déclarés sont interceptés avant la soute — sans paperasse
+              inutile, sans écart invisible.
             </p>
             <div className="lp-actions">
-              <Link href="/login" className="lp-cta">Accéder à la supervision</Link>
-              <a href="#fonctionnement" className="lp-cta-ghost">Voir le fonctionnement</a>
+              <Link href="/login" className="lp-cta">Commencer</Link>
+              <a href="#fonctionnement" className="lp-cta-link">Voir comment ça marche</a>
             </div>
 
             <div className="lp-stats">
@@ -97,11 +96,10 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Capacités */}
+      {/* Capacités — tuiles teintées, icônes en cercles */}
       <section className="lp-section">
         <div className="lp-section-inner">
-          <div className="lp-section-kicker">Capacités</div>
-          <h2 className="lp-section-title">Ce que couvre la plateforme</h2>
+          <h2 className="lp-section-title">Gardez le contrôle, du check-in à l’avion</h2>
           <div className="lp-cap-grid">
             {CAPABILITIES.map((c) => (
               <div key={c.title} className="lp-cap">
@@ -114,15 +112,10 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Déroulé opérationnel */}
-      <section
-        id="fonctionnement"
-        className="lp-section"
-        style={{ background: 'var(--surface)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}
-      >
+      {/* Déroulé opérationnel — section teintée */}
+      <section id="fonctionnement" className="lp-section lp-section-tinted">
         <div className="lp-section-inner">
-          <div className="lp-section-kicker">Fonctionnement</div>
-          <h2 className="lp-section-title">Le déroulé d’un vol</h2>
+          <h2 className="lp-section-title">Un vol, quatre étapes</h2>
           <div className="lp-steps">
             {STEPS.map((st) => (
               <div key={st.n} className="lp-step">
@@ -131,6 +124,20 @@ export default function Landing() {
                 <div className="lp-step-desc">{st.desc}</div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Bandeau vert vif — appel à l'action inversé */}
+      <section className="lp-section">
+        <div className="lp-section-inner">
+          <div className="lp-band">
+            <h2 className="lp-band-title">Prenez la main sur vos vols du jour.</h2>
+            <p className="lp-band-text">
+              Connectez-vous à l’espace superviseur : chaque passager, chaque bagage
+              et chaque alerte de fraude vous attend au même endroit.
+            </p>
+            <Link href="/login" className="lp-band-btn">Connexion</Link>
           </div>
         </div>
       </section>
@@ -149,8 +156,8 @@ export default function Landing() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.png" alt="Police Bagage" style={{ width: 28, height: 28, borderRadius: 7, objectFit: 'cover', display: 'block' }} />
-            <span style={{ color: '#cfd8e6', fontWeight: 600 }}>Police Bagage</span>
-            <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: 16 }}>·</span>
+            <span style={{ color: 'var(--content-primary)', fontWeight: 600 }}>Police Bagage</span>
+            <span style={{ color: 'var(--content-tertiary)', fontSize: 16 }}>·</span>
             <span style={s.footerAirPill}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/air.png" alt="Air Congo" style={{ height: 20, objectFit: 'contain', display: 'block' }} />
@@ -167,7 +174,7 @@ export default function Landing() {
 
 function IconScan() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 7V5a2 2 0 0 1 2-2h2" />
       <path d="M17 3h2a2 2 0 0 1 2 2v2" />
       <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
@@ -179,7 +186,7 @@ function IconScan() {
 
 function IconTag() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z" />
       <circle cx="7" cy="7" r="1.5" />
     </svg>
@@ -188,7 +195,7 @@ function IconTag() {
 
 function IconShield() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
       <path d="m9 12 2 2 4-4" />
     </svg>
@@ -197,7 +204,7 @@ function IconShield() {
 
 function IconChart() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 3v16a2 2 0 0 0 2 2h16" />
       <path d="M7 13l3-3 4 4 5-6" />
     </svg>
@@ -205,20 +212,22 @@ function IconChart() {
 }
 
 const s: Record<string, CSSProperties> = {
-  page: { minHeight: '100vh', display: 'flex', flexDirection: 'column' },
+  page: { minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-screen)' },
 
   brandBox: { display: 'flex', alignItems: 'center', gap: 10 },
   brandLogo: { width: 32, height: 32, borderRadius: 8, objectFit: 'cover' as const, display: 'block', flexShrink: 0 },
-  brandName: { fontWeight: 700, fontSize: 16, letterSpacing: -0.2, color: '#f1f5fb' },
-  topNav: { display: 'flex', alignItems: 'center', gap: 14 },
+  brandName: { fontWeight: 700, fontSize: 16, letterSpacing: -0.2, color: 'var(--content-primary)' },
+  topNav: { display: 'flex', alignItems: 'center', gap: 12 },
   hubChip: {
-    border: '1px solid rgba(255,255,255,0.15)',
-    borderRadius: 6,
-    padding: '4px 11px',
-    fontSize: 12.5,
-    fontWeight: 700,
-    color: '#9fb0cc',
-    letterSpacing: 0.3,
+    display: 'inline-flex',
+    alignItems: 'center',
+    background: 'var(--bg-neutral)',
+    borderRadius: 9999,
+    padding: '6px 14px',
+    fontSize: 13,
+    fontWeight: 600,
+    color: 'var(--content-primary)',
+    letterSpacing: 0.2,
   },
 
   /* Bande partenaires */
@@ -228,21 +237,20 @@ const s: Record<string, CSSProperties> = {
     justifyContent: 'center',
     gap: 16,
     padding: '28px 24px',
-    background: 'var(--surface)',
-    borderTop: '1px solid var(--border)',
-    borderBottom: '1px solid var(--border)',
+    background: 'var(--bg-screen)',
+    borderTop: '1px solid var(--border-neutral)',
   },
   partnerLabel: {
     fontSize: 12,
     fontWeight: 700,
     textTransform: 'uppercase' as const,
     letterSpacing: 1.5,
-    color: 'var(--muted)',
+    color: 'var(--content-secondary)',
   },
   partnerDivider: {
     width: 1,
     height: 28,
-    background: 'var(--border)',
+    background: 'var(--border-neutral)',
   },
   partnerLogo: {
     height: 38,
@@ -253,7 +261,7 @@ const s: Record<string, CSSProperties> = {
     display: 'inline-flex',
     alignItems: 'center',
     background: '#fff',
-    borderRadius: 6,
-    padding: '5px 9px',
+    borderRadius: 9999,
+    padding: '5px 12px',
   },
 };

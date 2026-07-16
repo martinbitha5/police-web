@@ -163,10 +163,10 @@ function BagagesContent() {
       {/* Cartes compteurs soute */}
       {selectedId && (
         <div style={s.counters}>
-          <CounterCard label="Soute avant" value={avantCount} color="var(--primary)" />
-          <CounterCard label="Soute arrière" value={arriereCount} color="#0891b2" />
-          <CounterCard label="Non scannés" value={nonScanneCount} color="var(--muted)" />
-          <CounterCard label="Total bagages" value={bags.length} color="var(--text)" />
+          <CounterCard label="Soute avant" value={avantCount} color="var(--brand-forest)" />
+          <CounterCard label="Soute arrière" value={arriereCount} color="var(--brand-forest)" />
+          <CounterCard label="Non scannés" value={nonScanneCount} color="var(--content-secondary)" />
+          <CounterCard label="Total bagages" value={bags.length} color="var(--content-primary)" />
         </div>
       )}
 
@@ -190,7 +190,6 @@ function BagagesContent() {
                 key={v}
                 active={souteFilter === v}
                 onClick={() => setSouteFilter(v)}
-                color={v === 'avant' ? 'var(--primary)' : v === 'arriere' ? '#22d3ee' : undefined}
               >
                 {v === 'all' ? 'Tous' : v === 'avant' ? 'Avant' : v === 'arriere' ? 'Arrière' : 'Non scannés'}
               </FilterPill>
@@ -205,7 +204,6 @@ function BagagesContent() {
                 key={v}
                 active={statusFilter === v}
                 onClick={() => setStatusFilter(v)}
-                color={v === 'rush' ? '#fbbf24' : v === 'in_hold' ? 'var(--success)' : undefined}
               >
                 {v === 'all' ? 'Tous' : v === 'in_hold' ? 'Chargé' : v === 'confirmed' ? 'Enregistré' : v === 'rush' ? 'Rush' : 'En attente'}
               </FilterPill>
@@ -285,28 +283,25 @@ function BagagesContent() {
 function FilterPill({
   children,
   active,
-  color,
   onClick,
 }: {
   children: ReactNode;
   active: boolean;
-  color?: string;
   onClick: () => void;
 }) {
-  const activeColor = color ?? 'var(--text)';
   return (
     <button
       onClick={onClick}
       style={{
-        border: `1px solid ${active ? activeColor : 'var(--glass-border)'}`,
-        borderRadius: 999,
-        padding: '4px 12px',
+        border: active ? '1px solid var(--interactive-primary)' : '1px solid var(--border-neutral)',
+        borderRadius: 9999,
+        padding: '4px 14px',
         fontSize: 12,
         fontWeight: 600,
         cursor: 'pointer',
-        background: active ? `${activeColor}18` : 'transparent',
-        color: active ? activeColor : 'var(--muted)',
-        transition: 'all 0.15s',
+        background: active ? 'var(--interactive-primary)' : 'transparent',
+        color: active ? '#FFFFFF' : 'var(--content-secondary)',
+        transition: 'all 0.15s ease-in-out',
         whiteSpace: 'nowrap' as const,
       }}
     >
@@ -319,26 +314,25 @@ function CounterCard({ label, value, color }: { label: string; value: number; co
   return (
     <div style={{ ...card, flex: 1, minWidth: 120, padding: '14px 18px' }}>
       <div style={{ fontSize: 28, fontWeight: 800, color }}>{value}</div>
-      <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 3, fontWeight: 600 }}>{label}</div>
+      <div style={{ fontSize: 13, color: 'var(--content-secondary)', marginTop: 3, fontWeight: 600 }}>{label}</div>
     </div>
   );
 }
 
 function SouteBadge({ soute }: { soute: SoutePosition | null }) {
-  if (!soute) return <span style={{ color: 'var(--muted)', fontSize: 13 }}>—</span>;
-  const color = soute === 'avant' ? 'var(--primary)' : '#22d3ee';
-  return (
-    <span style={{ ...badge, color, fontSize: 12 }}>
-      {SOUTE_LABEL[soute]}
-    </span>
+  if (!soute) return <span style={{ color: 'var(--content-secondary)', fontSize: 13 }}>—</span>;
+  return soute === 'avant' ? (
+    <span style={{ ...badge, background: 'var(--bg-neutral)', color: 'var(--brand-forest)', fontSize: 12 }}>{SOUTE_LABEL[soute]}</span>
+  ) : (
+    <span style={{ ...badge, background: 'var(--brand-blue)', color: 'var(--content-primary)', fontSize: 12 }}>{SOUTE_LABEL[soute]}</span>
   );
 }
 
 function StatusBadge({ bag }: { bag: Baggage }) {
-  if (bag.rush) return <span style={{ ...badge, color: 'var(--warning)', fontSize: 12 }}>Rush</span>;
-  if (bag.in_hold) return <span style={{ ...badge, color: 'var(--success)', fontSize: 12 }}>Chargé</span>;
-  if (bag.is_confirmed) return <span style={{ ...badge, color: 'var(--text)', fontSize: 12 }}>Enregistré</span>;
-  return <span style={{ ...badge, color: 'var(--muted)', fontSize: 12 }}>En attente</span>;
+  if (bag.rush) return <span style={{ ...badge, background: 'var(--warning-bg)', color: 'var(--warning-content)', fontSize: 12 }}>Rush</span>;
+  if (bag.in_hold) return <span style={{ ...badge, background: 'var(--positive-bg)', color: 'var(--positive)', fontSize: 12 }}>Chargé</span>;
+  if (bag.is_confirmed) return <span style={{ ...badge, background: 'var(--bg-neutral)', color: 'var(--content-primary)', fontSize: 12 }}>Enregistré</span>;
+  return <span style={{ ...badge, background: 'var(--bg-neutral)', color: 'var(--content-secondary)', fontSize: 12 }}>En attente</span>;
 }
 
 function DetailModal({ bag, flight, onClose }: { bag: BagRow; flight: Flight | null; onClose: () => void }) {
@@ -382,7 +376,7 @@ function DetailModal({ bag, flight, onClose }: { bag: BagRow; flight: Flight | n
             {bag.soute ? (
               <SouteBadge soute={bag.soute} />
             ) : (
-              <span style={{ color: 'var(--muted)' }}>Non scanné en soute</span>
+              <span style={{ color: 'var(--content-secondary)' }}>Non scanné en soute</span>
             )}
           </Row>
           {bag.soute_at && <Row label="Scanné en soute">{formatDateTime(bag.soute_at)}</Row>}
@@ -422,48 +416,46 @@ function Td({ children, mono }: { children: ReactNode; mono?: boolean }) {
 const s: Record<string, CSSProperties> = {
   page: { padding: '28px 28px 40px', display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 1100 },
   header: { display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', justifyContent: 'space-between' },
-  title: { margin: 0, fontSize: 22, fontWeight: 800 },
+  title: { margin: 0, fontSize: 22, fontWeight: 600, letterSpacing: '-0.03em', color: 'var(--content-primary)' },
   select: {
-    background: 'var(--surface)',
-    border: '1px solid var(--border-strong)',
-    borderRadius: 8,
+    background: 'var(--bg-elevated)',
+    border: '1px solid var(--border-neutral)',
+    borderRadius: 10,
     padding: '9px 13px',
-    color: 'var(--text)',
+    color: 'var(--content-primary)',
     fontSize: 14,
     fontWeight: 600,
     minWidth: 280,
-    boxShadow: 'var(--shadow-sm)',
   },
   counters: { display: 'flex', gap: 14, flexWrap: 'wrap' },
   toolbar: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 },
   searchInput: {
-    background: 'var(--surface)',
-    border: '1px solid var(--border-strong)',
-    borderRadius: 8,
+    background: 'var(--bg-elevated)',
+    border: '1px solid var(--border-neutral)',
+    borderRadius: 10,
     padding: '9px 14px',
-    color: 'var(--text)',
+    color: 'var(--content-primary)',
     fontSize: 14,
     flex: '1 1 240px',
     minWidth: 200,
-    boxShadow: 'var(--shadow-sm)',
   },
   filterGroup: { display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const },
-  filterLabel: { fontSize: 12, color: 'var(--muted)', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: 0.4, marginRight: 2 },
+  filterLabel: { fontSize: 12, color: 'var(--content-secondary)', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: 0.4, marginRight: 2 },
   resetBtn: {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 5,
     background: 'transparent',
-    border: '1px solid var(--danger)',
-    color: 'var(--danger)',
-    borderRadius: 999,
-    padding: '4px 12px',
+    border: '1px solid var(--negative)',
+    color: 'var(--negative)',
+    borderRadius: 9999,
+    padding: '4px 14px',
     fontSize: 12,
     fontWeight: 600,
     cursor: 'pointer',
     whiteSpace: 'nowrap' as const,
   },
-  resultCount: { padding: '10px 16px', fontSize: 13, color: 'var(--muted)', borderTop: '1px solid var(--glass-border)', textAlign: 'right' as const },
+  resultCount: { padding: '10px 16px', fontSize: 13, color: 'var(--content-secondary)', borderTop: '1px solid var(--border-neutral)', textAlign: 'right' as const },
   table: { width: '100%', borderCollapse: 'collapse' },
   th: {
     textAlign: 'left' as const,
@@ -472,18 +464,18 @@ const s: Record<string, CSSProperties> = {
     fontWeight: 700,
     textTransform: 'uppercase' as const,
     letterSpacing: 0.5,
-    color: 'var(--muted)',
-    borderBottom: '1px solid var(--glass-border)',
+    color: 'var(--content-secondary)',
+    borderBottom: '1px solid var(--border-neutral)',
   },
   td: {
     padding: '13px 16px',
     fontSize: 14,
-    color: 'var(--text)',
-    borderBottom: '1px solid var(--border)',
+    color: 'var(--content-primary)',
+    borderBottom: '1px solid var(--border-neutral)',
     verticalAlign: 'middle' as const,
   },
   tr: { cursor: 'pointer', transition: 'background 0.15s' },
-  empty: { padding: 32, textAlign: 'center' as const, color: 'var(--muted)' },
+  empty: { padding: 32, textAlign: 'center' as const, color: 'var(--content-secondary)' },
 
   // Modal
   overlay: { ...modalOverlay },
@@ -498,22 +490,22 @@ const s: Record<string, CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: '16px 20px',
-    borderBottom: '1px solid var(--glass-border)',
+    borderBottom: '1px solid var(--border-neutral)',
   },
   closeBtn: {
     background: 'transparent',
     border: 'none',
-    color: 'var(--muted)',
+    color: 'var(--content-secondary)',
     cursor: 'pointer',
     padding: 4,
     display: 'flex',
   },
   modalBody: { padding: 20, display: 'flex', flexDirection: 'column', gap: 12 },
   tagHero: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
-  tagNumber: { fontFamily: 'monospace', fontSize: 22, fontWeight: 800, letterSpacing: 1 },
-  divider: { height: 1, background: 'var(--glass-border)', margin: '2px 0' },
+  tagNumber: { fontFamily: 'monospace', fontSize: 22, fontWeight: 700, letterSpacing: 1, color: 'var(--content-primary)' },
+  divider: { height: 1, background: 'var(--border-neutral)', margin: '2px 0' },
   row: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
-  rowLabel: { fontSize: 13, color: 'var(--muted)', fontWeight: 600, flexShrink: 0 },
-  rowValue: { fontSize: 14, color: 'var(--text)', textAlign: 'right' as const },
+  rowLabel: { fontSize: 13, color: 'var(--content-secondary)', fontWeight: 600, flexShrink: 0 },
+  rowValue: { fontSize: 14, color: 'var(--content-primary)', textAlign: 'right' as const },
 };
 

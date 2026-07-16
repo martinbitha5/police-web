@@ -1,48 +1,92 @@
 :root {
-  /* Spatial UI — fond ambiant profond, surfaces en verre dépoli translucide */
-  --bg: #060a13;
-  --surface: rgba(255, 255, 255, 0.055);
-  --surface-alt: rgba(255, 255, 255, 0.03);
-  --border: rgba(255, 255, 255, 0.1);
-  --border-strong: rgba(255, 255, 255, 0.17);
-  --text: #eef2f9;
-  --muted: #a3adbf;
-  --faint: #778093;
+  /* ════════════════════════════════════════════════════════════
+     Tokens Wise (Neptune, thème clair) — source : docs/wise-design-spec.md
+     ════════════════════════════════════════════════════════════ */
 
-  --primary: #4f7df9;
-  --primary-hover: #6b91fa;
-  --primary-soft: rgba(79, 125, 249, 0.15);
-  --success: #4ade80;
-  --success-soft: rgba(74, 222, 128, 0.12);
-  --danger: #f87171;
-  --danger-soft: rgba(248, 113, 113, 0.12);
-  --warning: #fbbf24;
-  --warning-soft: rgba(251, 191, 36, 0.12);
+  /* Marque */
+  --brand-green: #9FE870;              /* vert vif — CTA, sections promo */
+  --brand-forest: #163300;             /* vert forêt — texte sur vert, boutons sombres, liens */
+  --brand-yellow: #FFEB69;
+  --brand-orange: #FFC091;
+  --brand-blue: #A0E1E1;
+  --brand-pink: #FFD7EF;
 
-  /* Marine profonde — héro, volet login (panneaux d'identité opaques) */
-  --side-bg: #0a1120;
-  --side-bg-2: #101b31;
-  --side-border: rgba(255, 255, 255, 0.08);
-  --side-text: #e7ebf2;
-  --side-muted: #8e99ad;
-  --side-active: rgba(255, 255, 255, 0.07);
+  /* Sémantique (light) */
+  --content-primary: #0E0F0C;          /* texte principal */
+  --content-secondary: #454745;        /* texte secondaire */
+  --content-tertiary: #6A6C6A;         /* légendes */
+  --content-link: #163300;
+  --content-link-hover: #0D1F00;
+  --bg-screen: #FFFFFF;                /* fond de page */
+  --bg-elevated: #FFFFFF;              /* cartes blanches/modales */
+  --bg-neutral: rgba(22, 51, 0, 0.08); /* cartes teintées, footer, pilules */
+  --bg-neutral-hover: rgba(22, 51, 0, 0.13);
+  --bg-neutral-active: rgba(22, 51, 0, 0.18);
+  --border-neutral: rgba(14, 15, 12, 0.12);
+  --interactive-accent: #9FE870;
+  --interactive-accent-hover: #80E142;
+  --interactive-accent-active: #65CF21;
+  --interactive-control: #163300;      /* texte du CTA vert */
+  --interactive-primary: #163300;      /* bouton sombre */
+  --interactive-primary-hover: #0D1F00;
+  --negative: #CB272F; --negative-bg: #FBEAEA;
+  --positive: #054D28; --positive-bg: #E2F6D5;
+  --warning: #FFD11A;  --warning-bg: #FFF7D7; --warning-content: #4A3B1C;
 
-  /* Verre dépoli — panneaux flottants du spatial UI. Verre TEINTÉ navy et non
-     blanc : le texte est clair, il doit rester lisible même quand le panneau
-     passe au-dessus d'une zone lumineuse du fond photo. */
-  --glass: rgba(13, 21, 40, 0.42);
-  --glass-strong: rgba(13, 21, 40, 0.58);
-  --glass-border: rgba(255, 255, 255, 0.16);
-  --glass-blur: blur(28px) saturate(160%);
+  /* Typo */
+  --font-display: var(--font-archivo), 'Inter', sans-serif;
+  --font-body: var(--font-inter), 'Inter', Helvetica, Arial, sans-serif;
+  --lh-display: 0.95;
+  --lh-title: 1.1;
+  --lh-body: 1.5;
+  --ls-heading: -0.03em;
+  --ls-body: 0.005em;
 
-  /* Modales : voile flouté + panneau presque opaque (lisibilité) */
-  --overlay: rgba(3, 7, 15, 0.55);
-  --panel: rgba(15, 23, 42, 0.92);
+  /* Radius */
+  --radius-sm: 10px; --radius-md: 16px; --radius-lg: 24px;
+  --radius-xl: 32px; --radius-full: 9999px;
 
-  --shadow-sm: 0 2px 10px rgba(2, 6, 16, 0.35);
-  --shadow-md: 0 8px 30px rgba(2, 6, 16, 0.45);
-  --shadow-lg: 0 16px 50px rgba(2, 6, 16, 0.55);
-  --shadow-xl: 0 24px 70px rgba(2, 6, 16, 0.65);
+  /* Espacement fluide */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px;
+  --space-4: clamp(1rem, 0.94rem + 0.26vw, 1.25rem);
+  --space-6: clamp(1.5rem, 1.41rem + 0.38vw, 1.875rem);
+  --space-8: clamp(2rem, 1.88rem + 0.51vw, 2.5rem);
+  --space-12: clamp(3rem, 2.83rem + 0.77vw, 3.75rem);
+  --space-16: clamp(4rem, 3.77rem + 1.03vw, 5rem);
+  --space-24: clamp(6rem, 5.65rem + 1.54vw, 7.5rem);
+
+  /* Layout */
+  --container-max: 1440px; --container-text: 700px; --nav-height: 76px;
+
+  /* Ombre — RARE : uniquement cartes survolées/étendues */
+  --shadow-card: 0 1px 10px rgba(0, 0, 0, 0.10);
+
+  /* ── Alias hérités (ancien thème sombre → équivalents clairs) ──
+     Filet de sécurité : tout style inline résiduel qui référencerait
+     encore les anciens noms retombe sur le thème clair Wise. */
+  --bg: var(--bg-screen);
+  --surface: var(--bg-elevated);
+  --surface-alt: var(--bg-neutral);
+  --border: var(--border-neutral);
+  --border-strong: rgba(14, 15, 12, 0.2);
+  --text: var(--content-primary);
+  --muted: var(--content-secondary);
+  --faint: var(--content-tertiary);
+  --primary: var(--interactive-primary);
+  --primary-hover: var(--interactive-primary-hover);
+  --primary-soft: var(--bg-neutral);
+  --success: var(--positive);
+  --success-soft: var(--positive-bg);
+  --danger: var(--negative);
+  --danger-soft: var(--negative-bg);
+  --warning-soft: var(--warning-bg);
+  --glass-border: var(--border-neutral);
+  --overlay: rgba(14, 15, 12, 0.45);
+  --panel: var(--bg-elevated);
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: var(--shadow-card);
+  --shadow-xl: var(--shadow-card);
 }
 
 * {
@@ -50,37 +94,22 @@
 }
 
 html {
-  background: var(--bg);
+  background: var(--bg-screen);
   scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
 }
 
 body {
   margin: 0;
   padding: 0;
-  color: var(--text);
-  font-family: var(--font-inter), 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
-  font-size: 14px;
-  line-height: 1.5;
+  color: var(--content-primary);
+  background: var(--bg-screen);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: var(--lh-body);
+  letter-spacing: var(--ls-body);
   min-height: 100vh;
-  /* Transparent : le fond opaque du body peindrait PAR-DESSUS la couche photo
-     en z-index -1 ci-dessous. Le html porte la couleur de secours. */
-  background: transparent;
-  -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-}
-
-/* Ambiance spatiale : la photo du tarmac, floutée et assombrie, fixe derrière
-   toute l'interface — c'est elle que les panneaux en verre dépoli floutent,
-   ce qui rend l'effet de profondeur réellement visible. */
-body::before {
-  content: '';
-  position: fixed;
-  inset: -48px; /* déborde pour masquer les bords adoucis par le blur */
-  z-index: -1;
-  background:
-    linear-gradient(160deg, rgba(6, 10, 19, 0.6), rgba(9, 15, 30, 0.44) 55%, rgba(5, 9, 18, 0.64)),
-    url('/IMG_9478.jpeg') center 60% / cover no-repeat;
-  filter: blur(32px) saturate(1.3);
 }
 
 button {
@@ -94,48 +123,50 @@ button:disabled {
 }
 
 a {
-  color: var(--primary);
+  color: var(--content-link);
   text-decoration: none;
 }
 
-/* Micro-interactions globales — tout répond au survol et au focus */
+/* Micro-interactions globales — assombrissement au survol, jamais d'élévation */
 button,
 a {
-  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease,
-    box-shadow 0.16s ease, transform 0.16s ease, opacity 0.16s ease;
+  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out,
+    color 0.15s ease-in-out, box-shadow 0.15s ease-in-out, opacity 0.15s ease-in-out;
 }
 
-button:not(:disabled):active {
-  transform: translateY(1px);
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--interactive-primary);
+  outline-offset: 2px;
 }
 
 input,
 select,
 textarea {
   font: inherit;
-  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 
 input:focus,
 select:focus,
 textarea:focus {
   outline: none;
-  border-color: var(--primary) !important;
-  box-shadow: 0 0 0 3px rgba(30, 78, 216, 0.13);
+  border-color: var(--interactive-primary) !important;
+  box-shadow: 0 0 0 3px rgba(22, 51, 0, 0.12);
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: var(--faint);
+  color: var(--content-tertiary);
 }
 
 select option {
-  background: #0d1626;
-  color: var(--text);
+  background: var(--bg-elevated);
+  color: var(--content-primary);
 }
 
 ::selection {
-  background: rgba(30, 78, 216, 0.15);
+  background: rgba(159, 232, 112, 0.45);
 }
 
 ::-webkit-scrollbar {
@@ -146,12 +177,12 @@ select option {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(14, 15, 12, 0.18);
   border-radius: 6px;
-  border: 2px solid #0a1424;
+  border: 2px solid var(--bg-screen);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.28);
+  background: rgba(14, 15, 12, 0.3);
 }
 
 /* Lignes de tableau — survol discret sur tout le back-office */
@@ -159,72 +190,111 @@ tbody tr {
   transition: background-color 0.12s ease;
 }
 tbody tr:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-neutral);
+}
+
+/* Lien de pied de page (composant Footer) */
+.ft-link {
+  color: var(--content-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+.ft-link:hover {
+  color: var(--content-link);
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
 }
 
 /* ════════════════════════════════════════════════════════════
-   Landing page (.lp-*) — héro marine + sections claires
+   Landing page (.lp-*) — thème clair Wise
    ════════════════════════════════════════════════════════════ */
 
 .lp-topbar {
   position: sticky;
   top: 0;
-  z-index: 30;
-  background: rgba(12, 19, 34, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  z-index: 1050;
+  background: var(--bg-screen);
+  border-bottom: 1px solid var(--border-neutral);
 }
 
 .lp-topbar-inner {
-  max-width: 1120px;
+  max-width: var(--container-max);
   margin: 0 auto;
-  padding: 14px 28px;
+  min-height: var(--nav-height);
+  padding: 12px 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
 }
 
-.lp-login-btn {
-  background: var(--primary);
-  color: #fff;
-  border-radius: 8px;
-  padding: 9px 20px;
-  font-weight: 600;
+@media (max-width: 640px) {
+  .lp-topbar-inner {
+    padding: 12px 16px;
+  }
+}
+
+/* Pilule neutre de nav */
+.lp-nav-pill {
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  color: var(--content-primary);
+  border-radius: var(--radius-full);
+  padding: 8px 12px;
   font-size: 14px;
+  font-weight: 600;
+}
+.lp-nav-pill:hover {
+  background: var(--bg-neutral);
+}
+
+.lp-login-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--interactive-accent);
+  color: var(--interactive-control);
+  border: none;
+  border-radius: var(--radius-full);
+  padding: 10px 24px;
+  font-weight: 600;
+  font-size: 15px;
 }
 .lp-login-btn:hover {
-  background: var(--primary-hover);
+  background: var(--interactive-accent-hover);
+}
+.lp-login-btn:active {
+  background: var(--interactive-accent-active);
 }
 
+/* Héro — 2 colonnes : texte à gauche, visuel arrondi à droite */
 .lp-hero {
-  background: linear-gradient(165deg, #0c1322 0%, #101c33 55%, #13233f 100%);
-  color: #f1f5fb;
-  overflow: hidden;
+  background: var(--bg-screen);
 }
 
-/* Héro en deux volets : texte à gauche, photo coupée en oblique à droite.
-   Un seul fond continu sur tout le bloc ; c'est l'image qui est découpée
-   (clip-path), pour n'avoir qu'une seule ligne diagonale nette. */
 .lp-hero-grid {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: var(--space-16) 32px var(--space-12);
   display: grid;
-  /* Colonne texte = marge de centrage (alignée sur le conteneur 1120px)
-     + ~560px de contenu, pour une largeur de lecture constante à toutes
-     les résolutions. La photo occupe tout le reste, jusqu'au bord. */
-  grid-template-columns: minmax(460px, calc((100vw - 1120px) / 2 + 560px)) 1fr;
-  min-height: 560px;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  align-items: center;
+  gap: var(--space-8);
 }
 
 .lp-hero-copy {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 80px 56px 64px max(28px, calc((100vw - 1120px) / 2));
 }
 
 .lp-hero-media {
   position: relative;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  min-height: 420px;
 }
 .lp-hero-media img {
   position: absolute;
@@ -233,131 +303,107 @@ tbody tr:hover {
   height: 100%;
   object-fit: cover;
   object-position: center 62%;
-  clip-path: polygon(7rem 0, 100% 0, 100% 100%, 0 100%);
-}
-/* Voile navy léger côté gauche de la photo — même découpe, même diagonale. */
-.lp-hero-media::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  clip-path: polygon(7rem 0, 100% 0, 100% 100%, 0 100%);
-  background: linear-gradient(90deg, rgba(12, 19, 34, 0.5), rgba(12, 19, 34, 0) 45%);
 }
 
 @media (max-width: 940px) {
   .lp-hero-grid {
     grid-template-columns: 1fr;
-    min-height: 0;
-  }
-  .lp-hero-copy {
-    padding: 60px 28px 48px;
+    padding: var(--space-8) 16px var(--space-8);
   }
   .lp-hero-media {
-    height: 280px;
+    min-height: 240px;
   }
-  .lp-hero-media img,
-  .lp-hero-media::after {
-    clip-path: polygon(0 3.5rem, 100% 0, 100% 100%, 0 100%);
-  }
-}
-
-.lp-kicker {
-  font-size: 12.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1.6px;
-  color: #7da2f5;
-  margin-bottom: 20px;
 }
 
 .lp-title {
   margin: 0;
-  font-size: clamp(30px, 3.6vw, 44px);
-  line-height: 1.14;
-  font-weight: 800;
-  letter-spacing: -1.1px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.625rem, 5vw + 1rem, 5rem);
+  line-height: var(--lh-display);
+  letter-spacing: 0;
+  color: var(--content-primary);
   max-width: 640px;
 }
 
-.lp-title em {
-  font-style: normal;
-  color: #8ab0ff;
-}
-
 .lp-tagline {
-  margin: 24px 0 0;
-  max-width: 620px;
-  color: #aab8d0;
-  font-size: 17px;
-  line-height: 1.7;
+  margin: var(--space-6) 0 0;
+  max-width: 560px;
+  color: var(--content-secondary);
+  font-size: 18px;
+  line-height: var(--lh-body);
 }
 
 .lp-actions {
-  margin-top: 38px;
+  margin-top: var(--space-8);
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 24px;
   flex-wrap: wrap;
 }
 
+/* Bouton primaire — pilule verte */
 .lp-cta {
-  background: var(--primary);
-  color: #fff;
-  border-radius: 9px;
-  padding: 14px 30px;
-  font-weight: 700;
-  font-size: 15.5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 200px;
+  background: var(--interactive-accent);
+  color: var(--interactive-control);
+  border-radius: var(--radius-full);
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 16px;
 }
 .lp-cta:hover {
-  background: var(--primary-hover);
+  background: var(--interactive-accent-hover);
+}
+.lp-cta:active {
+  background: var(--interactive-accent-active);
 }
 
-.lp-cta-ghost {
-  color: #c4d2ea;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 9px;
-  padding: 13px 26px;
+/* Bouton tertiaire — lien souligné */
+.lp-cta-link {
+  color: var(--content-link);
   font-weight: 600;
-  font-size: 15px;
+  font-size: 16px;
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
 }
-.lp-cta-ghost:hover {
-  border-color: rgba(255, 255, 255, 0.4);
-  color: #fff;
-  background: rgba(255, 255, 255, 0.05);
+.lp-cta-link:hover {
+  color: var(--content-link-hover);
 }
 
-/* Bande de repères sous le texte du héro — filets fins, pas de cartes. */
+/* Repères chiffrés sous le héro — filets fins */
 .lp-stats {
-  margin-top: 44px;
-  padding-top: 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  margin-top: var(--space-8);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--border-neutral);
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 22px;
 }
 
 .lp-stat + .lp-stat {
-  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  border-left: 1px solid var(--border-neutral);
   padding-left: 22px;
 }
 
 .lp-stat-value {
   font-size: 20px;
-  font-weight: 800;
-  letter-spacing: -0.4px;
-  color: #fff;
+  font-weight: 700;
+  letter-spacing: var(--ls-heading);
+  color: var(--content-primary);
 }
 
 .lp-stat-label {
-  color: #8e9db8;
-  font-size: 12.5px;
+  color: var(--content-secondary);
+  font-size: 13px;
   line-height: 1.5;
   margin-top: 4px;
-  max-width: 170px;
+  max-width: 180px;
 }
 
-/* Sur petit écran, une stat par ligne, sans filets verticaux.
-   (Après les règles de base pour les surcharger à même spécificité.) */
 @media (max-width: 940px) {
   .lp-stats {
     grid-template-columns: 1fr;
@@ -373,31 +419,37 @@ tbody tr:hover {
 }
 
 .lp-section {
-  padding: 72px 0;
+  padding: var(--space-16) 0;
+}
+
+.lp-section-tinted {
+  background: var(--bg-neutral);
 }
 
 .lp-section-inner {
-  max-width: 1120px;
+  max-width: var(--container-max);
   margin: 0 auto;
-  padding: 0 28px;
+  padding: 0 32px;
 }
 
-.lp-section-kicker {
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1.4px;
-  color: var(--primary);
-  margin-bottom: 10px;
+@media (max-width: 640px) {
+  .lp-section-inner {
+    padding: 0 16px;
+  }
 }
 
 .lp-section-title {
-  margin: 0 0 36px;
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: -0.7px;
+  margin: 0 0 var(--space-8);
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2rem, 3vw + 1rem, 2.875rem);
+  line-height: var(--lh-display);
+  letter-spacing: 0;
+  color: var(--content-primary);
+  max-width: 700px;
 }
 
+/* Tuiles de capacités — cartes teintées plates, sans ombre ni bordure */
 .lp-cap-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -405,49 +457,50 @@ tbody tr:hover {
 }
 
 .lp-cap {
-  background: var(--glass);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  border-radius: 16px;
-  padding: 26px 24px;
-  box-shadow: var(--shadow-sm);
-  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+  background: var(--bg-neutral);
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: 32px 24px;
+  box-shadow: none;
+  transition: background-color 0.15s ease-in-out;
 }
 .lp-cap:hover {
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-md);
+  background: var(--bg-neutral-hover);
 }
 
+/* Icône en cercle 72px */
 .lp-cap-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
-  background: var(--surface-alt);
-  border: 1px solid var(--border);
-  color: var(--primary);
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-full);
+  background: var(--bg-elevated);
+  box-shadow: inset 0 0 0 1px var(--border-neutral);
+  color: var(--brand-forest);
   display: grid;
   place-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .lp-cap-title {
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: var(--ls-heading);
+  line-height: var(--lh-title);
+  color: var(--content-primary);
   margin-bottom: 8px;
 }
 
 .lp-cap-desc {
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.65;
+  color: var(--content-secondary);
+  font-size: 15px;
+  line-height: 1.6;
 }
 
+/* Déroulé — frise fine, points vert forêt */
 .lp-steps {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 0;
-  counter-reset: step;
 }
 
 .lp-step {
@@ -461,7 +514,7 @@ tbody tr:hover {
   left: 0;
   right: 24px;
   height: 1px;
-  background: var(--border-strong);
+  background: var(--border-neutral);
 }
 .lp-step::after {
   content: '';
@@ -471,55 +524,102 @@ tbody tr:hover {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--primary);
+  background: var(--brand-forest);
 }
 
 .lp-step-num {
   font-size: 12.5px;
-  font-weight: 800;
-  color: var(--primary);
+  font-weight: 700;
+  color: var(--brand-forest);
   letter-spacing: 1.5px;
 }
 
 .lp-step-title {
-  font-size: 16.5px;
-  font-weight: 700;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: var(--ls-heading);
+  color: var(--content-primary);
   margin: 8px 0 8px;
 }
 
 .lp-step-desc {
-  color: var(--muted);
-  font-size: 13.5px;
-  line-height: 1.65;
+  color: var(--content-secondary);
+  font-size: 14px;
+  line-height: 1.6;
 }
 
+/* Bandeau vert vif — texte et bouton inversés */
+.lp-band {
+  background: var(--brand-green);
+  border-radius: 40px;
+  padding: var(--space-16) var(--space-8);
+  text-align: center;
+  color: var(--brand-forest);
+}
+
+.lp-band-title {
+  margin: 0 auto;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2rem, 3vw + 1rem, 2.875rem);
+  line-height: var(--lh-display);
+  color: var(--brand-forest);
+  max-width: 700px;
+}
+
+.lp-band-text {
+  margin: var(--space-4) auto 0;
+  max-width: 560px;
+  font-size: 17px;
+  line-height: var(--lh-body);
+  color: var(--brand-forest);
+}
+
+.lp-band-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 200px;
+  margin-top: var(--space-6);
+  background: var(--brand-forest);
+  color: var(--brand-green);
+  border-radius: var(--radius-full);
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 16px;
+}
+.lp-band-btn:hover {
+  background: var(--interactive-primary-hover);
+}
+
+/* Pied de page — clair */
 .lp-footer {
-  background: var(--side-bg);
-  color: var(--side-muted);
+  background: var(--bg-neutral);
+  color: var(--content-secondary);
 }
 
 .lp-footer-inner {
-  max-width: 1120px;
+  max-width: var(--container-max);
   margin: 0 auto;
-  padding: 26px 28px;
+  padding: 40px 32px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 500;
 }
 
 /* ════════════════════════════════════════════════════════════
-   Login (.lg-*)
+   Login (.lg-*) — panneau vert vif + carte blanche
    ════════════════════════════════════════════════════════════ */
 
 .lg-side {
   position: relative;
   width: min(440px, 38vw);
-  background: linear-gradient(170deg, #0c1322, #13233f);
-  color: var(--side-text);
+  background: var(--brand-green);
+  color: var(--brand-forest);
   display: flex;
   flex-direction: column;
   padding: 30px 36px;
@@ -535,30 +635,29 @@ tbody tr:hover {
 .lg-card {
   width: 400px;
   max-width: 100%;
-  background: var(--glass);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  border-radius: 18px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-neutral);
+  border-radius: var(--radius-lg);
   padding: 36px 32px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  box-shadow: var(--shadow-lg);
+  box-shadow: none;
 }
 
 .lg-btn {
-  background: var(--primary);
-  color: #fff;
+  background: var(--interactive-accent);
+  color: var(--interactive-control);
   border: none;
-  border-radius: 8px;
-  padding: 12px;
-  font-weight: 700;
-  font-size: 15px;
+  border-radius: var(--radius-full);
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 16px;
   margin-top: 4px;
-  box-shadow: 0 4px 14px rgba(30, 78, 216, 0.3);
 }
 .lg-btn:hover:not(:disabled) {
-  background: var(--primary-hover);
-  box-shadow: 0 6px 18px rgba(30, 78, 216, 0.4);
+  background: var(--interactive-accent-hover);
+}
+.lg-btn:active:not(:disabled) {
+  background: var(--interactive-accent-active);
 }

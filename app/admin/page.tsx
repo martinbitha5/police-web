@@ -132,7 +132,7 @@ function AccountManager() {
             ) : null}
 
             {message ? (
-              <p style={{ ...s.msg, color: message.ok ? 'var(--success)' : 'var(--danger)' }}>{message.text}</p>
+              <p style={{ ...s.msg, color: message.ok ? 'var(--positive)' : 'var(--negative)' }}>{message.text}</p>
             ) : null}
 
             <button style={{ ...btnPrimary, justifyContent: 'center', opacity: busy ? 0.7 : 1 }} disabled={busy} type="submit">
@@ -175,7 +175,7 @@ function Field({ label: text, children }: { label: string; children: React.React
 }
 
 function UserRow({ user }: { user: Profile }) {
-  const color = ROLE_COLOR[user.role] ?? 'var(--muted)';
+  const color = ROLE_COLOR[user.role] ?? 'var(--content-secondary)';
   const created = user.created_at
     ? new Date(user.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
     : '—';
@@ -192,7 +192,7 @@ function UserRow({ user }: { user: Profile }) {
           Créé le {created}
         </div>
       </div>
-      <span style={{ ...badge, color, borderColor: color }}>{ROLE_LABEL[user.role] ?? user.role}</span>
+      <span style={{ ...badge, color }}>{ROLE_LABEL[user.role] ?? user.role}</span>
     </div>
   );
 }
@@ -200,8 +200,8 @@ function UserRow({ user }: { user: Profile }) {
 const s: Record<string, CSSProperties> = {
   page: { padding: '28px 32px', maxWidth: 1100, margin: '0 auto' },
   head: { marginBottom: 22 },
-  title: { fontSize: 24, fontWeight: 800, letterSpacing: -0.4, margin: 0 },
-  subtitle: { color: 'var(--muted)', fontSize: 14, margin: '6px 0 0' },
+  title: { fontSize: 24, fontWeight: 600, letterSpacing: '-0.03em', margin: 0, color: 'var(--content-primary)' },
+  subtitle: { color: 'var(--content-secondary)', fontSize: 14, margin: '6px 0 0' },
 
   grid: { display: 'grid', gridTemplateColumns: 'minmax(300px, 360px) 1fr', gap: 20, alignItems: 'start' },
   formCard: { ...card },
@@ -214,16 +214,16 @@ const s: Record<string, CSSProperties> = {
   count: {
     minWidth: 26,
     height: 22,
-    padding: '0 8px',
-    borderRadius: 999,
-    background: 'rgba(37,99,235,0.16)',
-    color: 'var(--text)',
+    padding: '0 10px',
+    borderRadius: 9999,
+    background: 'var(--bg-neutral)',
+    color: 'var(--content-primary)',
     fontSize: 13,
     fontWeight: 700,
     display: 'grid',
     placeItems: 'center',
   },
-  empty: { color: 'var(--muted)', fontSize: 14, padding: '24px 0', textAlign: 'center' },
+  empty: { color: 'var(--content-secondary)', fontSize: 14, padding: '24px 0', textAlign: 'center' },
 
   userList: { display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 },
   userRow: {
@@ -231,9 +231,9 @@ const s: Record<string, CSSProperties> = {
     alignItems: 'center',
     gap: 12,
     padding: '12px 14px',
-    borderRadius: 10,
-    border: '1px solid var(--border)',
-    background: 'var(--surface)',
+    borderRadius: 12,
+    border: '1px solid var(--border-neutral)',
+    background: 'var(--bg-elevated)',
   },
   userAvatar: {
     width: 38,
@@ -245,6 +245,6 @@ const s: Record<string, CSSProperties> = {
     flexShrink: 0,
   },
   userMain: { flex: 1, minWidth: 0 },
-  userName: { fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-  userMeta: { color: 'var(--muted)', fontSize: 12, marginTop: 2 },
+  userName: { fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--content-primary)' },
+  userMeta: { color: 'var(--content-secondary)', fontSize: 12, marginTop: 2 },
 };

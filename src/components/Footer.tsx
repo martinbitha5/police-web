@@ -22,11 +22,11 @@ export function Footer() {
 
         {/* Liens partenaires */}
         <div style={s.links}>
-          <a href="https://fih-rva.com" target="_blank" rel="noopener noreferrer" style={s.link}>
+          <a href="https://fih-rva.com" target="_blank" rel="noopener noreferrer" className="ft-link">
             Aéroport International de Kinshasa
           </a>
           <span style={s.sep}>·</span>
-          <a href="https://www.ats-handling-rdc.com/" target="_blank" rel="noopener noreferrer" style={s.link}>
+          <a href="https://www.ats-handling-rdc.com/" target="_blank" rel="noopener noreferrer" className="ft-link">
             ATS Handling RDC
           </a>
         </div>
@@ -40,9 +40,8 @@ export function Footer() {
 
 const s: Record<string, CSSProperties> = {
   footer: {
-    borderTop: '1px solid var(--border)',
-    background: 'var(--surface)',
-    padding: '14px 28px',
+    background: 'var(--bg-neutral)',
+    padding: '20px 28px',
   },
   inner: {
     display: 'flex',
@@ -58,10 +57,10 @@ const s: Record<string, CSSProperties> = {
     gap: 10,
   },
   brandName: {
-    fontWeight: 700,
-    fontSize: 13,
-    color: 'var(--text)',
-    letterSpacing: -0.2,
+    fontWeight: 600,
+    fontSize: 14,
+    color: 'var(--content-primary)',
+    letterSpacing: '-0.03em',
   },
   links: {
     display: 'flex',
@@ -69,21 +68,14 @@ const s: Record<string, CSSProperties> = {
     gap: 10,
     flex: 1,
   },
-  link: {
-    color: 'var(--muted)',
-    fontSize: 13,
-    fontWeight: 500,
-    textDecoration: 'none',
-    transition: 'color 0.15s',
-  },
   sep: {
-    color: 'var(--border-strong)',
+    color: 'var(--content-tertiary)',
     fontSize: 13,
     userSelect: 'none',
   },
   copy: {
-    color: 'var(--muted)',
-    fontSize: 12,
+    color: 'var(--content-secondary)',
+    fontSize: 13,
     marginLeft: 'auto',
     whiteSpace: 'nowrap',
   },
@@ -93,14 +85,14 @@ const s: Record<string, CSSProperties> = {
     alignItems: 'center',
     gap: 8,
     paddingLeft: 20,
-    borderLeft: '1px solid var(--border)',
+    borderLeft: '1px solid var(--border-neutral)',
   },
   partnerLabel: {
     fontSize: 11,
     fontWeight: 700,
     textTransform: 'uppercase' as const,
     letterSpacing: 1.2,
-    color: 'var(--muted)',
+    color: 'var(--content-tertiary)',
     paddingRight: 4,
   },
   partnerLogo: {

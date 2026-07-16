@@ -36,17 +36,16 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
 
 const wrap: React.CSSProperties = { minHeight: '60vh', display: 'grid', placeItems: 'center', padding: 24 };
 const card: React.CSSProperties = {
-  background: 'var(--surface, #ffffff)',
-  border: '1px solid var(--border, #e3e6ea)',
-  borderRadius: 12,
+  background: 'var(--bg-elevated, #ffffff)',
+  border: '1px solid var(--border-neutral, rgba(14,15,12,0.12))',
+  borderRadius: 16,
   padding: 28,
   maxWidth: 420,
   textAlign: 'center',
-  color: 'var(--text, #15181d)',
-  boxShadow: 'var(--shadow-md, 0 4px 12px rgba(16,24,40,0.08))',
+  color: 'var(--content-primary, #0E0F0C)',
 };
-const title: React.CSSProperties = { margin: '0 0 8px', fontSize: 20, fontWeight: 800 };
-const text: React.CSSProperties = { margin: '0 0 18px', color: 'var(--muted, #5c6470)', fontSize: 14, lineHeight: 1.5 };
+const title: React.CSSProperties = { margin: '0 0 8px', fontSize: 20, fontWeight: 600, letterSpacing: '-0.03em' };
+const text: React.CSSProperties = { margin: '0 0 18px', color: 'var(--content-secondary, #454745)', fontSize: 14, lineHeight: 1.5 };
 const row: React.CSSProperties = { display: 'flex', gap: 10, justifyContent: 'center' };
-const btnPrimary: React.CSSProperties = { background: 'var(--primary, #1e4ed8)', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 18px', fontWeight: 700, cursor: 'pointer' };
-const btnGhost: React.CSSProperties = { background: 'var(--surface, #fff)', color: 'var(--text, #15181d)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--border-strong, #d3d8de)', borderRadius: 8, padding: '10px 18px', fontWeight: 700, cursor: 'pointer' };
+const btnPrimary: React.CSSProperties = { background: 'var(--interactive-accent, #9FE870)', color: 'var(--interactive-control, #163300)', border: 'none', borderRadius: 9999, padding: '10px 22px', fontWeight: 600, cursor: 'pointer' };
+const btnGhost: React.CSSProperties = { background: 'transparent', color: 'var(--interactive-primary, #163300)', borderWidth: 1, borderStyle: 'solid', borderColor: 'var(--interactive-primary, #163300)', borderRadius: 9999, padding: '10px 22px', fontWeight: 600, cursor: 'pointer' };

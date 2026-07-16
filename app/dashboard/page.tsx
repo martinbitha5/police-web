@@ -27,11 +27,12 @@ const STATUS_LABEL: Record<Flight['status'], string> = {
   closed: 'Porte fermée',
   cancelled: 'Annulé',
 };
-const STATUS_COLOR: Record<Flight['status'], string> = {
-  scheduled: 'var(--muted)',
-  boarding: 'var(--success)',
-  closed: 'var(--danger)',
-  cancelled: '#f59e0b',
+// Pastilles de statut — pilules sémantiques Wise (fond + texte).
+const STATUS_STYLE: Record<Flight['status'], { bg: string; color: string }> = {
+  scheduled: { bg: 'var(--bg-neutral)', color: 'var(--content-secondary)' },
+  boarding: { bg: 'var(--positive-bg)', color: 'var(--positive)' },
+  closed: { bg: 'var(--negative-bg)', color: 'var(--negative)' },
+  cancelled: { bg: 'var(--warning-bg)', color: 'var(--warning-content)' },
 };
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -182,14 +183,13 @@ function Overview({
       </div>
 
       <div style={isMobile ? { ...s.statGrid, gridTemplateColumns: 'repeat(2, 1fr)' } : s.statGrid}>
-        <Stat label="Vols du jour" value={String(flights.length)} icon={<IconPlane size={20} />} tint="#2563eb" />
-        <Stat label="Départs" value={String(departures.length)} icon={<IconPlaneDepart size={20} />} tint="#0ea5e9" />
-        <Stat label="Arrivées" value={String(arrivals.length)} icon={<IconPlaneArrive size={20} />} tint="#14b8a6" />
+        <Stat label="Vols du jour" value={String(flights.length)} icon={<IconPlane size={20} />} />
+        <Stat label="Départs" value={String(departures.length)} icon={<IconPlaneDepart size={20} />} />
+        <Stat label="Arrivées" value={String(arrivals.length)} icon={<IconPlaneArrive size={20} />} />
         <Stat
           label="Bagages écartés"
           value={String(totalAlerts)}
           icon={<IconAlert size={20} />}
-          tint="#dc2626"
           danger={totalAlerts > 0}
         />
       </div>
@@ -206,7 +206,7 @@ function Overview({
               return (
                 <button key={a.id} style={s.alertBannerItem} onClick={() => onSelect(a.flight_id)}>
                   <span style={{ fontWeight: 600 }}>{a.passenger_name ?? 'Passager inconnu'}</span>
-                  <span style={{ color: 'var(--muted)' }}>{a.reason}</span>
+                  <span style={{ color: 'var(--content-secondary)' }}>{a.reason}</span>
                   <span style={s.alertBannerFlight}>{fl?.flight_number ?? '—'}</span>
                 </button>
               );
@@ -219,7 +219,7 @@ function Overview({
         <div style={s.emptyCard}>
           <IconPlane size={34} />
           <div style={{ fontWeight: 600, marginTop: 10 }}>Aucun vol programmé aujourd&apos;hui</div>
-          <div style={{ color: 'var(--muted)', marginTop: 4 }}>
+          <div style={{ color: 'var(--content-secondary)', marginTop: 4 }}>
             {canManage ? 'Crée un premier vol pour commencer le suivi.' : 'Aucun vol à afficher pour le moment.'}
           </div>
           {canManage ? (
@@ -280,7 +280,7 @@ function FlightCard({ hub, flight, alertCount, onSelect }: { hub: string; flight
       </div>
       <div style={s.flightCardRoute}>{formatRoute(flight)}</div>
       <div style={s.flightCardFoot}>
-        <span style={{ color: 'var(--muted)', fontSize: 13 }}>
+        <span style={{ color: 'var(--content-secondary)', fontSize: 13 }}>
           {flight.origin === hub ? `Départ ${formatTime(flight.departure_time)}` : `Arrivée ${formatTime(flight.arrival_time)}`}
         </span>
         {alertCount > 0 ? (
@@ -352,12 +352,12 @@ function FlightDetail({
       </div>
 
       <div style={isMobile ? { ...s.statGrid, gridTemplateColumns: 'repeat(2, 1fr)' } : s.statGrid}>
-        <Stat label="Passagers" value={String(passengers.length)} icon={<IconUser size={20} />} tint="#2563eb" />
-        <Stat label="Embarqués" value={`${boardedCount} / ${passengers.length}`} icon={<IconPlaneDepart size={20} />} tint="#22c55e" />
-        <Stat label="Bagages confirmés" value={`${baggageConfirmed} / ${baggageDeclared}`} icon={<IconBag size={20} />} tint="#14b8a6" />
-        <Stat label="Chargés en soute" value={`${baggageInHold} / ${baggageConfirmed}`} icon={<IconBag size={20} />} tint="#0ea5e9" />
-        <Stat label="Rush (réacheminés)" value={String(baggageRush)} icon={<IconBag size={20} />} tint="#d97706" danger={baggageRush > 0} />
-        <Stat label="Bagages écartés" value={String(alerts.length)} icon={<IconAlert size={20} />} tint="#dc2626" danger={alerts.length > 0} />
+        <Stat label="Passagers" value={String(passengers.length)} icon={<IconUser size={20} />} />
+        <Stat label="Embarqués" value={`${boardedCount} / ${passengers.length}`} icon={<IconPlaneDepart size={20} />} />
+        <Stat label="Bagages confirmés" value={`${baggageConfirmed} / ${baggageDeclared}`} icon={<IconBag size={20} />} />
+        <Stat label="Chargés en soute" value={`${baggageInHold} / ${baggageConfirmed}`} icon={<IconBag size={20} />} />
+        <Stat label="Rush (réacheminés)" value={String(baggageRush)} icon={<IconBag size={20} />} danger={baggageRush > 0} />
+        <Stat label="Bagages écartés" value={String(alerts.length)} icon={<IconAlert size={20} />} danger={alerts.length > 0} />
       </div>
 
       {alerts.length > 0 ? <FraudAlerts alerts={alerts} /> : null}
@@ -408,17 +408,17 @@ function FlightDetail({
 
 function PassengerCardMobile({ p, fallbackRoute }: { p: PassengerRow; fallbackRoute: string }) {
   const complete = p.declared_baggage_count > 0 && p.confirmedCount >= p.declared_baggage_count;
-  const bagColor = p.declared_baggage_count === 0 ? 'var(--muted)' : complete ? 'var(--success)' : 'var(--warning)';
+  const bagColor = p.declared_baggage_count === 0 ? 'var(--content-secondary)' : complete ? 'var(--positive)' : 'var(--warning-content)';
   return (
     <div style={s.paxCard}>
       <div style={s.paxCardHead}>
         <span style={s.paxCardName}>{p.full_name}</span>
         {p.boarded ? (
-          <span style={{ ...badge, color: 'var(--success)' }}>
-            <span style={{ ...s.statusDot, background: 'var(--success)' }} /> Embarqué
+          <span style={{ ...badge, background: 'var(--positive-bg)', color: 'var(--positive)' }}>
+            <span style={{ ...s.statusDot, background: 'currentColor' }} /> Embarqué
           </span>
         ) : (
-          <span style={{ ...badge, color: 'var(--muted)' }}>En attente</span>
+          <span style={{ ...badge, color: 'var(--content-secondary)' }}>En attente</span>
         )}
       </div>
       <div style={s.paxCardRoute}>{p.route ?? fallbackRoute}</div>
@@ -443,7 +443,7 @@ function PaxMeta({ label, value, color }: { label: string; value: string; color?
 
 function PassengerRowView({ p, fallbackRoute }: { p: PassengerRow; fallbackRoute: string }) {
   const complete = p.declared_baggage_count > 0 && p.confirmedCount >= p.declared_baggage_count;
-  const color = p.declared_baggage_count === 0 ? 'var(--muted)' : complete ? 'var(--success)' : 'var(--warning)';
+  const color = p.declared_baggage_count === 0 ? 'var(--content-secondary)' : complete ? 'var(--positive)' : 'var(--warning-content)';
   return (
     <tr>
       <td style={s.td}>{p.full_name}</td>
@@ -456,12 +456,12 @@ function PassengerRowView({ p, fallbackRoute }: { p: PassengerRow; fallbackRoute
       </td>
       <td style={s.td}>
         {p.boarded ? (
-          <span style={{ ...badge, color: 'var(--success)' }}>
-            <span style={{ ...s.statusDot, background: 'var(--success)' }} />
+          <span style={{ ...badge, background: 'var(--positive-bg)', color: 'var(--positive)' }}>
+            <span style={{ ...s.statusDot, background: 'currentColor' }} />
             Embarqué
           </span>
         ) : (
-          <span style={{ color: 'var(--muted)' }}>En attente</span>
+          <span style={{ color: 'var(--content-secondary)' }}>En attente</span>
         )}
       </td>
     </tr>
@@ -478,7 +478,7 @@ function FraudAlerts({ alerts }: { alerts: FraudAlert[] }) {
           </span>
           <div style={{ flex: 1 }}>
             <strong>{a.passenger_name ?? 'Passager inconnu'}</strong> · PNR {a.pnr ?? '—'} · Tag {a.tag_number ?? '—'}
-            <div style={{ color: 'var(--muted)' }}>
+            <div style={{ color: 'var(--content-secondary)' }}>
               {a.reason} {a.gate ? `· ${a.gate}` : ''} · {new Date(a.created_at).toLocaleString('fr-FR')}
             </div>
           </div>
@@ -489,21 +489,22 @@ function FraudAlerts({ alerts }: { alerts: FraudAlert[] }) {
 }
 
 function StatusBadge({ status }: { status: Flight['status'] }) {
+  const st = STATUS_STYLE[status];
   return (
-    <span style={{ ...badge, color: STATUS_COLOR[status] }}>
-      <span style={{ ...s.statusDot, background: STATUS_COLOR[status] }} />
+    <span style={{ ...badge, background: st.bg, color: st.color }}>
+      <span style={{ ...s.statusDot, background: 'currentColor' }} />
       {STATUS_LABEL[status]}
     </span>
   );
 }
 
-function Stat({ label, value, icon, tint, danger }: { label: string; value: string; icon: React.ReactNode; tint: string; danger?: boolean }) {
+function Stat({ label, value, icon, danger }: { label: string; value: string; icon: React.ReactNode; danger?: boolean }) {
   return (
     <div style={s.stat}>
-      <div style={{ ...s.statIcon, background: `${tint}22`, color: tint }}>{icon}</div>
+      <div style={s.statIcon}>{icon}</div>
       <div>
         <div style={s.statLabel}>{label}</div>
-        <div style={{ fontSize: 26, fontWeight: 800, color: danger ? 'var(--danger)' : 'var(--text)', lineHeight: 1.1 }}>{value}</div>
+        <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.03em', color: danger ? 'var(--negative)' : 'var(--content-primary)', lineHeight: 1.1 }}>{value}</div>
       </div>
     </div>
   );
@@ -616,7 +617,7 @@ function FlightFormModal({ hub, onClose, onCreated }: { hub: string; onClose: ()
           <div style={s.routePreview}>
             {routePreview.map((code, i) => (
               <span key={i}>
-                {i > 0 ? <span style={{ color: 'var(--muted)' }}> → </span> : null}
+                {i > 0 ? <span style={{ color: 'var(--content-secondary)' }}> → </span> : null}
                 <strong>{code}</strong>
               </span>
             ))}
@@ -644,7 +645,7 @@ function FlightFormModal({ hub, onClose, onCreated }: { hub: string; onClose: ()
           </select>
         </div>
 
-        {error ? <p style={{ color: 'var(--danger)', margin: 0 }}>{error}</p> : null}
+        {error ? <p style={{ color: 'var(--negative)', margin: 0 }}>{error}</p> : null}
 
         <div style={s.modalActions}>
           <button type="button" style={btnGhost} onClick={onClose}>
@@ -665,16 +666,26 @@ const s: Record<string, CSSProperties> = {
 
   pageHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, gap: 16, flexWrap: 'wrap' },
   pageHeaderMobile: { flexDirection: 'column', gap: 12, marginBottom: 16 },
-  pageTitle: { margin: 0, fontSize: 26, fontWeight: 800, letterSpacing: -0.5 },
-  pageSub: { color: 'var(--muted)', fontSize: 14, marginTop: 4 },
+  pageTitle: { margin: 0, fontSize: 26, fontWeight: 600, letterSpacing: '-0.03em', color: 'var(--content-primary)' },
+  pageSub: { color: 'var(--content-secondary)', fontSize: 14, marginTop: 4 },
 
   statGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 14, marginBottom: 24 },
   stat: { ...card, display: 'flex', alignItems: 'center', gap: 14, padding: 18 },
-  statIcon: { width: 44, height: 44, borderRadius: 12, display: 'grid', placeItems: 'center', flexShrink: 0 },
-  statLabel: { color: 'var(--muted)', fontSize: 13, marginBottom: 4 },
+  statIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 9999,
+    background: 'var(--bg-neutral)',
+    boxShadow: 'inset 0 0 0 1px var(--border-neutral)',
+    color: 'var(--brand-forest)',
+    display: 'grid',
+    placeItems: 'center',
+    flexShrink: 0,
+  },
+  statLabel: { color: 'var(--content-secondary)', fontSize: 13, marginBottom: 4 },
 
-  alertBanner: { ...card, borderColor: 'rgba(248,113,113,0.35)', background: 'var(--danger-soft)', marginBottom: 24, padding: 18 },
-  alertBannerHead: { display: 'flex', alignItems: 'center', gap: 8, color: 'var(--danger)', marginBottom: 12 },
+  alertBanner: { background: 'var(--negative-bg)', border: 'none', borderRadius: 16, marginBottom: 24, padding: 18 },
+  alertBannerHead: { display: 'flex', alignItems: 'center', gap: 8, color: 'var(--negative)', marginBottom: 12 },
   alertBannerList: { display: 'flex', flexDirection: 'column', gap: 6 },
   alertBannerItem: {
     display: 'flex',
@@ -682,17 +693,17 @@ const s: Record<string, CSSProperties> = {
     gap: 12,
     width: '100%',
     textAlign: 'left',
-    background: 'var(--surface)',
-    border: '1px solid var(--border)',
-    borderRadius: 8,
-    padding: '9px 12px',
-    color: 'var(--text)',
+    background: 'var(--bg-elevated)',
+    border: '1px solid var(--border-neutral)',
+    borderRadius: 12,
+    padding: '9px 14px',
+    color: 'var(--content-primary)',
     fontSize: 14,
   },
   alertBannerFlight: { marginLeft: 'auto', fontWeight: 700, fontSize: 13 },
 
-  countPill: { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6, padding: '1px 9px', fontSize: 12, fontWeight: 700, color: 'var(--muted)' },
-  sectionEmpty: { color: 'var(--faint)', fontSize: 14, fontStyle: 'italic', marginBottom: 18 },
+  countPill: { background: 'var(--bg-neutral)', border: 'none', borderRadius: 9999, padding: '1px 10px', fontSize: 12, fontWeight: 700, color: 'var(--content-secondary)' },
+  sectionEmpty: { color: 'var(--content-tertiary)', fontSize: 14, fontStyle: 'italic', marginBottom: 18 },
 
   cardGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14, marginBottom: 20 },
   flightCard: {
@@ -704,59 +715,59 @@ const s: Record<string, CSSProperties> = {
     cursor: 'pointer',
   },
   flightCardTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  flightCardNumber: { fontWeight: 800, fontSize: 18 },
+  flightCardNumber: { fontWeight: 700, fontSize: 18, letterSpacing: '-0.03em' },
   flightCardRoute: { fontSize: 15 },
   flightCardFoot: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 },
-  alertPill: { display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--danger)', color: '#fff', borderRadius: 20, padding: '2px 9px', fontSize: 12, fontWeight: 600 },
+  alertPill: { display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--negative-bg)', color: 'var(--negative)', borderRadius: 9999, padding: '2px 10px', fontSize: 12, fontWeight: 600 },
 
-  emptyCard: { ...card, borderStyle: 'dashed', padding: '44px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'var(--text)' },
+  emptyCard: { ...card, borderStyle: 'dashed', padding: '44px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'var(--content-primary)' },
 
   statusDot: { width: 8, height: 8, borderRadius: '50%', flexShrink: 0, display: 'inline-block' },
 
-  backBtn: { display: 'inline-flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: 'var(--primary)', padding: 0, marginBottom: 16, fontSize: 14, fontWeight: 600 },
+  backBtn: { display: 'inline-flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: 'var(--content-link)', padding: 0, marginBottom: 16, fontSize: 14, fontWeight: 600, textDecoration: 'underline', textUnderlineOffset: '0.3em' },
   detailHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 22, gap: 16, flexWrap: 'wrap' },
   detailHeaderMobile: { flexDirection: 'column', gap: 12, marginBottom: 14 },
   detailRoute: { display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' },
-  routeChip: { background: 'var(--surface-alt)', border: '1px solid var(--border)', borderRadius: 6, padding: '4px 10px', fontSize: 14 },
-  statusSelect: { background: 'var(--surface)', border: '1px solid var(--border-strong)', color: 'var(--text)', borderRadius: 8, padding: '9px 12px', boxShadow: 'var(--shadow-sm)' },
+  routeChip: { background: 'var(--bg-neutral)', border: 'none', borderRadius: 9999, padding: '4px 14px', fontSize: 14, color: 'var(--content-primary)' },
+  statusSelect: { background: 'var(--bg-elevated)', border: '1px solid var(--border-neutral)', color: 'var(--content-primary)', borderRadius: 10, padding: '9px 12px' },
 
   alertsBox: { display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 },
-  alert: { display: 'flex', alignItems: 'center', gap: 12, background: 'var(--danger-soft)', border: '1px solid rgba(248,113,113,0.35)', borderRadius: 10, padding: 14 },
-  alertTag: { display: 'inline-flex', alignItems: 'center', gap: 5, color: '#fff', background: 'var(--danger)', borderRadius: 8, padding: '4px 9px', fontSize: 12, fontWeight: 800, letterSpacing: 0.5, whiteSpace: 'nowrap', flexShrink: 0 },
+  alert: { display: 'flex', alignItems: 'center', gap: 12, background: 'var(--negative-bg)', border: 'none', borderRadius: 16, padding: 14 },
+  alertTag: { display: 'inline-flex', alignItems: 'center', gap: 5, color: '#fff', background: 'var(--negative)', borderRadius: 9999, padding: '4px 12px', fontSize: 12, fontWeight: 700, letterSpacing: 0.5, whiteSpace: 'nowrap', flexShrink: 0 },
 
   tableWrap: { ...card, padding: 0, overflowX: 'auto' },
 
   paxCardList: { display: 'flex', flexDirection: 'column', gap: 10 },
   paxCard: { ...card, padding: 14, display: 'flex', flexDirection: 'column', gap: 8 },
   paxCardHead: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
-  paxCardName: { fontWeight: 700, fontSize: 15 },
-  paxCardRoute: { color: 'var(--muted)', fontSize: 13, fontWeight: 600 },
+  paxCardName: { fontWeight: 600, fontSize: 15, letterSpacing: '-0.03em' },
+  paxCardRoute: { color: 'var(--content-secondary)', fontSize: 13, fontWeight: 600 },
   paxCardMeta: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 },
   paxMeta: { display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 },
-  paxMetaLabel: { color: 'var(--muted)', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.4, fontWeight: 600 },
+  paxMetaLabel: { color: 'var(--content-secondary)', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.4, fontWeight: 600 },
   paxMetaValue: { fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   table: { width: '100%', borderCollapse: 'collapse', background: 'transparent' },
-  th: { textAlign: 'left', padding: 14, color: 'var(--muted)', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: '1px solid var(--glass-border)' },
-  td: { padding: 14, borderBottom: '1px solid var(--border)' },
-  tdEmpty: { padding: '32px 14px', textAlign: 'center', color: 'var(--muted)' },
+  th: { textAlign: 'left', padding: 14, color: 'var(--content-secondary)', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: '1px solid var(--border-neutral)' },
+  td: { padding: 14, color: 'var(--content-primary)', borderBottom: '1px solid var(--border-neutral)' },
+  tdEmpty: { padding: '32px 14px', textAlign: 'center', color: 'var(--content-secondary)' },
 
   overlay: { ...modalOverlay },
   modal: { ...modalPanel, width: 460, maxWidth: '100%', padding: 24, display: 'flex', flexDirection: 'column', gap: 14, maxHeight: '90vh', overflowY: 'auto' },
   modalHead: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
-  modalClose: { background: 'transparent', border: 'none', color: 'var(--muted)', display: 'grid', placeItems: 'center', padding: 4 },
+  modalClose: { background: 'transparent', border: 'none', color: 'var(--content-secondary)', display: 'grid', placeItems: 'center', padding: 4 },
   row: { display: 'flex', gap: 12 },
   field: { display: 'flex', flexDirection: 'column', gap: 5, flex: 1 },
-  label: { fontSize: 12, color: 'var(--muted)', fontWeight: 600 },
-  input: { background: 'var(--surface)', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '10px 12px', color: 'var(--text)', fontSize: 14 },
+  label: { fontSize: 12, color: 'var(--content-secondary)', fontWeight: 600 },
+  input: { background: 'var(--bg-elevated)', border: '1px solid var(--border-neutral)', borderRadius: 10, padding: '10px 12px', color: 'var(--content-primary)', fontSize: 14 },
   stopsHead: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  addStopBtn: { display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: '1px solid var(--primary)', color: 'var(--primary)', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600 },
-  stopsHint: { color: 'var(--muted)', fontSize: 13, fontStyle: 'italic' },
+  addStopBtn: { display: 'inline-flex', alignItems: 'center', gap: 5, background: 'transparent', border: '1px solid var(--interactive-primary)', color: 'var(--interactive-primary)', borderRadius: 9999, padding: '4px 12px', fontSize: 12, fontWeight: 600 },
+  stopsHint: { color: 'var(--content-secondary)', fontSize: 13, fontStyle: 'italic' },
   stopRow: { display: 'flex', alignItems: 'center', gap: 8 },
-  stopIndex: { width: 24, height: 24, borderRadius: '50%', background: 'var(--surface-alt)', border: '1px solid var(--border)', display: 'grid', placeItems: 'center', fontSize: 12, color: 'var(--muted)', flexShrink: 0 },
-  removeStopBtn: { background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--danger)', borderRadius: 8, padding: '8px 9px', flexShrink: 0, display: 'grid', placeItems: 'center' },
-  routePreview: { background: 'var(--surface-alt)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 12px', fontSize: 14, marginTop: 2 },
+  stopIndex: { width: 24, height: 24, borderRadius: '50%', background: 'var(--bg-neutral)', border: 'none', display: 'grid', placeItems: 'center', fontSize: 12, color: 'var(--content-secondary)', flexShrink: 0 },
+  removeStopBtn: { background: 'transparent', border: '1px solid var(--border-neutral)', color: 'var(--negative)', borderRadius: 9999, padding: '8px 9px', flexShrink: 0, display: 'grid', placeItems: 'center' },
+  routePreview: { background: 'var(--bg-neutral)', border: 'none', borderRadius: 10, padding: '8px 12px', fontSize: 14, marginTop: 2 },
   toggle: { display: 'flex', gap: 8 },
-  toggleBtn: { flex: 1, background: 'var(--surface-alt)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: 8, padding: '10px', fontSize: 13, fontWeight: 600 },
-  toggleBtnActive: { borderColor: 'var(--primary)', background: 'var(--primary)', color: '#fff' },
+  toggleBtn: { flex: 1, background: 'var(--bg-neutral)', border: 'none', color: 'var(--content-primary)', borderRadius: 9999, padding: '10px', fontSize: 13, fontWeight: 600 },
+  toggleBtnActive: { background: 'var(--interactive-primary)', color: '#fff' },
   modalActions: { display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 4 },
 };
