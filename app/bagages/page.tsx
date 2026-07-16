@@ -11,11 +11,11 @@ import { IconBag, IconClose, IconPlane } from '@/components/icons';
 const today = () => new Date().toISOString().slice(0, 10);
 
 function formatTime(ts: string | null): string {
-  if (!ts) return '—';
+  if (!ts) return 'N/A';
   return new Date(ts).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 }
 function formatDateTime(ts: string | null): string {
-  if (!ts) return '—';
+  if (!ts) return 'N/A';
   return new Date(ts).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
@@ -89,8 +89,8 @@ function BagagesContent() {
       const pax = paxById.get(b.passenger_id);
       return {
         ...b,
-        passengerName: pax?.full_name ?? '—',
-        pnr: pax?.pnr ?? '—',
+        passengerName: pax?.full_name ?? 'N/A',
+        pnr: pax?.pnr ?? 'N/A',
         declaredCount: pax?.declared_baggage_count ?? 0,
       };
     });
@@ -154,7 +154,7 @@ function BagagesContent() {
           {flights.length === 0 && <option value="">Aucun vol aujourd'hui</option>}
           {flights.map((f) => (
             <option key={f.id} value={f.id}>
-              {f.flight_number} — {f.origin} → {f.destination} {formatTime(f.departure_time)}
+              {f.flight_number} · {f.origin} → {f.destination} {formatTime(f.departure_time)}
             </option>
           ))}
         </select>
@@ -320,7 +320,7 @@ function CounterCard({ label, value, color }: { label: string; value: number; co
 }
 
 function SouteBadge({ soute }: { soute: SoutePosition | null }) {
-  if (!soute) return <span style={{ color: 'var(--content-secondary)', fontSize: 13 }}>—</span>;
+  if (!soute) return <span style={{ color: 'var(--content-secondary)', fontSize: 13 }}>N/A</span>;
   return soute === 'avant' ? (
     <span style={{ ...badge, background: 'var(--bg-neutral)', color: 'var(--brand-forest)', fontSize: 12 }}>{SOUTE_LABEL[soute]}</span>
   ) : (
@@ -361,7 +361,7 @@ function DetailModal({ bag, flight, onClose }: { bag: BagRow; flight: Flight | n
             <Row label="Vol">
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
                 <IconPlane size={14} />
-                {flight.flight_number} — {flight.origin} → {flight.destination}
+                {flight.flight_number} · {flight.origin} → {flight.destination}
               </span>
             </Row>
           )}

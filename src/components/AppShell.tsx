@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import type { Profile } from '@police/shared';
 import { createClient } from '@/supabase/client';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { IconDashboard, IconUsers, IconLogout, IconReport, IconBag } from './icons';
+import { IconDashboard, IconUsers, IconLogout, IconReport, IconBag, IconUser } from './icons';
 import { Footer } from './Footer';
 
 function formatToday(): string {
@@ -49,6 +49,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     { href: '/dashboard', label: 'Tableau de bord', icon: IconDashboard, show: true },
     { href: '/bagages',   label: 'Bagages',          icon: IconBag,       show: true },
     { href: '/rapport',   label: 'Rapports',         icon: IconReport,    show: true },
+    { href: '/profil',    label: 'Profil',           icon: IconUser,      show: true },
     { href: '/admin',     label: 'Comptes',          icon: IconUsers,     show: isAdmin },
   ].filter((n) => n.show);
 
@@ -65,7 +66,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <img src="/logo.png" alt="Police Bagage" style={m.topLogo} />
                 <div>
                   <span style={m.topBrandName}>Police Bagage</span>
-                  <span style={m.topBrandHub}>{profile?.airport_code ?? '—'} · {profile?.airline_code ?? 'ET'}</span>
+                  <span style={m.topBrandHub}>{profile?.airport_code ?? 'N/A'} · {profile?.airline_code ?? 'ET'}</span>
                 </div>
               </div>
             </div>
@@ -85,7 +86,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <div style={m.drawerUser}>
                 <div style={m.drawerAvatar}>{(profile?.full_name ?? '?').charAt(0).toUpperCase()}</div>
                 <div>
-                  <div style={m.drawerName}>{profile?.full_name ?? '—'}</div>
+                  <div style={m.drawerName}>{profile?.full_name ?? 'N/A'}</div>
                   <div style={m.drawerRole}>{profile?.role ?? ''}</div>
                 </div>
               </div>
@@ -130,7 +131,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <img src="/logo.png" alt="Police Bagage" style={d.brandLogo} />
             <div>
               <div style={d.brand}>Police Bagage</div>
-              <div style={d.brandSub}>{profile?.airport_code ?? '—'} · {profile?.airline_code ?? 'ET'}</div>
+              <div style={d.brandSub}>{profile?.airport_code ?? 'N/A'} · {profile?.airline_code ?? 'ET'}</div>
             </div>
           </div>
 
@@ -163,7 +164,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div style={d.userRow}>
               <div style={d.avatar}>{(profile?.full_name ?? '?').charAt(0).toUpperCase()}</div>
               <div style={{ overflow: 'hidden' }}>
-                <div style={d.userName}>{profile?.full_name ?? '—'}</div>
+                <div style={d.userName}>{profile?.full_name ?? 'N/A'}</div>
                 <div style={d.userRole}>{profile?.role ?? ''}</div>
               </div>
             </div>

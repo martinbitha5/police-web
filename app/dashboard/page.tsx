@@ -38,7 +38,7 @@ const STATUS_STYLE: Record<Flight['status'], { bg: string; color: string }> = {
 const today = () => new Date().toISOString().slice(0, 10);
 
 function formatTime(ts: string | null): string {
-  if (!ts) return '—';
+  if (!ts) return 'N/A';
   return new Date(ts).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 }
 function formatToday(): string {
@@ -207,7 +207,7 @@ function Overview({
                 <button key={a.id} style={s.alertBannerItem} onClick={() => onSelect(a.flight_id)}>
                   <span style={{ fontWeight: 600 }}>{a.passenger_name ?? 'Passager inconnu'}</span>
                   <span style={{ color: 'var(--content-secondary)' }}>{a.reason}</span>
-                  <span style={s.alertBannerFlight}>{fl?.flight_number ?? '—'}</span>
+                  <span style={s.alertBannerFlight}>{fl?.flight_number ?? 'N/A'}</span>
                 </button>
               );
             })}
@@ -423,8 +423,8 @@ function PassengerCardMobile({ p, fallbackRoute }: { p: PassengerRow; fallbackRo
       </div>
       <div style={s.paxCardRoute}>{p.route ?? fallbackRoute}</div>
       <div style={s.paxCardMeta}>
-        <PaxMeta label="Siège" value={p.seat ?? '—'} />
-        <PaxMeta label="Classe" value={p.class ?? '—'} />
+        <PaxMeta label="Siège" value={p.seat ?? 'N/A'} />
+        <PaxMeta label="Classe" value={p.class ?? 'N/A'} />
         <PaxMeta label="PNR" value={p.pnr} />
         <PaxMeta label="Bagages" value={`${p.confirmedCount}/${p.declared_baggage_count}`} color={bagColor} />
       </div>
@@ -447,8 +447,8 @@ function PassengerRowView({ p, fallbackRoute }: { p: PassengerRow; fallbackRoute
   return (
     <tr>
       <td style={s.td}>{p.full_name}</td>
-      <td style={s.td}>{p.seat ?? '—'}</td>
-      <td style={s.td}>{p.class ?? '—'}</td>
+      <td style={s.td}>{p.seat ?? 'N/A'}</td>
+      <td style={s.td}>{p.class ?? 'N/A'}</td>
       <td style={s.td}>{p.route ?? fallbackRoute}</td>
       <td style={s.td}>{p.pnr}</td>
       <td style={{ ...s.td, color, fontWeight: 600 }}>
@@ -477,7 +477,7 @@ function FraudAlerts({ alerts }: { alerts: FraudAlert[] }) {
             <IconAlert size={15} /> ÉCARTÉ
           </span>
           <div style={{ flex: 1 }}>
-            <strong>{a.passenger_name ?? 'Passager inconnu'}</strong> · PNR {a.pnr ?? '—'} · Tag {a.tag_number ?? '—'}
+            <strong>{a.passenger_name ?? 'Passager inconnu'}</strong> · PNR {a.pnr ?? 'N/A'} · Tag {a.tag_number ?? 'N/A'}
             <div style={{ color: 'var(--content-secondary)' }}>
               {a.reason} {a.gate ? `· ${a.gate}` : ''} · {new Date(a.created_at).toLocaleString('fr-FR')}
             </div>
@@ -578,7 +578,7 @@ function FlightFormModal({ hub, onClose, onCreated }: { hub: string; onClose: ()
     <div style={s.overlay} onClick={onClose}>
       <form style={s.modal} onClick={(e) => e.stopPropagation()} onSubmit={submit}>
         <div style={s.modalHead}>
-          <h2 style={{ margin: 0, fontSize: 20 }}>Nouveau vol — départ {hub}</h2>
+          <h2 style={{ margin: 0, fontSize: 20 }}>Nouveau vol au départ de {hub}</h2>
           <button type="button" style={s.modalClose} onClick={onClose} aria-label="Fermer">
             <IconClose size={18} />
           </button>

@@ -4,7 +4,7 @@ import type { CSSProperties, ReactNode } from 'react';
 const HUB = process.env.NEXT_PUBLIC_HUB ?? 'FIH';
 
 export const metadata = {
-  title: 'Police Bagage — Supervision',
+  title: 'Police Bagage · Supervision',
   description: 'Plateforme de supervision anti-fraude bagages et contrôle d’embarquement.',
 };
 
@@ -65,7 +65,7 @@ export default function Landing() {
             </h1>
             <p className="lp-tagline">
               Suivez vos vols, vos passagers et chaque étiquette bagage en temps réel.
-              Les bagages non déclarés sont interceptés avant la soute — sans paperasse
+              Les bagages non déclarés sont interceptés avant la soute, sans paperasse
               inutile, sans écart invisible.
             </p>
             <div className="lp-actions">

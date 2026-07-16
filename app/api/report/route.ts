@@ -203,7 +203,7 @@ export async function GET(request: NextRequest) {
   // ════════════════════════════════════════════════════════════
   {
     const ws = makeSheet(wb, 'Résumé', [32, 20, 20, 20, 20, 20]);
-    let r = sheetTitle(ws, `Résumé — ${header}`, 6);
+    let r = sheetTitle(ws, `Résumé · ${header}`, 6);
 
     r = sheetMeta(ws, r, 'Vol',            `${flight.flight_number}  (${formatRoute(flight)})`, 6);
     r = sheetMeta(ws, r, 'Date',           flight.date, 6);
@@ -230,7 +230,7 @@ export async function GET(request: NextRequest) {
     r = sheetSection(ws, r, 'Alertes fraude', 6);
     r = sheetData(ws, r, ['Alertes fraude détectées', alerts.length], { danger: alerts.length > 0 });
 
-    r = sheetSection(ws, r, `Statistiques globales journée — ${flight.date}`, 6);
+    r = sheetSection(ws, r, `Statistiques globales journée · ${flight.date}`, 6);
     r = sheetData(ws, r, ['Vols traités',             dayIds.length]);
     r = sheetData(ws, r, ['Passagers enregistrés',    dayPax     ?? 0]);
     r = sheetData(ws, r, ['Passagers embarqués',      dayBoarded ?? 0]);
@@ -244,7 +244,7 @@ export async function GET(request: NextRequest) {
   // ════════════════════════════════════════════════════════════
   {
     const ws = makeSheet(wb, 'Passagers', [28, 12, 8, 8, 24, 14, 14, 10]);
-    let r = sheetTitle(ws, `Passagers — ${header}`, 8);
+    let r = sheetTitle(ws, `Passagers · ${header}`, 8);
     r = sheetHeader(ws, r, ['Nom complet', 'PNR', 'Siège', 'Classe', 'Route', 'Bag. conf./décl.', 'Scanné le', 'Embarqué']);
 
     if (passengers.length === 0) {
@@ -256,8 +256,8 @@ export async function GET(request: NextRequest) {
         r = sheetData(ws, r, [
           p.full_name,
           p.pnr,
-          p.seat  ?? '—',
-          p.class ?? '—',
+          p.seat  ?? 'N/A',
+          p.class ?? 'N/A',
           routeByPax.get(p.id) ?? formatRoute(flight),
           `${conf} / ${p.declared_baggage_count}`,
           new Date(p.scanned_at).toLocaleString('fr-FR'),
@@ -272,7 +272,7 @@ export async function GET(request: NextRequest) {
   // ════════════════════════════════════════════════════════════
   {
     const ws = makeSheet(wb, 'Bagages', [16, 12, 28, 12, 16, 14, 22]);
-    let r = sheetTitle(ws, `Bagages — ${header}`, 7);
+    let r = sheetTitle(ws, `Bagages · ${header}`, 7);
     r = sheetHeader(ws, r, ['Étiquette', 'Série', 'Passager', 'PNR', 'Statut', 'Soute', 'Scanné le']);
 
     if (baggage.length === 0) {
@@ -281,12 +281,12 @@ export async function GET(request: NextRequest) {
       baggage.forEach((b, i) => {
         const pax = paxById.get(b.passenger_id);
         const statusLabel = bagStatusLabel(b);
-        const souteLabel = b.soute === 'avant' ? 'Soute avant' : b.soute === 'arriere' ? 'Soute arrière' : '—';
+        const souteLabel = b.soute === 'avant' ? 'Soute avant' : b.soute === 'arriere' ? 'Soute arrière' : 'N/A';
         r = sheetData(ws, r, [
           b.tag_number,
-          b.serial_number  ?? '—',
-          pax?.full_name   ?? '—',
-          pax?.pnr         ?? '—',
+          b.serial_number  ?? 'N/A',
+          pax?.full_name   ?? 'N/A',
+          pax?.pnr         ?? 'N/A',
           statusLabel,
           souteLabel,
           new Date(b.scanned_at).toLocaleString('fr-FR'),
@@ -300,7 +300,7 @@ export async function GET(request: NextRequest) {
   // ════════════════════════════════════════════════════════════
   {
     const ws = makeSheet(wb, 'Alertes fraude', [22, 12, 16, 30, 22]);
-    let r = sheetTitle(ws, `Alertes fraude — ${header}`, 5);
+    let r = sheetTitle(ws, `Alertes fraude · ${header}`, 5);
     r = sheetHeader(ws, r, ['Heure', 'PNR', 'Passager', 'Raison', 'Étiquette']);
 
     if (alerts.length === 0) {
@@ -309,10 +309,10 @@ export async function GET(request: NextRequest) {
       alerts.forEach((a) => {
         r = sheetData(ws, r, [
           new Date(a.created_at).toLocaleString('fr-FR'),
-          a.pnr            ?? '—',
-          a.passenger_name ?? '—',
+          a.pnr            ?? 'N/A',
+          a.passenger_name ?? 'N/A',
           a.reason,
-          a.tag_number     ?? '—',
+          a.tag_number     ?? 'N/A',
         ], { danger: true });
       });
     }

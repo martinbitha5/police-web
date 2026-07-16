@@ -103,10 +103,10 @@ async function fetchAll<T>(
 }
 
 function pct(num: number, den: number): string {
-  return den > 0 ? `${Math.round((num / den) * 100)} %` : '—';
+  return den > 0 ? `${Math.round((num / den) * 100)} %` : 'N/A';
 }
 function avg(num: number, den: number): string {
-  return den > 0 ? (num / den).toFixed(1) : '—';
+  return den > 0 ? (num / den).toFixed(1) : 'N/A';
 }
 
 export async function GET(request: NextRequest) {
@@ -205,7 +205,7 @@ export async function GET(request: NextRequest) {
   // FEUILLE 1 — RÉSUMÉ (statistiques comptables)
   {
     const ws = sheet(wb, 'Résumé', [38, 22]);
-    let r = title(ws, 1, `Rapport ${label} — ${periodStr}`, 2);
+    let r = title(ws, 1, `Rapport ${label} · ${periodStr}`, 2);
     r = meta(ws, r, 'Période', periodStr, 2);
     r = meta(ws, r, 'Aéroport (hub)', HUB, 2);
     r = meta(ws, r, 'Édité le', now, 2);
@@ -248,7 +248,7 @@ export async function GET(request: NextRequest) {
   // FEUILLE 2 — VOLS
   {
     const ws = sheet(wb, 'Vols', [12, 12, 22, 12, 12, 16, 10]);
-    let r = title(ws, 1, `Vols — ${periodStr}`, 7);
+    let r = title(ws, 1, `Vols · ${periodStr}`, 7);
     r = headerRow(ws, r, ['Date', 'Vol', 'Route', 'Passagers', 'Embarqués', 'Bag. conf./décl.', 'Alertes']);
     if (flights.length === 0) {
       r = dataRow(ws, r, ['Aucun vol sur la période', '', '', '', '', '', '']);
@@ -270,7 +270,7 @@ export async function GET(request: NextRequest) {
   // FEUILLE 3 — PASSAGERS (détail)
   {
     const ws = sheet(wb, 'Passagers', [12, 12, 26, 12, 8, 8, 12, 10, 18]);
-    let r = title(ws, 1, `Passagers — ${periodStr}`, 9);
+    let r = title(ws, 1, `Passagers · ${periodStr}`, 9);
     r = headerRow(ws, r, ['Date vol', 'Vol', 'Passager', 'PNR', 'Siège', 'Classe', 'Bag. conf./décl.', 'Embarqué', 'Scanné le']);
     if (passengers.length === 0) {
       r = dataRow(ws, r, ['Aucun passager sur la période', '', '', '', '', '', '', '', '']);
@@ -289,12 +289,12 @@ export async function GET(request: NextRequest) {
           ws,
           r,
           [
-            f?.date ?? '—',
-            f?.flight_number ?? '—',
+            f?.date ?? 'N/A',
+            f?.flight_number ?? 'N/A',
             p.full_name,
             p.pnr,
-            p.seat ?? '—',
-            p.class ?? '—',
+            p.seat ?? 'N/A',
+            p.class ?? 'N/A',
             `${conf} / ${p.declared_baggage_count}`,
             p.boarded ? 'Oui' : 'Non',
             new Date(p.scanned_at).toLocaleString('fr-FR'),
@@ -308,7 +308,7 @@ export async function GET(request: NextRequest) {
   // FEUILLE 4 — BAGAGES (détail)
   {
     const ws = sheet(wb, 'Bagages', [12, 12, 16, 12, 26, 12, 12, 14, 18]);
-    let r = title(ws, 1, `Bagages — ${periodStr}`, 9);
+    let r = title(ws, 1, `Bagages · ${periodStr}`, 9);
     r = headerRow(ws, r, ['Date vol', 'Vol', 'Étiquette', 'Série', 'Passager', 'PNR', 'Statut', 'Soute', 'Scanné le']);
     if (baggage.length === 0) {
       r = dataRow(ws, r, ['Aucun bagage sur la période', '', '', '', '', '', '', '', '']);
@@ -322,17 +322,17 @@ export async function GET(request: NextRequest) {
         const f = flightById.get(b.flight_id);
         const pax = passengerById.get(b.passenger_id);
         const statusLabel = b.rush ? 'Réacheminement' : b.in_hold ? 'Chargé en soute' : b.is_confirmed ? 'Enregistré' : 'En attente';
-        const souteLabel = b.soute === 'avant' ? 'Soute avant' : b.soute === 'arriere' ? 'Soute arrière' : '—';
+        const souteLabel = b.soute === 'avant' ? 'Soute avant' : b.soute === 'arriere' ? 'Soute arrière' : 'N/A';
         r = dataRow(
           ws,
           r,
           [
-            f?.date ?? '—',
-            f?.flight_number ?? '—',
+            f?.date ?? 'N/A',
+            f?.flight_number ?? 'N/A',
             b.tag_number,
-            b.serial_number ?? '—',
-            pax?.full_name ?? '—',
-            pax?.pnr ?? '—',
+            b.serial_number ?? 'N/A',
+            pax?.full_name ?? 'N/A',
+            pax?.pnr ?? 'N/A',
             statusLabel,
             souteLabel,
             new Date(b.scanned_at).toLocaleString('fr-FR'),
@@ -346,7 +346,7 @@ export async function GET(request: NextRequest) {
   // FEUILLE 5 — ALERTES FRAUDE
   {
     const ws = sheet(wb, 'Alertes fraude', [12, 12, 22, 16, 30, 18]);
-    let r = title(ws, 1, `Alertes fraude — ${periodStr}`, 6);
+    let r = title(ws, 1, `Alertes fraude · ${periodStr}`, 6);
     r = headerRow(ws, r, ['Date', 'Vol', 'Passager', 'PNR', 'Raison', 'Étiquette']);
     if (alerts.length === 0) {
       r = dataRow(ws, r, ['Aucune alerte sur la période', '', '', '', '', '']);
@@ -358,11 +358,11 @@ export async function GET(request: NextRequest) {
           r,
           [
             new Date(a.created_at).toLocaleDateString('fr-FR'),
-            f?.flight_number ?? '—',
-            a.passenger_name ?? '—',
-            a.pnr ?? '—',
+            f?.flight_number ?? 'N/A',
+            a.passenger_name ?? 'N/A',
+            a.pnr ?? 'N/A',
             a.reason,
-            a.tag_number ?? '—',
+            a.tag_number ?? 'N/A',
           ],
           { danger: true },
         );

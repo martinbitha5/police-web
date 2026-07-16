@@ -212,7 +212,7 @@ function Stat({
       <div style={{ minWidth: 0 }}>
         <div style={s.statLabel}>{label}</div>
         <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.03em', color: danger ? 'var(--negative)' : 'var(--content-primary)', lineHeight: 1.1 }}>
-          {loading ? '…' : (value ?? '—')}
+          {loading ? '…' : (value ?? 'N/A')}
         </div>
       </div>
     </div>

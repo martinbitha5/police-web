@@ -178,7 +178,7 @@ function UserRow({ user }: { user: Profile }) {
   const color = ROLE_COLOR[user.role] ?? 'var(--content-secondary)';
   const created = user.created_at
     ? new Date(user.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
-    : '—';
+    : 'N/A';
   return (
     <div style={s.userRow}>
       <div style={{ ...s.userAvatar, background: color }}>

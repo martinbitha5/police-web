@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ['latin'], display: 'swap', variable: '--font-int
 const archivo = Archivo_Black({ weight: '400', subsets: ['latin'], display: 'swap', variable: '--font-archivo' });
 
 export const metadata = {
-  title: 'Boarding Scanner — Superviseur',
+  title: 'Boarding Scanner · Superviseur',
   description: 'Dashboard anti-fraude bagages',
 };
 
