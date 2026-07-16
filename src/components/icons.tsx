@@ -138,6 +138,17 @@ export function IconPlane(p: IconProps) {
   );
 }
 
+export function IconTrash(p: IconProps) {
+  return (
+    <svg {...base(p)}>
+      <path d="M4 7h16" />
+      <path d="M10 4h4a1 1 0 0 1 1 1v2H9V5a1 1 0 0 1 1-1z" />
+      <path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" />
+      <path d="M10 11v7M14 11v7" />
+    </svg>
+  );
+}
+
 export function IconReport(p: IconProps) {
   return (
     <svg {...base(p)}>

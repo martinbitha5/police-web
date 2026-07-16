@@ -30,5 +30,19 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  return NextResponse.json({ users: (data ?? []) as Profile[] });
+  // Associe l'email de chaque profil (l'email vit dans auth.users, pas dans profiles).
+  const emailById = new Map<string, string | null>();
+  try {
+    const { data: authList } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    for (const u of authList?.users ?? []) emailById.set(u.id, u.email ?? null);
+  } catch {
+    // si l'inventaire auth échoue, on renvoie quand même les profils sans email
+  }
+
+  const users = ((data ?? []) as Profile[]).map((p) => ({
+    ...p,
+    email: emailById.get(p.id) ?? null,
+  }));
+
+  return NextResponse.json({ users });
 }
