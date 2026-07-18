@@ -60,7 +60,6 @@ function Dashboard() {
   const airportCode = profile?.airport_code ?? 'FIH';
   const [flights, setFlights] = useState<Flight[]>([]);
   const [alertsByFlight, setAlertsByFlight] = useState<Record<string, number>>({});
-  const [recentAlerts, setRecentAlerts] = useState<FraudAlert[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
 
@@ -77,19 +76,20 @@ function Dashboard() {
 
     const ids = list.map((f) => f.id);
     if (ids.length > 0) {
+      // Seul le compteur par vol est affiché ici : on ne rapatrie que flight_id,
+      // pas les lignes complètes. Sur un vol à forte fraude (des centaines
+      // d'alertes), charger tout le détail — noms passagers et étiquettes
+      // compris — pour n'afficher qu'un nombre serait inutile et coûteux.
       const { data: al } = await supabase
         .from('fraud_alerts')
-        .select('*')
-        .in('flight_id', ids)
-        .order('created_at', { ascending: false });
-      const alerts = (al as FraudAlert[] | null) ?? [];
+        .select('flight_id')
+        .in('flight_id', ids);
+      const rows = (al as { flight_id: string }[] | null) ?? [];
       const map: Record<string, number> = {};
-      for (const a of alerts) map[a.flight_id] = (map[a.flight_id] ?? 0) + 1;
+      for (const a of rows) map[a.flight_id] = (map[a.flight_id] ?? 0) + 1;
       setAlertsByFlight(map);
-      setRecentAlerts(alerts.slice(0, 5));
     } else {
       setAlertsByFlight({});
-      setRecentAlerts([]);
     }
   }
 
@@ -115,7 +115,6 @@ function Dashboard() {
           departures={departures}
           arrivals={arrivals}
           totalAlerts={totalAlerts}
-          recentAlerts={recentAlerts}
           alerts={alertsByFlight}
           canManage={canManage}
           isMobile={isMobile}
@@ -149,7 +148,6 @@ function Overview({
   departures,
   arrivals,
   totalAlerts,
-  recentAlerts,
   alerts,
   canManage,
   isMobile,
@@ -161,7 +159,6 @@ function Overview({
   departures: Flight[];
   arrivals: Flight[];
   totalAlerts: number;
-  recentAlerts: FraudAlert[];
   alerts: Record<string, number>;
   canManage: boolean;
   isMobile: boolean;
@@ -194,26 +191,9 @@ function Overview({
         />
       </div>
 
-      {recentAlerts.length > 0 ? (
-        <div style={s.alertBanner}>
-          <div style={s.alertBannerHead}>
-            <IconAlert size={18} />
-            <strong>{totalAlerts} bagage{totalAlerts > 1 ? 's' : ''} écarté{totalAlerts > 1 ? 's' : ''}</strong>
-          </div>
-          <div style={s.alertBannerList}>
-            {recentAlerts.map((a) => {
-              const fl = flights.find((f) => f.id === a.flight_id);
-              return (
-                <button key={a.id} style={s.alertBannerItem} onClick={() => onSelect(a.flight_id)}>
-                  <span style={{ fontWeight: 600 }}>{a.passenger_name ?? 'Passager inconnu'}</span>
-                  <span style={{ color: 'var(--content-secondary)' }}>{a.reason}</span>
-                  <span style={s.alertBannerFlight}>{fl?.flight_number ?? 'N/A'}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ) : null}
+      {/* Pas de liste des bagages écartés ici : la vue d'ensemble n'affiche que
+          le compteur (carte « Bagages écartés » ci-dessus). Le détail par alerte
+          reste consultable en ouvrant le vol concerné. */}
 
       {flights.length === 0 ? (
         <div style={s.emptyCard}>
@@ -683,24 +663,6 @@ const s: Record<string, CSSProperties> = {
     flexShrink: 0,
   },
   statLabel: { color: 'var(--content-secondary)', fontSize: 13, marginBottom: 4 },
-
-  alertBanner: { background: 'var(--negative-bg)', border: 'none', borderRadius: 16, marginBottom: 24, padding: 18 },
-  alertBannerHead: { display: 'flex', alignItems: 'center', gap: 8, color: 'var(--negative)', marginBottom: 12 },
-  alertBannerList: { display: 'flex', flexDirection: 'column', gap: 6 },
-  alertBannerItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-    width: '100%',
-    textAlign: 'left',
-    background: 'var(--bg-elevated)',
-    border: '1px solid var(--border-neutral)',
-    borderRadius: 12,
-    padding: '9px 14px',
-    color: 'var(--content-primary)',
-    fontSize: 14,
-  },
-  alertBannerFlight: { marginLeft: 'auto', fontWeight: 700, fontSize: 13 },
 
   countPill: { background: 'var(--bg-neutral)', border: 'none', borderRadius: 9999, padding: '1px 10px', fontSize: 12, fontWeight: 700, color: 'var(--content-secondary)' },
   sectionEmpty: { color: 'var(--content-tertiary)', fontSize: 14, fontStyle: 'italic', marginBottom: 18 },
