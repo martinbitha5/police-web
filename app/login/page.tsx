@@ -139,7 +139,10 @@ const styles: Record<string, React.CSSProperties> = {
   sideDot: { width: 6, height: 6, borderRadius: '50%', background: 'var(--brand-forest)', flexShrink: 0 },
   sideFoot: { color: 'var(--brand-forest)', fontSize: 12.5, fontWeight: 600, position: 'relative' },
 
-  main: { flex: 1, display: 'grid', placeItems: 'center', padding: 24 },
+  // minWidth: 0 — sans lui, ce flex item garde `min-width: auto` et refuse de
+  // descendre sous la largeur mini de son contenu (carte 400px + padding),
+  // soit 448px : la carte était rognée sur un écran de 375px.
+  main: { flex: 1, minWidth: 0, display: 'grid', placeItems: 'center', padding: 24 },
   title: { margin: 0, fontSize: 26, fontWeight: 600, letterSpacing: '-0.03em', color: 'var(--content-primary)' },
   subtitle: { margin: '-10px 0 6px', color: 'var(--content-secondary)', fontSize: 14 },
 

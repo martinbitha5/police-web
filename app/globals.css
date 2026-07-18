@@ -250,9 +250,22 @@ tbody tr:hover {
   background: var(--bg-neutral);
 }
 
+/* Pastille « Hub » de l'en-tête. Sous 640px, marque + hub + bouton ne tiennent
+   pas sur une ligne : on masque le hub (info secondaire) pour garder la marque
+   et le bouton d'action lisibles. */
+.hub-chip {
+  display: inline-flex;
+}
+@media (max-width: 640px) {
+  .hub-chip {
+    display: none;
+  }
+}
+
 .lp-login-btn {
   display: inline-flex;
   align-items: center;
+  white-space: nowrap;
   justify-content: center;
   background: var(--interactive-accent);
   color: var(--interactive-control);
@@ -633,8 +646,11 @@ tbody tr:hover {
 }
 
 .lg-card {
-  width: 400px;
-  max-width: 100%;
+  /* width:100% + max-width — et non width:400px + max-width:100%, qui est
+     circulaire dans une grille (la piste se dimensionne sur les 400px, donc
+     le 100% valait 400px et la carte débordait sur mobile). */
+  width: 100%;
+  max-width: 400px;
   background: var(--bg-elevated);
   border: 1px solid var(--border-neutral);
   border-radius: var(--radius-lg);

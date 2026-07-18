@@ -50,7 +50,7 @@ export default function Landing() {
             <span style={s.brandName}>Police Bagage</span>
           </div>
           <nav style={s.topNav}>
-            <span style={s.hubChip}>Hub {HUB}</span>
+            <span className="hub-chip" style={s.hubChip}>Hub {HUB}</span>
             <Link href="/login" className="lp-login-btn">Connexion</Link>
           </nav>
         </div>
@@ -216,10 +216,12 @@ const s: Record<string, CSSProperties> = {
 
   brandBox: { display: 'flex', alignItems: 'center', gap: 10 },
   brandLogo: { width: 32, height: 32, borderRadius: 8, objectFit: 'cover' as const, display: 'block', flexShrink: 0 },
-  brandName: { fontWeight: 700, fontSize: 16, letterSpacing: -0.2, color: 'var(--content-primary)' },
+  brandName: { fontWeight: 700, fontSize: 16, letterSpacing: -0.2, color: 'var(--content-primary)', whiteSpace: 'nowrap' },
   topNav: { display: 'flex', alignItems: 'center', gap: 12 },
+  // `display` volontairement absent : il est porté par la classe .hub-chip, afin
+  // que la media query mobile puisse masquer la pastille (un style inline
+  // l'emporterait sur la classe et empêcherait le display:none).
   hubChip: {
-    display: 'inline-flex',
     alignItems: 'center',
     background: 'var(--bg-neutral)',
     borderRadius: 9999,
