@@ -13,7 +13,6 @@ import {
   IconBag,
   IconAlert,
   IconDownload,
-  IconReport,
 } from '@/components/icons';
 
 type Period = 'jour' | 'semaine' | 'mois' | 'annee' | 'perso';
@@ -190,13 +189,6 @@ function ReportView() {
         <Stat label="Alertes fraude" value={stats?.alerts} icon={<IconAlert size={20} />} danger={(stats?.alerts ?? 0) > 0} loading={loading} />
       </div>
 
-      <div style={s.note}>
-        <IconReport size={18} />
-        <span>
-          Le fichier Excel contient 5 feuilles : <strong>Résumé</strong> (statistiques comptables), <strong>Vols</strong>,{' '}
-          <strong>Passagers</strong> (détail complet), <strong>Bagages</strong> (détail complet) et <strong>Alertes fraude</strong>.
-        </span>
-      </div>
     </div>
   );
 }
@@ -279,16 +271,4 @@ const s: Record<string, CSSProperties> = {
   },
   statLabel: { color: 'var(--content-secondary)', fontSize: 13, marginBottom: 4 },
 
-  note: {
-    background: 'var(--bg-neutral)',
-    border: 'none',
-    borderRadius: 16,
-    padding: 20,
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-    color: 'var(--content-secondary)',
-    fontSize: 14,
-    lineHeight: 1.5,
-  },
 };

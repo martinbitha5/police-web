@@ -186,6 +186,7 @@ export async function GET(request: NextRequest) {
   const totDeclared = passengers.reduce((s, p) => s + p.declared_baggage_count, 0);
   const totConfirmed = baggage.reduce((s, b) => s + (b.is_confirmed ? 1 : 0), 0);
   const totInHold = baggage.reduce((s, b) => s + (b.in_hold ? 1 : 0), 0);
+  const totOnDolly = baggage.reduce((s, b) => s + (b.on_dolly ? 1 : 0), 0);
   const totRush = baggage.reduce((s, b) => s + (b.rush ? 1 : 0), 0);
   const paxNoBag = passengers.filter((p) => p.declared_baggage_count === 0).length;
   const totAlerts = alerts.length;
@@ -221,6 +222,7 @@ export async function GET(request: NextRequest) {
     r = section(ws, r, 'Bagages', 2);
     r = dataRow(ws, r, ['Bagages déclarés', totDeclared]);
     r = dataRow(ws, r, ['Bagages enregistrés (confirmés)', totConfirmed], { success: true });
+    r = dataRow(ws, r, ['Contrôlés au rayon X (dolly)', totOnDolly], { success: totOnDolly > 0 });
     r = dataRow(ws, r, ['Chargés en soute', totInHold], { success: totInHold > 0 });
     r = dataRow(ws, r, ['Rush (réacheminés)', totRush], { danger: totRush > 0 });
     r = dataRow(ws, r, ['Bagages en attente', Math.max(totDeclared - totConfirmed, 0)], {
@@ -307,11 +309,11 @@ export async function GET(request: NextRequest) {
 
   // FEUILLE 4 — BAGAGES (détail)
   {
-    const ws = sheet(wb, 'Bagages', [12, 12, 16, 12, 26, 12, 12, 14, 18]);
-    let r = title(ws, 1, `Bagages · ${periodStr}`, 9);
-    r = headerRow(ws, r, ['Date vol', 'Vol', 'Étiquette', 'Série', 'Passager', 'PNR', 'Statut', 'Soute', 'Scanné le']);
+    const ws = sheet(wb, 'Bagages', [12, 12, 16, 12, 26, 12, 18, 14, 10, 18]);
+    let r = title(ws, 1, `Bagages · ${periodStr}`, 10);
+    r = headerRow(ws, r, ['Date vol', 'Vol', 'Étiquette', 'Série', 'Passager', 'PNR', 'Statut', 'Soute', 'Dolly', 'Scanné le']);
     if (baggage.length === 0) {
-      r = dataRow(ws, r, ['Aucun bagage sur la période', '', '', '', '', '', '', '', '']);
+      r = dataRow(ws, r, ['Aucun bagage sur la période', '', '', '', '', '', '', '', '', '']);
     } else {
       const sorted = [...baggage].sort((a, b) => {
         const fa = flightById.get(a.flight_id)?.date ?? '';
@@ -321,7 +323,16 @@ export async function GET(request: NextRequest) {
       sorted.forEach((b, i) => {
         const f = flightById.get(b.flight_id);
         const pax = passengerById.get(b.passenger_id);
-        const statusLabel = b.rush ? 'Réacheminement' : b.in_hold ? 'Chargé en soute' : b.is_confirmed ? 'Enregistré' : 'En attente';
+        // Le dolly s'intercale entre l'enregistrement au tapis et le chargement.
+        const statusLabel = b.rush
+          ? 'Réacheminement'
+          : b.in_hold
+            ? 'Chargé en soute'
+            : b.on_dolly
+              ? 'Contrôlé au rayon X'
+              : b.is_confirmed
+                ? 'Enregistré'
+                : 'En attente';
         const souteLabel = b.soute === 'avant' ? 'Soute avant' : b.soute === 'arriere' ? 'Soute arrière' : 'N/A';
         r = dataRow(
           ws,
@@ -335,6 +346,7 @@ export async function GET(request: NextRequest) {
             pax?.pnr ?? 'N/A',
             statusLabel,
             souteLabel,
+            b.on_dolly ? 'Oui' : 'N/A',
             new Date(b.scanned_at).toLocaleString('fr-FR'),
           ],
           { danger: b.rush, success: b.in_hold && !b.rush, zebra: !b.rush && !b.in_hold && i % 2 === 1 },

@@ -18,9 +18,12 @@ const COLOR = {
 };
 
 /** Libellé du statut soute d'un bagage (du plus avancé au moins avancé). */
-function bagStatusLabel(b: { rush: boolean; in_hold: boolean; is_confirmed: boolean }): string {
+function bagStatusLabel(b: { rush: boolean; in_hold: boolean; on_dolly: boolean; is_confirmed: boolean }): string {
   if (b.rush) return 'Réacheminement';
   if (b.in_hold) return 'Chargé en soute';
+  // Étape intermédiaire : contrôlé au rayon X et placé sur le dolly, mais pas
+  // encore chargé en soute.
+  if (b.on_dolly) return 'Contrôlé au rayon X';
   if (b.is_confirmed) return 'Enregistré';
   return 'En attente';
 }
@@ -177,6 +180,7 @@ export async function GET(request: NextRequest) {
   const declaredTotal  = passengers.reduce((s, p) => s + p.declared_baggage_count, 0);
   const confirmedTotal = [...confirmedByPax.values()].reduce((s, n) => s + n, 0);
   const inHoldTotal    = baggage.filter((b) => b.in_hold).length;
+  const onDollyTotal   = baggage.filter((b) => b.on_dolly).length;
   const rushTotal      = baggage.filter((b) => b.rush).length;
   const boardedTotal   = passengers.reduce((s, p) => s + (p.boarded ? 1 : 0), 0);
 
@@ -222,6 +226,7 @@ export async function GET(request: NextRequest) {
     r = sheetData(ws, r, ['Bagages déclarés',  declaredTotal]);
     r = sheetData(ws, r, ['Bagages confirmés', confirmedTotal],
       { success: confirmedTotal === declaredTotal });
+    r = sheetData(ws, r, ['Contrôlés au rayon X (dolly)', onDollyTotal], { success: onDollyTotal > 0 });
     r = sheetData(ws, r, ['Chargés en soute', inHoldTotal], { success: inHoldTotal > 0 });
     r = sheetData(ws, r, ['Rush (réacheminés)', rushTotal], { danger: rushTotal > 0 });
     r = sheetData(ws, r, ['Écart (déclarés − confirmés)', declaredTotal - confirmedTotal],
@@ -271,12 +276,12 @@ export async function GET(request: NextRequest) {
   // FEUILLE 3 — BAGAGES
   // ════════════════════════════════════════════════════════════
   {
-    const ws = makeSheet(wb, 'Bagages', [16, 12, 28, 12, 16, 14, 22]);
-    let r = sheetTitle(ws, `Bagages · ${header}`, 7);
-    r = sheetHeader(ws, r, ['Étiquette', 'Série', 'Passager', 'PNR', 'Statut', 'Soute', 'Scanné le']);
+    const ws = makeSheet(wb, 'Bagages', [16, 12, 28, 12, 18, 14, 10, 22]);
+    let r = sheetTitle(ws, `Bagages · ${header}`, 8);
+    r = sheetHeader(ws, r, ['Étiquette', 'Série', 'Passager', 'PNR', 'Statut', 'Soute', 'Dolly', 'Scanné le']);
 
     if (baggage.length === 0) {
-      r = sheetData(ws, r, ['Aucun bagage enregistré', '', '', '', '', '', '']);
+      r = sheetData(ws, r, ['Aucun bagage enregistré', '', '', '', '', '', '', '']);
     } else {
       baggage.forEach((b, i) => {
         const pax = paxById.get(b.passenger_id);
@@ -289,6 +294,7 @@ export async function GET(request: NextRequest) {
           pax?.pnr         ?? 'N/A',
           statusLabel,
           souteLabel,
+          b.on_dolly ? 'Oui' : 'N/A',
           new Date(b.scanned_at).toLocaleString('fr-FR'),
         ], { danger: b.rush, success: b.in_hold && !b.rush, zebra: !b.rush && !b.in_hold && i % 2 === 1 });
       });
