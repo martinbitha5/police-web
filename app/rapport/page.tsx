@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { createClient } from '@/supabase/client';
-import { AppShell } from '@/components/AppShell';
+import { AppShell, useSession } from '@/components/AppShell';
+import { flightScope, scopeFlightQuery } from '@/lib/scope';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { card, btnPrimary, sectionHeading } from '@/ui/theme';
 import {
@@ -72,6 +73,10 @@ export default function RapportPage() {
 }
 
 function ReportView() {
+  const profile = useSession();
+  // Périmètre du profil : un superviseur ne totalise que les vols de son
+  // aéroport et de sa compagnie. Sans cela, le rapport agrégeait tous les vols.
+  const scope = flightScope(profile);
   const isMobile = useIsMobile();
   const [period, setPeriod] = useState<Period>('jour');
   const today = iso(new Date());
@@ -93,7 +98,10 @@ function ReportView() {
     const { from, to } = rg;
     const supabase = createClient();
 
-    const { data: fl } = await supabase.from('flights').select('id').gte('date', from).lte('date', to);
+    const { data: fl } = await scopeFlightQuery(
+      supabase.from('flights').select('id').gte('date', from).lte('date', to),
+      scope,
+    );
     const ids = ((fl as { id: string }[] | null) ?? []).map((f) => f.id);
 
     if (ids.length === 0) {
@@ -120,7 +128,7 @@ function ReportView() {
       alerts: fraud.count ?? 0,
     });
     setLoading(false);
-  }, []);
+  }, [scope.airport, scope.airline]);
 
   useEffect(() => {
     void load({ from, to });

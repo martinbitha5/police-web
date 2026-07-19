@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import type { Flight, Baggage, Passenger, SoutePosition } from '@police/shared';
 import { SOUTE_LABEL } from '@police/shared';
+import { flightScope, scopeFlightQuery } from '@/lib/scope';
 import { createClient } from '@/supabase/client';
 import { AppShell, useSession } from '@/components/AppShell';
 import { card, badge, modalOverlay, modalPanel } from '@/ui/theme';
@@ -38,7 +39,8 @@ type StatusFilter = 'all' | 'rush' | 'in_hold' | 'confirmed' | 'pending';
 
 function BagagesContent() {
   const profile = useSession();
-  const airportCode = profile?.airport_code ?? 'FIH';
+  const scope = flightScope(profile);
+  const airportCode = scope.airport;
 
   const [flights, setFlights] = useState<Flight[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -55,18 +57,17 @@ function BagagesContent() {
   useEffect(() => {
     const supabase = createClient();
     (async () => {
-      const { data } = await supabase
-        .from('flights')
-        .select('*')
-        .eq('date', today())
-        .or(`origin.eq.${airportCode},destination.eq.${airportCode}`)
-        .order('departure_time', { ascending: true });
+      // Périmètre du profil : aéroport ET compagnie.
+      const { data } = await scopeFlightQuery(
+        supabase.from('flights').select('*').eq('date', today()),
+        scope,
+      ).order('departure_time', { ascending: true });
       const list = (data as Flight[] | null) ?? [];
       setFlights(list);
       if (list.length > 0 && !selectedId) setSelectedId(list[0].id);
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [airportCode]);
+  }, [airportCode, scope.airline]);
 
   // Charge les bagages du vol sélectionné
   const loadBags = useCallback(async () => {

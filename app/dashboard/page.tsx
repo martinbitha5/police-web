@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { flightScope, scopeFlightQuery } from '@/lib/scope';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import type { Flight, FraudAlert } from '@police/shared';
 import { formatRoute } from '@police/shared';
@@ -57,7 +58,8 @@ export default function DashboardPage() {
 function Dashboard() {
   const profile    = useSession();
   const isMobile   = useIsMobile();
-  const airportCode = profile?.airport_code ?? 'FIH';
+  const scope = flightScope(profile);
+  const airportCode = scope.airport;
   const [flights, setFlights] = useState<Flight[]>([]);
   const [alertsByFlight, setAlertsByFlight] = useState<Record<string, number>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -65,12 +67,12 @@ function Dashboard() {
 
   async function loadFlights() {
     const supabase = createClient();
-    const { data: fl } = await supabase
-      .from('flights')
-      .select('*')
-      .eq('date', today())
-      .or(`origin.eq.${airportCode},destination.eq.${airportCode}`)
-      .order('departure_time', { ascending: true });
+    // Périmètre du profil : son aéroport ET sa compagnie. Sans le filtre
+    // transporteur, un profil KQ voyait les vols ET du même aéroport.
+    const { data: fl } = await scopeFlightQuery(
+      supabase.from('flights').select('*').eq('date', today()),
+      scope,
+    ).order('departure_time', { ascending: true });
     const list = (fl as Flight[] | null) ?? [];
     setFlights(list);
 
