@@ -110,6 +110,8 @@ export interface Flight {
   destination: string;
   /** Escales intermédiaires en ordre de trajet (vols avec transit). Route complète = origin → stops → destination. */
   stops: string[] | null;
+  /** Transporteur, dérivé du préfixe de flight_number. Colonne générée : sert au cloisonnement par compagnie. */
+  airline_code: string | null;
   departure_time: string | null;
   arrival_time: string | null;
   status: FlightStatus;
@@ -270,6 +272,34 @@ export interface BaggageLoadAllRejected {
 }
 
 export type BaggageLoadAllResult = BaggageLoadAllAccepted | BaggageLoadAllRejected;
+
+// ─────────────────────────────────────────────────────────────
+// Dolly : contrôle rayon X avant chargement
+// Seuls les bagages enregistrés (is_confirmed) sont admis sur le dolly.
+// Le dolly « attend » le nombre exact de bagages enregistrés du vol.
+// ─────────────────────────────────────────────────────────────
+
+export interface DollyScanAccepted {
+  status: 'accepted';
+  passengerName: string;
+  tagNumber: string;
+  /** Bagages actuellement sur le dolly pour ce vol. */
+  onDolly: number;
+  /** Cible : total des bagages enregistrés (confirmés) du vol. */
+  confirmed: number;
+  /** true = ce bagage était déjà sur le dolly (re-scan). */
+  alreadyOnDolly: boolean;
+  /** true = tous les bagages enregistrés sont sur le dolly (onDolly ≥ confirmed). */
+  complete: boolean;
+  message: string;
+}
+
+export interface DollyScanRejected {
+  status: 'rejected';
+  message: string;
+}
+
+export type DollyScanResult = DollyScanAccepted | DollyScanRejected;
 
 // ─────────────────────────────────────────────────────────────
 // Embarquement à la porte (boarding pass scanné au gate)

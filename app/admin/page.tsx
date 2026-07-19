@@ -87,6 +87,12 @@ function AccountManager() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const airport = form.airport_code.trim();
+    const airline = form.airline_code.trim();
+    if (!airport || !airline) {
+      setMessage({ text: 'Aéroport et compagnie sont obligatoires : ils définissent ce que le compte pourra voir.', ok: false });
+      return;
+    }
     setBusy(true);
     setMessage(null);
     try {
@@ -143,16 +149,15 @@ function AccountManager() {
                 <input style={input} placeholder="Comptoir 3" value={form.gate} onChange={(e) => update('gate', e.target.value)} />
               </Field>
             ) : null}
-            {form.role !== 'agent' ? (
-              <>
-                <Field label="Aéroport (code IATA)">
-                  <input style={input} placeholder="FIH, FBM, GMN…" value={form.airport_code} onChange={(e) => update('airport_code', e.target.value.toUpperCase())} maxLength={4} />
-                </Field>
-                <Field label="Compagnie (code IATA)">
-                  <input style={input} placeholder="ET" value={form.airline_code} onChange={(e) => update('airline_code', e.target.value.toUpperCase())} maxLength={3} />
-                </Field>
-              </>
-            ) : null}
+            {/* Aéroport et compagnie s'appliquent à TOUS les rôles, agents compris :
+                ils déterminent le périmètre de données du compte. Un agent sans
+                ces codes ne verrait aucun vol sur son PDA. */}
+            <Field label="Aéroport (code IATA)">
+              <input style={input} placeholder="FIH, FBM, GMN…" value={form.airport_code} onChange={(e) => update('airport_code', e.target.value.toUpperCase())} maxLength={4} required />
+            </Field>
+            <Field label="Compagnie (code IATA)">
+              <input style={input} placeholder="ET" value={form.airline_code} onChange={(e) => update('airline_code', e.target.value.toUpperCase())} maxLength={3} required />
+            </Field>
 
             {message ? (
               <p style={{ ...s.msg, color: message.ok ? 'var(--positive)' : 'var(--negative)' }}>{message.text}</p>

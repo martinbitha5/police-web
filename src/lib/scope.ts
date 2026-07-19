@@ -7,8 +7,9 @@ import type { Profile } from '@police/shared';
  * compagnie. Sans le filtre transporteur, un profil KQ posté à FIH voyait toute
  * l'activité ET du même aéroport.
  *
- * La compagnie n'existe pas en colonne sur `flights` : elle est portée par le
- * préfixe du numéro de vol (« ET64 »). Le filtre s'applique donc sur ce préfixe.
+ * La cloison est posée dans la RLS : la base ne renvoie déjà que les vols du
+ * périmètre. Ce filtre client reste utile pour éviter de rapatrier des lignes
+ * inutiles et pour garder l'intention lisible dans le code.
  */
 export interface FlightScope {
   airport: string;
@@ -27,17 +28,20 @@ export function flightScope(profile: Pick<Profile, 'airport_code' | 'airline_cod
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function scopeFlightQuery<T extends { or: any; ilike: any }>(query: T, scope: FlightScope): T {
   let q = query.or(`origin.eq.${scope.airport},destination.eq.${scope.airport}`);
-  if (scope.airline) q = q.ilike('flight_number', `${scope.airline}%`);
+  if (scope.airline) q = q.eq('airline_code', scope.airline);
   return q as T;
 }
 
 /** Le vol appartient-il au périmètre du profil ? (filtrage côté client) */
 export function flightInScope(
-  flight: { flight_number: string; origin: string; destination: string },
+  flight: { airline_code?: string | null; origin: string; destination: string; stops?: string[] | null },
   scope: FlightScope,
 ): boolean {
-  const servesAirport = flight.origin === scope.airport || flight.destination === scope.airport;
+  const servesAirport =
+    flight.origin === scope.airport ||
+    flight.destination === scope.airport ||
+    (flight.stops ?? []).includes(scope.airport);
   if (!servesAirport) return false;
   if (!scope.airline) return true;
-  return flight.flight_number.trim().toUpperCase().startsWith(scope.airline);
+  return (flight.airline_code ?? '').toUpperCase() === scope.airline;
 }
