@@ -1,100 +1,32 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import ExcelJS from 'exceljs';
 import type { Flight, Passenger, Baggage, FraudAlert, Profile } from '@police/shared';
 import { formatRoute, FLIGHT_STATUS_LABEL } from '@police/shared';
 import { createClient } from '@/supabase/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import {
+  newWorkbook,
+  addSheet,
+  titleBand,
+  kpiGrid,
+  sectionBar,
+  kvRows,
+  table,
+  ratio,
+  PCT,
+  workbookResponse,
+  type Tone,
+  type Cell,
+} from '@/lib/report-xlsx';
 
 const HUB = process.env.NEXT_PUBLIC_HUB ?? 'FIH';
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-const COLOR = {
-  primary: 'FF2563EB',
-  dark: 'FF0F172A',
-  header: 'FF1E293B',
-  danger: 'FFDC2626',
-  success: 'FF16A34A',
-  light: 'FFF1F5F9',
-  zebra: 'FFF8FAFC',
-};
-
-// ── Helpers Excel ────────────────────────────────────────────
-function sheet(wb: ExcelJS.Workbook, name: string, widths: number[]): ExcelJS.Worksheet {
-  const ws = wb.addWorksheet(name, { views: [{ showGridLines: false }], properties: { defaultRowHeight: 18 } });
-  ws.columns = widths.map((w) => ({ width: w }));
-  return ws;
-}
-function title(ws: ExcelJS.Worksheet, r: number, text: string, cols: number): number {
-  ws.mergeCells(r, 1, r, cols);
-  const c = ws.getCell(r, 1);
-  c.value = text;
-  c.font = { bold: true, size: 15, color: { argb: COLOR.light } };
-  c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR.primary } };
-  c.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
-  ws.getRow(r).height = 28;
-  return r + 1;
-}
-function meta(ws: ExcelJS.Worksheet, r: number, label: string, value: string, cols: number): number {
-  ws.getCell(r, 1).value = label;
-  ws.getCell(r, 1).font = { bold: true };
-  ws.mergeCells(r, 2, r, cols);
-  ws.getCell(r, 2).value = value;
-  return r + 1;
-}
-function section(ws: ExcelJS.Worksheet, r: number, text: string, cols: number): number {
-  r += 1;
-  ws.mergeCells(r, 1, r, cols);
-  const c = ws.getCell(r, 1);
-  c.value = text;
-  c.font = { bold: true, size: 11, color: { argb: COLOR.light } };
-  c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR.dark } };
-  c.alignment = { vertical: 'middle', indent: 1 };
-  ws.getRow(r).height = 20;
-  return r + 1;
-}
-function headerRow(ws: ExcelJS.Worksheet, r: number, cells: string[]): number {
-  const row = ws.getRow(r);
-  cells.forEach((v, i) => {
-    const c = row.getCell(i + 1);
-    c.value = v;
-    c.font = { bold: true, color: { argb: COLOR.light } };
-    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR.header } };
-  });
-  return r + 1;
-}
-function dataRow(
-  ws: ExcelJS.Worksheet,
-  r: number,
-  cells: (string | number)[],
-  opts?: { danger?: boolean; success?: boolean; zebra?: boolean },
-): number {
-  const row = ws.getRow(r);
-  cells.forEach((v, i) => {
-    const c = row.getCell(i + 1);
-    c.value = v;
-    if (opts?.danger) c.font = { color: { argb: COLOR.danger } };
-    else if (opts?.success) c.font = { color: { argb: COLOR.success } };
-    else if (opts?.zebra) c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR.zebra } };
-  });
-  return r + 1;
-}
-
-/** Récupère TOUTES les lignes d'une table par pages de 1000 (les grandes
- *  périodes — ex. l'année — peuvent dépasser la limite par requête). */
-async function fetchAll<T>(
-  supabase: SupabaseClient,
-  table: string,
-  columns: string,
-  flightIds: string[],
-): Promise<T[]> {
+/** Récupère TOUTES les lignes par pages de 1000 (les grandes périodes dépassent la limite). */
+async function fetchAll<T>(supabase: SupabaseClient, tableName: string, columns: string, flightIds: string[]): Promise<T[]> {
   const PAGE = 1000;
   let out: T[] = [];
   for (let offset = 0; ; offset += PAGE) {
-    const { data } = await supabase
-      .from(table)
-      .select(columns)
-      .in('flight_id', flightIds)
-      .range(offset, offset + PAGE - 1);
+    const { data } = await supabase.from(tableName).select(columns).in('flight_id', flightIds).range(offset, offset + PAGE - 1);
     const rows = (data as T[] | null) ?? [];
     out = out.concat(rows);
     if (rows.length < PAGE) break;
@@ -102,11 +34,12 @@ async function fetchAll<T>(
   return out;
 }
 
-function pct(num: number, den: number): string {
-  return den > 0 ? `${Math.round((num / den) * 100)} %` : 'N/A';
-}
-function avg(num: number, den: number): string {
-  return den > 0 ? (num / den).toFixed(1) : 'N/A';
+function bagStage(b: Baggage): { label: string; tone: Tone } {
+  if (b.rush) return { label: 'Réacheminement', tone: 'warning' };
+  if (b.in_hold) return { label: 'Chargé en soute', tone: 'positive' };
+  if (b.on_dolly) return { label: 'Contrôlé rayon X', tone: 'info' };
+  if (b.is_confirmed) return { label: 'Enregistré', tone: 'neutral' };
+  return { label: 'En attente', tone: 'neutral' };
 }
 
 export async function GET(request: NextRequest) {
@@ -122,7 +55,6 @@ export async function GET(request: NextRequest) {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
 
-  // Données passagers + fraude : réservé à la supervision (pas les comptes agent).
   const { data: profile } = await supabase
     .from('profiles')
     .select('role')
@@ -132,7 +64,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Réservé aux superviseurs et administrateurs' }, { status: 403 });
   }
 
-  // Vols de la période.
   const { data: flightsData } = await supabase
     .from('flights')
     .select('*')
@@ -191,202 +122,279 @@ export async function GET(request: NextRequest) {
   const paxNoBag = passengers.filter((p) => p.declared_baggage_count === 0).length;
   const totAlerts = alerts.length;
 
-  // Répartition vols par statut.
   const byStatus = { scheduled: 0, boarding: 0, closed: 0, cancelled: 0 } as Record<string, number>;
   for (const f of flights) byStatus[f.status] = (byStatus[f.status] ?? 0) + 1;
 
   const periodStr = from === to ? from : `${from} au ${to}`;
-  const now = new Date().toLocaleString('fr-FR');
+  const now = new Date();
 
   // ── Classeur ──────────────────────────────────────────────────
-  const wb = new ExcelJS.Workbook();
-  wb.creator = 'Boarding Scanner';
-  wb.created = new Date();
+  const wb = newWorkbook();
+  wb.title = `Rapport ${label} ${periodStr}`;
 
-  // FEUILLE 1 — RÉSUMÉ (statistiques comptables)
+  // FEUILLE 1 — SYNTHÈSE
   {
-    const ws = sheet(wb, 'Résumé', [38, 22]);
-    let r = title(ws, 1, `Rapport ${label} · ${periodStr}`, 2);
-    r = meta(ws, r, 'Période', periodStr, 2);
-    r = meta(ws, r, 'Aéroport (hub)', HUB, 2);
-    r = meta(ws, r, 'Édité le', now, 2);
+    const COLS = 12;
+    const ws = addSheet(wb, 'Synthèse', 'brand');
+    let r = titleBand(
+      ws,
+      {
+        title: `Rapport ${label.toLowerCase()}`,
+        subtitle: from === to ? `Journée du ${from}` : `Du ${from} au ${to}`,
+        meta: [
+          ['Période', periodStr],
+          ['Aéroport', HUB],
+          ['Vols traités', String(flights.length)],
+          ['Édité le', now.toLocaleString('fr-FR')],
+        ],
+      },
+      COLS,
+    );
 
-    r = section(ws, r, 'Activité', 2);
-    r = dataRow(ws, r, ['Vols traités', flights.length]);
-    r = dataRow(ws, r, ['Passagers enregistrés', totPax]);
-    r = dataRow(ws, r, ['Passagers embarqués', totBoarded], { success: totBoarded === totPax && totPax > 0 });
-    r = dataRow(ws, r, ['Reste à embarquer', totPax - totBoarded], { danger: totPax - totBoarded > 0 });
-    r = dataRow(ws, r, ["Taux d'embarquement", pct(totBoarded, totPax)]);
-    r = dataRow(ws, r, ['Moyenne passagers / vol', avg(totPax, flights.length)]);
+    r = kpiGrid(
+      ws,
+      r,
+      [
+        { label: 'Vols traités', value: flights.length, sub: periodStr, tone: 'brand' },
+        { label: 'Passagers', value: totPax, sub: `${totBoarded} embarqués`, tone: 'brand' },
+        {
+          label: 'Bagages confirmés',
+          value: totConfirmed,
+          sub: `sur ${totDeclared} déclarés`,
+          tone: 'positive',
+        },
+        {
+          label: 'Alertes fraude',
+          value: totAlerts,
+          sub: totAlerts > 0 ? 'sur la période' : 'aucune',
+          tone: totAlerts > 0 ? 'negative' : 'positive',
+        },
+      ],
+      4,
+    );
 
-    r = section(ws, r, 'Bagages', 2);
-    r = dataRow(ws, r, ['Bagages déclarés', totDeclared]);
-    r = dataRow(ws, r, ['Bagages enregistrés (confirmés)', totConfirmed], { success: true });
-    r = dataRow(ws, r, ['Contrôlés au rayon X (dolly)', totOnDolly], { success: totOnDolly > 0 });
-    r = dataRow(ws, r, ['Chargés en soute', totInHold], { success: totInHold > 0 });
-    r = dataRow(ws, r, ['Rush (réacheminés)', totRush], { danger: totRush > 0 });
-    r = dataRow(ws, r, ['Bagages en attente', Math.max(totDeclared - totConfirmed, 0)], {
-      danger: totDeclared - totConfirmed > 0,
-    });
-    r = dataRow(ws, r, ['Écart (déclarés − confirmés)', totDeclared - totConfirmed], {
-      danger: totDeclared - totConfirmed !== 0,
-    });
-    r = dataRow(ws, r, ['Taux de confirmation', pct(totConfirmed, totDeclared)]);
-    r = dataRow(ws, r, ['Taux de chargement soute', pct(totInHold, totConfirmed)]);
-    r = dataRow(ws, r, ['Moyenne bagages / passager', avg(totDeclared, totPax)]);
-    r = dataRow(ws, r, ['Passagers sans bagage', paxNoBag]);
+    r = sectionBar(ws, r, 'Activité', COLS);
+    r = kvRows(
+      ws,
+      r,
+      [
+        { label: 'Vols traités', value: flights.length },
+        { label: 'Passagers enregistrés', value: totPax },
+        { label: 'Passagers embarqués', value: totBoarded, tone: totBoarded === totPax && totPax > 0 ? 'positive' : undefined },
+        { label: 'Reste à embarquer', value: totPax - totBoarded, tone: totPax - totBoarded > 0 ? 'warning' : undefined },
+        { label: "Taux d'embarquement", value: ratio(totBoarded, totPax), numFmt: PCT },
+        { label: 'Moyenne passagers / vol', value: ratio(totPax, flights.length), numFmt: '0.0' },
+      ],
+      COLS,
+    );
 
-    r = section(ws, r, 'Anti-fraude', 2);
-    r = dataRow(ws, r, ['Alertes fraude détectées', totAlerts], { danger: totAlerts > 0 });
-    r = dataRow(ws, r, ["Taux d'alerte (alertes / passagers)", pct(totAlerts, totPax)]);
+    r = sectionBar(ws, r, 'Bagages', COLS);
+    r = kvRows(
+      ws,
+      r,
+      [
+        { label: 'Bagages déclarés', value: totDeclared },
+        { label: 'Bagages confirmés au tapis', value: totConfirmed, tone: 'positive' },
+        { label: 'Contrôlés au rayon X (dolly)', value: totOnDolly, tone: totOnDolly > 0 ? 'info' : undefined },
+        { label: 'Chargés en soute', value: totInHold, tone: totInHold > 0 ? 'positive' : undefined },
+        { label: 'Rush (réacheminés)', value: totRush, tone: totRush > 0 ? 'warning' : undefined },
+        { label: 'Écart (déclarés − confirmés)', value: totDeclared - totConfirmed, tone: totDeclared - totConfirmed !== 0 ? 'negative' : 'positive' },
+        { label: 'Taux de confirmation', value: ratio(totConfirmed, totDeclared), numFmt: PCT },
+        { label: 'Taux de chargement soute', value: ratio(totInHold, totConfirmed), numFmt: PCT },
+        { label: 'Moyenne bagages / passager', value: ratio(totDeclared, totPax), numFmt: '0.0' },
+        { label: 'Passagers sans bagage', value: paxNoBag },
+      ],
+      COLS,
+    );
 
-    r = section(ws, r, 'Vols par statut', 2);
-    r = dataRow(ws, r, [FLIGHT_STATUS_LABEL.scheduled, byStatus.scheduled]);
-    r = dataRow(ws, r, [FLIGHT_STATUS_LABEL.boarding, byStatus.boarding]);
-    r = dataRow(ws, r, [FLIGHT_STATUS_LABEL.closed, byStatus.closed]);
-    r = dataRow(ws, r, [FLIGHT_STATUS_LABEL.cancelled, byStatus.cancelled], { danger: byStatus.cancelled > 0 });
+    r = sectionBar(ws, r, 'Anti-fraude', COLS);
+    r = kvRows(
+      ws,
+      r,
+      [
+        { label: 'Alertes fraude détectées', value: totAlerts, tone: totAlerts > 0 ? 'negative' : 'positive' },
+        { label: "Taux d'alerte (alertes / passagers)", value: ratio(totAlerts, totPax), numFmt: PCT },
+      ],
+      COLS,
+    );
+
+    r = sectionBar(ws, r, 'Vols par statut', COLS);
+    kvRows(
+      ws,
+      r,
+      [
+        { label: FLIGHT_STATUS_LABEL.scheduled, value: byStatus.scheduled },
+        { label: FLIGHT_STATUS_LABEL.boarding, value: byStatus.boarding, tone: byStatus.boarding > 0 ? 'positive' : undefined },
+        { label: FLIGHT_STATUS_LABEL.closed, value: byStatus.closed },
+        { label: FLIGHT_STATUS_LABEL.cancelled, value: byStatus.cancelled, tone: byStatus.cancelled > 0 ? 'negative' : undefined },
+      ],
+      COLS,
+    );
   }
 
   // FEUILLE 2 — VOLS
   {
-    const ws = sheet(wb, 'Vols', [12, 12, 22, 12, 12, 16, 10]);
-    let r = title(ws, 1, `Vols · ${periodStr}`, 7);
-    r = headerRow(ws, r, ['Date', 'Vol', 'Route', 'Passagers', 'Embarqués', 'Bag. conf./décl.', 'Alertes']);
-    if (flights.length === 0) {
-      r = dataRow(ws, r, ['Aucun vol sur la période', '', '', '', '', '', '']);
-    } else {
-      flights.forEach((f, i) => {
-        const conf = confirmedByFlight.get(f.id) ?? 0;
-        const decl = declaredByFlight.get(f.id) ?? 0;
-        const al = alertsByFlight.get(f.id) ?? 0;
-        r = dataRow(
-          ws,
-          r,
-          [f.date, f.flight_number, formatRoute(f), paxByFlight.get(f.id) ?? 0, boardedByFlight.get(f.id) ?? 0, `${conf} / ${decl}`, al],
-          { danger: al > 0, zebra: al === 0 && i % 2 === 1 },
-        );
-      });
-    }
+    const ws = addSheet(wb, 'Vols', 'brand');
+    const hr = titleBand(ws, { title: 'Vols', subtitle: periodStr, meta: [] }, 7);
+    const rows: Cell[][] = flights.map((f) => {
+      const conf = confirmedByFlight.get(f.id) ?? 0;
+      const decl = declaredByFlight.get(f.id) ?? 0;
+      const al = alertsByFlight.get(f.id) ?? 0;
+      return [
+        f.date,
+        f.flight_number,
+        formatRoute(f),
+        paxByFlight.get(f.id) ?? 0,
+        boardedByFlight.get(f.id) ?? 0,
+        { value: `${conf} / ${decl}`, pill: conf >= decl && decl > 0 ? 'positive' : conf < decl ? 'warning' : 'neutral' },
+        { value: al, pill: al > 0 ? 'negative' : undefined },
+      ];
+    });
+    table(
+      ws,
+      hr,
+      [
+        { header: 'Date', width: 12 },
+        { header: 'Vol', width: 12 },
+        { header: 'Route', width: 22 },
+        { header: 'Passagers', width: 12, align: 'right' },
+        { header: 'Embarqués', width: 12, align: 'right' },
+        { header: 'Bag. conf./décl.', width: 16, align: 'center' },
+        { header: 'Alertes', width: 10, align: 'center' },
+      ],
+      rows,
+      {
+        emptyLabel: 'Aucun vol sur la période',
+        totals: [`${flights.length} vol(s)`, '', '', totPax, totBoarded, `${totConfirmed} / ${totDeclared}`, totAlerts],
+      },
+    );
   }
 
-  // FEUILLE 3 — PASSAGERS (détail)
+  // FEUILLE 3 — PASSAGERS
   {
-    const ws = sheet(wb, 'Passagers', [12, 12, 26, 12, 8, 8, 12, 10, 18]);
-    let r = title(ws, 1, `Passagers · ${periodStr}`, 9);
-    r = headerRow(ws, r, ['Date vol', 'Vol', 'Passager', 'PNR', 'Siège', 'Classe', 'Bag. conf./décl.', 'Embarqué', 'Scanné le']);
-    if (passengers.length === 0) {
-      r = dataRow(ws, r, ['Aucun passager sur la période', '', '', '', '', '', '', '', '']);
-    } else {
-      // Tri par date de vol puis par nom.
-      const sorted = [...passengers].sort((a, b) => {
-        const fa = flightById.get(a.flight_id)?.date ?? '';
-        const fb = flightById.get(b.flight_id)?.date ?? '';
-        return fa === fb ? a.full_name.localeCompare(b.full_name) : fa.localeCompare(fb);
-      });
-      sorted.forEach((p, i) => {
-        const f = flightById.get(p.flight_id);
-        const conf = confirmedByPax.get(p.id) ?? 0;
-        const manque = conf < p.declared_baggage_count;
-        r = dataRow(
-          ws,
-          r,
-          [
-            f?.date ?? 'N/A',
-            f?.flight_number ?? 'N/A',
-            p.full_name,
-            p.pnr,
-            p.seat ?? 'N/A',
-            p.class ?? 'N/A',
-            `${conf} / ${p.declared_baggage_count}`,
-            p.boarded ? 'Oui' : 'Non',
-            new Date(p.scanned_at).toLocaleString('fr-FR'),
-          ],
-          { danger: manque, zebra: !manque && i % 2 === 1 },
-        );
-      });
-    }
+    const ws = addSheet(wb, 'Passagers', 'brand');
+    const hr = titleBand(ws, { title: 'Passagers', subtitle: periodStr, meta: [] }, 9);
+    const sorted = [...passengers].sort((a, b) => {
+      const fa = flightById.get(a.flight_id)?.date ?? '';
+      const fb = flightById.get(b.flight_id)?.date ?? '';
+      return fa === fb ? a.full_name.localeCompare(b.full_name) : fa.localeCompare(fb);
+    });
+    const rows: Cell[][] = sorted.map((p) => {
+      const f = flightById.get(p.flight_id);
+      const conf = confirmedByPax.get(p.id) ?? 0;
+      const manque = conf < p.declared_baggage_count;
+      return [
+        f?.date ?? 'N/A',
+        f?.flight_number ?? 'N/A',
+        p.full_name,
+        p.pnr,
+        p.seat ?? 'N/A',
+        p.class ?? 'N/A',
+        { value: `${conf} / ${p.declared_baggage_count}`, pill: manque ? 'warning' : 'positive' },
+        { value: p.boarded ? 'Oui' : 'Non', pill: p.boarded ? 'positive' : 'neutral' },
+        new Date(p.scanned_at),
+      ];
+    });
+    table(
+      ws,
+      hr,
+      [
+        { header: 'Date vol', width: 12 },
+        { header: 'Vol', width: 12 },
+        { header: 'Passager', width: 26 },
+        { header: 'PNR', width: 12 },
+        { header: 'Siège', width: 8, align: 'center' },
+        { header: 'Classe', width: 8, align: 'center' },
+        { header: 'Bag. conf./décl.', width: 15, align: 'center' },
+        { header: 'Embarqué', width: 11, align: 'center' },
+        { header: 'Scanné le', width: 20, align: 'right' },
+      ],
+      rows,
+      { emptyLabel: 'Aucun passager sur la période' },
+    );
   }
 
-  // FEUILLE 4 — BAGAGES (détail)
+  // FEUILLE 4 — BAGAGES
   {
-    const ws = sheet(wb, 'Bagages', [12, 12, 16, 12, 26, 12, 18, 14, 10, 18]);
-    let r = title(ws, 1, `Bagages · ${periodStr}`, 10);
-    r = headerRow(ws, r, ['Date vol', 'Vol', 'Étiquette', 'Série', 'Passager', 'PNR', 'Statut', 'Soute', 'Dolly', 'Scanné le']);
-    if (baggage.length === 0) {
-      r = dataRow(ws, r, ['Aucun bagage sur la période', '', '', '', '', '', '', '', '', '']);
-    } else {
-      const sorted = [...baggage].sort((a, b) => {
-        const fa = flightById.get(a.flight_id)?.date ?? '';
-        const fb = flightById.get(b.flight_id)?.date ?? '';
-        return fa === fb ? a.tag_number.localeCompare(b.tag_number) : fa.localeCompare(fb);
-      });
-      sorted.forEach((b, i) => {
-        const f = flightById.get(b.flight_id);
-        const pax = passengerById.get(b.passenger_id);
-        // Le dolly s'intercale entre l'enregistrement au tapis et le chargement.
-        const statusLabel = b.rush
-          ? 'Réacheminement'
-          : b.in_hold
-            ? 'Chargé en soute'
-            : b.on_dolly
-              ? 'Contrôlé au rayon X'
-              : b.is_confirmed
-                ? 'Enregistré'
-                : 'En attente';
-        const souteLabel = b.soute === 'avant' ? 'Soute avant' : b.soute === 'arriere' ? 'Soute arrière' : 'N/A';
-        r = dataRow(
-          ws,
-          r,
-          [
-            f?.date ?? 'N/A',
-            f?.flight_number ?? 'N/A',
-            b.tag_number,
-            b.serial_number ?? 'N/A',
-            pax?.full_name ?? 'N/A',
-            pax?.pnr ?? 'N/A',
-            statusLabel,
-            souteLabel,
-            b.on_dolly ? 'Oui' : 'N/A',
-            new Date(b.scanned_at).toLocaleString('fr-FR'),
-          ],
-          { danger: b.rush, success: b.in_hold && !b.rush, zebra: !b.rush && !b.in_hold && i % 2 === 1 },
-        );
-      });
-    }
+    const ws = addSheet(wb, 'Bagages', 'positive');
+    const hr = titleBand(ws, { title: 'Bagages', subtitle: periodStr, meta: [] }, 10);
+    const sorted = [...baggage].sort((a, b) => {
+      const fa = flightById.get(a.flight_id)?.date ?? '';
+      const fb = flightById.get(b.flight_id)?.date ?? '';
+      return fa === fb ? a.tag_number.localeCompare(b.tag_number) : fa.localeCompare(fb);
+    });
+    const rows: Cell[][] = sorted.map((b) => {
+      const f = flightById.get(b.flight_id);
+      const pax = passengerById.get(b.passenger_id);
+      const st = bagStage(b);
+      const soute = b.soute === 'avant' ? 'Soute avant' : b.soute === 'arriere' ? 'Soute arrière' : 'N/A';
+      return [
+        f?.date ?? 'N/A',
+        f?.flight_number ?? 'N/A',
+        b.tag_number,
+        b.serial_number ?? 'N/A',
+        pax?.full_name ?? 'N/A',
+        pax?.pnr ?? 'N/A',
+        { value: st.label, pill: st.tone },
+        soute,
+        { value: b.on_dolly ? 'Oui' : 'N/A', pill: b.on_dolly ? 'info' : undefined },
+        new Date(b.scanned_at),
+      ];
+    });
+    table(
+      ws,
+      hr,
+      [
+        { header: 'Date vol', width: 12 },
+        { header: 'Vol', width: 12 },
+        { header: 'Étiquette', width: 16 },
+        { header: 'Série', width: 12 },
+        { header: 'Passager', width: 26 },
+        { header: 'PNR', width: 12 },
+        { header: 'Statut', width: 18, align: 'center' },
+        { header: 'Soute', width: 14, align: 'center' },
+        { header: 'Dolly', width: 10, align: 'center' },
+        { header: 'Scanné le', width: 20, align: 'right' },
+      ],
+      rows,
+      {
+        emptyLabel: 'Aucun bagage sur la période',
+        totals: ['', '', `${baggage.length} bagage(s)`, '', '', '', `${totInHold} en soute`, '', `${totOnDolly}`, ''],
+      },
+    );
   }
 
   // FEUILLE 5 — ALERTES FRAUDE
   {
-    const ws = sheet(wb, 'Alertes fraude', [12, 12, 22, 16, 30, 18]);
-    let r = title(ws, 1, `Alertes fraude · ${periodStr}`, 6);
-    r = headerRow(ws, r, ['Date', 'Vol', 'Passager', 'PNR', 'Raison', 'Étiquette']);
-    if (alerts.length === 0) {
-      r = dataRow(ws, r, ['Aucune alerte sur la période', '', '', '', '', '']);
-    } else {
-      alerts.forEach((a) => {
-        const f = a.flight_id ? flightById.get(a.flight_id) : null;
-        r = dataRow(
-          ws,
-          r,
-          [
-            new Date(a.created_at).toLocaleDateString('fr-FR'),
-            f?.flight_number ?? 'N/A',
-            a.passenger_name ?? 'N/A',
-            a.pnr ?? 'N/A',
-            a.reason,
-            a.tag_number ?? 'N/A',
-          ],
-          { danger: true },
-        );
-      });
-    }
+    const ws = addSheet(wb, 'Alertes fraude', 'negative');
+    const hr = titleBand(ws, { title: 'Alertes fraude', subtitle: periodStr, meta: [] }, 6);
+    const rows: Cell[][] = alerts.map((a) => {
+      const f = a.flight_id ? flightById.get(a.flight_id) : null;
+      return [
+        new Date(a.created_at),
+        f?.flight_number ?? 'N/A',
+        a.passenger_name ?? 'N/A',
+        a.pnr ?? 'N/A',
+        { value: a.reason, pill: 'negative' },
+        a.tag_number ?? 'N/A',
+      ];
+    });
+    table(
+      ws,
+      hr,
+      [
+        { header: 'Date', width: 20, align: 'right' },
+        { header: 'Vol', width: 12 },
+        { header: 'Passager', width: 26 },
+        { header: 'PNR', width: 14 },
+        { header: 'Raison', width: 32 },
+        { header: 'Étiquette', width: 18 },
+      ],
+      rows,
+      { emptyLabel: 'Aucune alerte sur la période' },
+    );
   }
 
-  const buffer = await wb.xlsx.writeBuffer();
-  return new NextResponse(buffer as ArrayBuffer, {
-    headers: {
-      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': `attachment; filename="rapport-${label.toLowerCase()}-${from}_${to}.xlsx"`,
-    },
-  });
+  const { buffer, headers } = await workbookResponse(wb, `rapport-${label.toLowerCase()}-${from}_${to}.xlsx`);
+  return new NextResponse(buffer, { headers });
 }
