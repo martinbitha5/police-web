@@ -135,7 +135,9 @@ export function titleBand(
     lc.value = label.toUpperCase();
     lc.font = { name: FONT, bold: true, size: 9, color: { argb: C.muted } };
     lc.alignment = { vertical: 'middle', indent: 1 };
-    ws.mergeCells(r, 2, r, cols);
+    // Valeur limitée aux colonnes B..D : le reste de la bande reste libre pour
+    // les logos (bandeau à droite).
+    ws.mergeCells(r, 2, r, Math.min(4, cols));
     const vc = ws.getCell(r, 2);
     vc.value = value;
     vc.font = { name: FONT, size: 10.5, color: { argb: C.ink } };
@@ -144,6 +146,42 @@ export function titleBand(
     r += 1;
   }
   return r + 1;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Logos (bandeau de marque, en haut à droite)
+// ─────────────────────────────────────────────────────────────
+
+export interface EmbeddedLogo {
+  b64: string;
+  width: number;
+  height: number;
+}
+
+/**
+ * Pose les logos en haut à droite de la feuille, côte à côte, dans la zone
+ * laissée libre par le bloc métadonnées. La hauteur est fixée et la largeur
+ * calculée pour préserver le rapport d'aspect de chaque image.
+ */
+export function placeLogos(
+  wb: ExcelJS.Workbook,
+  ws: ExcelJS.Worksheet,
+  logos: EmbeddedLogo[],
+  opts?: { height?: number; startCol?: number; row?: number; gap?: number },
+): void {
+  const H = opts?.height ?? 62;
+  const row = opts?.row ?? 2.25; // 0-based : sous le sous-titre, dans la bande méta
+  const gapCols = opts?.gap ?? 0.4;
+  let col = opts?.startCol ?? 4.4; // 0-based : colonne E environ, à droite des méta
+  const COL_PX = 64; // largeur d'une colonne par défaut, en pixels
+
+  for (const logo of logos) {
+    if (!logo.b64) continue;
+    const width = Math.round(H * (logo.width / logo.height));
+    const id = wb.addImage({ base64: `data:image/png;base64,${logo.b64}`, extension: 'png' });
+    ws.addImage(id, { tl: { col, row }, ext: { width, height: H }, editAs: 'oneCell' });
+    col += width / COL_PX + gapCols;
+  }
 }
 
 // ─────────────────────────────────────────────────────────────

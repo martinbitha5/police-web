@@ -6,6 +6,7 @@ import {
   newWorkbook,
   addSheet,
   titleBand,
+  placeLogos,
   kpiGrid,
   sectionBar,
   kvRows,
@@ -16,6 +17,7 @@ import {
   type Tone,
   type Cell,
 } from '@/lib/report-xlsx';
+import { LOGO_ATS, LOGO_CSI } from '@/lib/report-logos';
 
 const HUB = process.env.NEXT_PUBLIC_HUB ?? 'FIH';
 
@@ -135,6 +137,7 @@ export async function GET(request: NextRequest) {
       },
       COLS,
     );
+    placeLogos(wb, ws, [LOGO_ATS, LOGO_CSI]);
 
     r = kpiGrid(
       ws,
