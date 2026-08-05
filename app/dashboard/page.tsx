@@ -294,7 +294,17 @@ function FlightDetail({
   onUpdated: () => void;
   isMobile: boolean;
 }) {
-  const { passengers, alerts, baggageDeclared, baggageConfirmed, baggageInHold, baggageRush, boardedCount } = useFlightData(flight.id);
+  const {
+    passengers,
+    alerts,
+    baggageDeclared,
+    baggageConfirmed,
+    baggageInHold,
+    baggageRush,
+    baggageArrived,
+    baggageExpected,
+    boardedCount,
+  } = useFlightData(flight.id);
 
   async function changeStatus(status: Flight['status']) {
     await createClient().from('flights').update({ status }).eq('id', flight.id);
@@ -338,6 +348,14 @@ function FlightDetail({
         <Stat label="Embarqués" value={`${boardedCount} / ${passengers.length}`} icon={<IconPlaneDepart size={20} />} />
         <Stat label="Bagages confirmés" value={`${baggageConfirmed} / ${baggageDeclared}`} icon={<IconBag size={20} />} />
         <Stat label="Chargés en soute" value={`${baggageInHold} / ${baggageConfirmed}`} icon={<IconBag size={20} />} />
+        {/* Réception à destination. En alerte seulement une fois le déchargement
+            commencé : avant ça, 0 sur N est normal, pas un manquant. */}
+        <Stat
+          label="Arrivés à destination"
+          value={`${baggageArrived} / ${baggageExpected}`}
+          icon={<IconPlaneArrive size={20} />}
+          danger={baggageArrived > 0 && baggageArrived < baggageExpected}
+        />
         <Stat label="Rush (réacheminés)" value={String(baggageRush)} icon={<IconBag size={20} />} danger={baggageRush > 0} />
         <Stat label="Bagages écartés" value={String(alerts.length)} icon={<IconAlert size={20} />} danger={alerts.length > 0} />
       </div>

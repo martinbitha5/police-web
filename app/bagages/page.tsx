@@ -35,7 +35,7 @@ export default function BagagesPage() {
 }
 
 type SouteFilter = 'all' | 'avant' | 'arriere' | 'none';
-type StatusFilter = 'all' | 'rush' | 'in_hold' | 'confirmed' | 'pending';
+type StatusFilter = 'all' | 'rush' | 'arrived' | 'in_hold' | 'confirmed' | 'pending';
 
 function BagagesContent() {
   const profile = useSession();
@@ -124,7 +124,10 @@ function BagagesContent() {
     if (souteFilter === 'arriere' && b.soute !== 'arriere') return false;
     if (souteFilter === 'none' && b.soute !== null) return false;
     if (statusFilter === 'rush' && !b.rush) return false;
-    if (statusFilter === 'in_hold' && !b.in_hold) return false;
+    if (statusFilter === 'arrived' && !b.arrived) return false;
+    // Les filtres désignent l'étape COURANTE : un bagage déjà réceptionné à
+    // destination n'apparaît plus sous « Chargé ».
+    if (statusFilter === 'in_hold' && (!b.in_hold || b.arrived)) return false;
     if (statusFilter === 'confirmed' && (!b.is_confirmed || b.in_hold || b.rush)) return false;
     if (statusFilter === 'pending' && b.is_confirmed) return false;
     return true;
@@ -200,13 +203,23 @@ function BagagesContent() {
           {/* Filtre statut */}
           <div style={s.filterGroup}>
             <span style={s.filterLabel}>Statut</span>
-            {(['all', 'in_hold', 'confirmed', 'rush', 'pending'] as StatusFilter[]).map((v) => (
+            {(['all', 'arrived', 'in_hold', 'confirmed', 'rush', 'pending'] as StatusFilter[]).map((v) => (
               <FilterPill
                 key={v}
                 active={statusFilter === v}
                 onClick={() => setStatusFilter(v)}
               >
-                {v === 'all' ? 'Tous' : v === 'in_hold' ? 'Chargé' : v === 'confirmed' ? 'Enregistré' : v === 'rush' ? 'Rush' : 'En attente'}
+                {v === 'all'
+                  ? 'Tous'
+                  : v === 'arrived'
+                    ? 'Arrivé'
+                    : v === 'in_hold'
+                      ? 'Chargé'
+                      : v === 'confirmed'
+                        ? 'Enregistré'
+                        : v === 'rush'
+                          ? 'Rush'
+                          : 'En attente'}
               </FilterPill>
             ))}
           </div>
@@ -330,8 +343,9 @@ function SouteBadge({ soute }: { soute: SoutePosition | null }) {
 }
 
 function StatusBadge({ bag }: { bag: Baggage }) {
+  if (bag.arrived) return <span style={{ ...badge, background: 'var(--positive-bg)', color: 'var(--positive)', fontSize: 12 }}>Arrivé</span>;
   if (bag.rush) return <span style={{ ...badge, background: 'var(--warning-bg)', color: 'var(--warning-content)', fontSize: 12 }}>Rush</span>;
-  if (bag.in_hold) return <span style={{ ...badge, background: 'var(--positive-bg)', color: 'var(--positive)', fontSize: 12 }}>Chargé</span>;
+  if (bag.in_hold) return <span style={{ ...badge, background: 'var(--brand-blue)', color: 'var(--content-primary)', fontSize: 12 }}>Chargé</span>;
   if (bag.is_confirmed) return <span style={{ ...badge, background: 'var(--bg-neutral)', color: 'var(--content-primary)', fontSize: 12 }}>Enregistré</span>;
   return <span style={{ ...badge, background: 'var(--bg-neutral)', color: 'var(--content-secondary)', fontSize: 12 }}>En attente</span>;
 }
@@ -389,6 +403,7 @@ function DetailModal({ bag, flight, onClose }: { bag: BagRow; flight: Flight | n
           <Row label="Enregistré">{formatDateTime(bag.scanned_at)}</Row>
           {bag.in_hold && <Row label="Chargé">{formatDateTime(bag.in_hold_at)}</Row>}
           {bag.rush && <Row label="Rush">{formatDateTime(bag.rush_at)}</Row>}
+          {bag.arrived && <Row label="Reçu à destination">{formatDateTime(bag.arrived_at)}</Row>}
         </div>
       </div>
     </div>

@@ -23,6 +23,7 @@ const HUB = process.env.NEXT_PUBLIC_HUB ?? 'FIH';
 
 /** Étape d'un bagage : libellé + ton de la pastille (du plus avancé au moins avancé). */
 function bagStage(b: Baggage): { label: string; tone: Tone } {
+  if (b.arrived) return { label: 'Arrivé à destination', tone: 'positive' };
   if (b.rush) return { label: 'Réacheminement', tone: 'warning' };
   if (b.in_hold) return { label: 'Chargé en soute', tone: 'positive' };
   if (b.on_dolly) return { label: 'Contrôlé rayon X', tone: 'info' };
@@ -99,6 +100,10 @@ export async function GET(request: NextRequest) {
   const inHoldTotal = baggage.filter((b) => b.in_hold).length;
   const onDollyTotal = baggage.filter((b) => b.on_dolly).length;
   const rushTotal = baggage.filter((b) => b.rush).length;
+  const arrivedTotal = baggage.filter((b) => b.arrived).length;
+  // Cible de l'arrivée : ce qui est réellement parti en soute (hors rush).
+  const expectedTotal = baggage.filter((b) => b.in_hold && !b.rush).length;
+  const missingTotal = Math.max(expectedTotal - arrivedTotal, 0);
   const boardedTotal = passengers.reduce((s, p) => s + (p.boarded ? 1 : 0), 0);
   const ecart = declaredTotal - confirmedTotal;
 
@@ -183,6 +188,13 @@ export async function GET(request: NextRequest) {
         { label: 'Bagages confirmés au tapis', value: confirmedTotal, tone: confirmedTotal === declaredTotal ? 'positive' : undefined },
         { label: 'Contrôlés au rayon X (dolly)', value: onDollyTotal, tone: onDollyTotal > 0 ? 'info' : undefined },
         { label: 'Chargés en soute', value: inHoldTotal, tone: inHoldTotal > 0 ? 'positive' : undefined },
+        { label: 'Arrivés à destination', value: arrivedTotal, tone: arrivedTotal > 0 ? 'positive' : undefined },
+        {
+          label: 'Manquants à l’arrivée',
+          value: missingTotal,
+          // Tant que la réception n'a pas commencé, l'écart n'a pas de sens.
+          tone: arrivedTotal > 0 && missingTotal > 0 ? 'negative' : arrivedTotal > 0 ? 'positive' : undefined,
+        },
         { label: 'Rush (réacheminés)', value: rushTotal, tone: rushTotal > 0 ? 'warning' : undefined },
         { label: 'Écart (déclarés − confirmés)', value: ecart, tone: ecart !== 0 ? 'negative' : 'positive' },
         { label: 'Taux de confirmation', value: ratio(confirmedTotal, declaredTotal), numFmt: PCT },
@@ -287,7 +299,16 @@ export async function GET(request: NextRequest) {
       rows,
       {
         emptyLabel: 'Aucun bagage enregistré',
-        totals: [`${baggage.length} bagage(s)`, '', '', '', `${inHoldTotal} en soute`, '', `${onDollyTotal}`, ''],
+        totals: [
+          `${baggage.length} bagage(s)`,
+          '',
+          '',
+          '',
+          `${arrivedTotal} arrivé(s) / ${inHoldTotal} en soute`,
+          '',
+          `${onDollyTotal}`,
+          '',
+        ],
       },
     );
   }

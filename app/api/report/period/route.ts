@@ -37,6 +37,7 @@ async function fetchAll<T>(supabase: SupabaseClient, tableName: string, columns:
 }
 
 function bagStage(b: Baggage): { label: string; tone: Tone } {
+  if (b.arrived) return { label: 'Arrivé à destination', tone: 'positive' };
   if (b.rush) return { label: 'Réacheminement', tone: 'warning' };
   if (b.in_hold) return { label: 'Chargé en soute', tone: 'positive' };
   if (b.on_dolly) return { label: 'Contrôlé rayon X', tone: 'info' };
@@ -121,6 +122,10 @@ export async function GET(request: NextRequest) {
   const totInHold = baggage.reduce((s, b) => s + (b.in_hold ? 1 : 0), 0);
   const totOnDolly = baggage.reduce((s, b) => s + (b.on_dolly ? 1 : 0), 0);
   const totRush = baggage.reduce((s, b) => s + (b.rush ? 1 : 0), 0);
+  const totArrived = baggage.reduce((s, b) => s + (b.arrived ? 1 : 0), 0);
+  // Cible de l'arrivée : ce qui est réellement parti en soute (hors rush).
+  const totExpected = baggage.reduce((s, b) => s + (b.in_hold && !b.rush ? 1 : 0), 0);
+  const totMissing = Math.max(totExpected - totArrived, 0);
   const paxNoBag = passengers.filter((p) => p.declared_baggage_count === 0).length;
   const totAlerts = alerts.length;
 
@@ -200,6 +205,13 @@ export async function GET(request: NextRequest) {
         { label: 'Bagages confirmés au tapis', value: totConfirmed, tone: 'positive' },
         { label: 'Contrôlés au rayon X (dolly)', value: totOnDolly, tone: totOnDolly > 0 ? 'info' : undefined },
         { label: 'Chargés en soute', value: totInHold, tone: totInHold > 0 ? 'positive' : undefined },
+        { label: 'Arrivés à destination', value: totArrived, tone: totArrived > 0 ? 'positive' : undefined },
+        {
+          label: 'Manquants à l’arrivée',
+          value: totMissing,
+          // Tant que la réception n'a pas commencé, l'écart n'a pas de sens.
+          tone: totArrived > 0 && totMissing > 0 ? 'negative' : totArrived > 0 ? 'positive' : undefined,
+        },
         { label: 'Rush (réacheminés)', value: totRush, tone: totRush > 0 ? 'warning' : undefined },
         { label: 'Écart (déclarés − confirmés)', value: totDeclared - totConfirmed, tone: totDeclared - totConfirmed !== 0 ? 'negative' : 'positive' },
         { label: 'Taux de confirmation', value: ratio(totConfirmed, totDeclared), numFmt: PCT },
