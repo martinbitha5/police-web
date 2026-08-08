@@ -112,7 +112,14 @@ function ReportView() {
     const [pax, bags, fraud] = await Promise.all([
       supabase.from('passengers').select('declared_baggage_count, boarded').in('flight_id', ids),
       supabase.from('baggage').select('is_confirmed').in('flight_id', ids),
-      supabase.from('fraud_alerts').select('id', { count: 'exact', head: true }).in('flight_id', ids),
+      // Compteur d'écran : les alertes levées (bagage scanné avant le check-in
+      // du passager) ne sont pas des fraudes et ne doivent pas gonfler le
+      // chiffre. Le classeur Excel, lui, garde la trace complète.
+      supabase
+        .from('fraud_alerts')
+        .select('id', { count: 'exact', head: true })
+        .eq('resolved', false)
+        .in('flight_id', ids),
     ]);
 
     const passengers = (pax.data as { declared_baggage_count: number; boarded: boolean }[] | null) ?? [];
