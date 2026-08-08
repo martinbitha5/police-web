@@ -157,18 +157,19 @@ function FlightsView() {
 
       {error ? <div style={s.error}>{error}</div> : null}
 
-      <div style={isMobile ? { ...s.grid, gridTemplateColumns: 'repeat(2, 1fr)' } : s.grid}>
-        <Stat label="Vols" value={rows.length} icon={<IconPlane size={20} />} loading={loading} />
-        <Stat label="Passagers" value={total.pax} icon={<IconUser size={20} />} loading={loading} />
-        <Stat label="Bagages au tapis" value={`${total.confirmed} / ${total.declared}`} icon={<IconBag size={20} />} loading={loading} />
+      <div style={s.grid}>
+        <Stat label="Vols" value={rows.length} icon={<IconPlane size={20} />} loading={loading} isMobile={isMobile} />
+        <Stat label="Passagers" value={total.pax} icon={<IconUser size={20} />} loading={loading} isMobile={isMobile} />
+        <Stat label="Bagages au tapis" value={`${total.confirmed} / ${total.declared}`} icon={<IconBag size={20} />} loading={loading} isMobile={isMobile} />
         <Stat
           label="Bagages manquants"
           value={total.declared - total.confirmed}
           icon={<IconBag size={20} />}
           danger={total.declared - total.confirmed > 0}
           loading={loading}
+          isMobile={isMobile}
         />
-        <Stat label="Alertes ouvertes" value={total.alerts} icon={<IconAlert size={20} />} danger={total.alerts > 0} loading={loading} />
+        <Stat label="Alertes ouvertes" value={total.alerts} icon={<IconAlert size={20} />} danger={total.alerts > 0} loading={loading} isMobile={isMobile} />
       </div>
 
       {loading ? (
@@ -332,6 +333,7 @@ function FlightCardMobile({
  * être supprimé sans casser la référence, on bloque avant d'appeler la base.
  */
 function DeleteFlightModal({ r, onClose, onDeleted }: { r: FlightStatsRow; onClose: () => void; onDeleted: () => void }) {
+  const isMobile = useIsMobile();
   const [typed, setTyped] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -353,9 +355,9 @@ function DeleteFlightModal({ r, onClose, onDeleted }: { r: FlightStatsRow; onClo
 
   return (
     <div style={s.overlay} onClick={onClose}>
-      <div style={s.modal} onClick={(e) => e.stopPropagation()}>
+      <div style={isMobile ? { ...s.modal, ...s.modalMobile } : s.modal} onClick={(e) => e.stopPropagation()}>
         <div style={s.modalHead}>
-          <h2 style={{ margin: 0, fontSize: 20 }}>Supprimer {r.flight_number} ?</h2>
+          <h2 style={{ margin: 0, fontSize: isMobile ? 17 : 20 }}>Supprimer {r.flight_number} ?</h2>
           <button type="button" style={s.modalClose} onClick={onClose} aria-label="Fermer">
             <IconClose size={18} />
           </button>
@@ -389,10 +391,13 @@ function DeleteFlightModal({ r, onClose, onDeleted }: { r: FlightStatsRow; onClo
             <label style={s.customField}>
               <span style={s.customLabel}>Retapez {r.flight_number} pour confirmer</span>
               <input
-                style={s.dateInput}
+                style={s.textInput}
                 value={typed}
                 onChange={(e) => setTyped(e.target.value)}
                 placeholder={r.flight_number}
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
                 autoFocus
               />
             </label>
@@ -400,19 +405,26 @@ function DeleteFlightModal({ r, onClose, onDeleted }: { r: FlightStatsRow; onClo
           </>
         )}
 
-        <div style={s.modalActions}>
-          <button type="button" style={s.cancelBtn} onClick={onClose}>
-            Annuler
-          </button>
+        {/* Les deux boutons côte à côte débordaient sous 360 px : « Supprimer
+            définitivement » fait à lui seul la largeur de l'écran. Ils passent
+            l'un sous l'autre, l'action destructrice en dessous. */}
+        <div style={isMobile ? { ...s.modalActions, ...s.modalActionsMobile } : s.modalActions}>
           {!blocked ? (
             <button
               type="button"
-              style={{ ...s.confirmDelete, ...(matches && !busy ? {} : { opacity: 0.5, pointerEvents: 'none' }) }}
+              style={{
+                ...s.confirmDelete,
+                ...(isMobile ? s.fullWidthBtn : {}),
+                ...(matches && !busy ? {} : { opacity: 0.5, pointerEvents: 'none' }),
+              }}
               onClick={remove}
             >
               {busy ? 'Suppression…' : 'Supprimer définitivement'}
             </button>
           ) : null}
+          <button type="button" style={isMobile ? { ...s.cancelBtn, ...s.fullWidthBtn } : s.cancelBtn} onClick={onClose}>
+            Annuler
+          </button>
         </div>
       </div>
     </div>
@@ -439,25 +451,30 @@ function Stat({
   icon,
   danger,
   loading,
+  isMobile,
 }: {
   label: string;
   value: number | string;
   icon: React.ReactNode;
   danger?: boolean;
   loading?: boolean;
+  isMobile?: boolean;
 }) {
   return (
-    <div style={s.stat}>
-      <div style={s.statIcon}>{icon}</div>
+    <div style={isMobile ? { ...s.stat, ...s.statMobile } : s.stat}>
+      {/* L'icône disparaît sur téléphone : sur une tuile de 145 px elle prend la
+          place du chiffre, qui est la seule chose qu'on vient lire. */}
+      {isMobile ? null : <div style={s.statIcon}>{icon}</div>}
       <div style={{ minWidth: 0 }}>
         <div style={s.statLabel}>{label}</div>
         <div
           style={{
-            fontSize: 24,
+            fontSize: isMobile ? 20 : 24,
             fontWeight: 700,
             letterSpacing: '-0.03em',
             color: danger ? 'var(--negative)' : 'var(--content-primary)',
             lineHeight: 1.1,
+            whiteSpace: 'nowrap',
           }}
         >
           {loading ? '…' : value}
@@ -501,10 +518,25 @@ const s: Record<string, CSSProperties> = {
     color: 'var(--content-primary)',
     borderRadius: 10,
     padding: '10px 13px',
-    fontSize: 14,
+    // 16 px : en dessous, iOS Safari zoome automatiquement à la mise au point
+    // et l'écran reste décalé après la saisie.
+    fontSize: 16,
+    maxWidth: '100%',
+  },
+  textInput: {
+    background: 'var(--bg-elevated)',
+    border: '1px solid var(--border-neutral)',
+    color: 'var(--content-primary)',
+    borderRadius: 10,
+    padding: '11px 13px',
+    fontSize: 16,
+    width: '100%',
+    boxSizing: 'border-box',
   },
 
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 12, marginBottom: 26 },
+  // auto-fit plutôt qu'un nombre fixe de colonnes : la grille se réorganise
+  // seule du petit Android 320 px au grand écran, sans palier codé en dur.
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(132px, 1fr))', gap: 10, marginBottom: 22 },
   stat: {
     display: 'flex',
     alignItems: 'center',
@@ -514,6 +546,7 @@ const s: Record<string, CSSProperties> = {
     borderRadius: 16,
     padding: 16,
   },
+  statMobile: { padding: 12, borderRadius: 14, gap: 0 },
   statIcon: { color: 'var(--content-secondary)', display: 'grid', placeItems: 'center', flexShrink: 0 },
   statLabel: { color: 'var(--content-secondary)', fontSize: 12.5, marginBottom: 3 },
 
@@ -545,15 +578,19 @@ const s: Record<string, CSSProperties> = {
     border: '1px solid var(--border-neutral)',
     color: 'var(--content-primary)',
     borderRadius: 10,
-    padding: '7px 10px',
-    fontSize: 13,
+    padding: '9px 10px',
+    fontSize: 14,
+    minHeight: 40,
+    maxWidth: '100%',
   },
   deleteBtn: {
     background: 'transparent',
     border: '1px solid var(--border-neutral)',
     color: 'var(--negative)',
     borderRadius: 9999,
-    padding: '7px 9px',
+    width: 40,
+    height: 40,
+    flexShrink: 0,
     display: 'grid',
     placeItems: 'center',
     cursor: 'pointer',
@@ -572,7 +609,9 @@ const s: Record<string, CSSProperties> = {
   cardHead: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 },
   cardTitle: { fontWeight: 700, fontSize: 16, letterSpacing: '-0.03em' },
   cardSub: { color: 'var(--content-secondary)', fontSize: 13, marginTop: 2 },
-  cardMeta: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 },
+  // Quatre colonnes fixes écrasaient « Manquants » sur un écran étroit : en
+  // auto-fit on passe à deux colonnes sous 320 px sans rien tronquer.
+  cardMeta: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(68px, 1fr))', gap: 8 },
   cardActions: { display: 'flex', gap: 8, alignItems: 'center' },
   meta: { display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 },
   metaLabel: { color: 'var(--content-secondary)', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.4, fontWeight: 600 },
@@ -590,13 +629,20 @@ const s: Record<string, CSSProperties> = {
     maxHeight: '90vh',
     overflowY: 'auto',
   },
+  modalMobile: { width: '100%', padding: 16, gap: 12, maxHeight: '92vh', borderRadius: 18 },
   modalHead: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  modalClose: { background: 'transparent', border: 'none', color: 'var(--content-secondary)', display: 'grid', placeItems: 'center', padding: 4, cursor: 'pointer' },
+  // 40 px de côté : une croix de 18 px avec 4 px de marge est intouchable au pouce.
+  modalClose: { background: 'transparent', border: 'none', color: 'var(--content-secondary)', display: 'grid', placeItems: 'center', width: 40, height: 40, flexShrink: 0, cursor: 'pointer' },
   modalText: { margin: 0, color: 'var(--content-secondary)', fontSize: 14, lineHeight: 1.5 },
   lossList: { margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6, borderTop: '1px solid var(--border-neutral)', paddingTop: 14 },
   lossItem: { fontSize: 14, color: 'var(--content-primary)' },
   blocked: { background: 'var(--warning-bg)', color: 'var(--warning-content)', borderRadius: 12, padding: '12px 14px', fontSize: 14, lineHeight: 1.5 },
-  modalActions: { display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 4 },
+  // row-reverse : l'ordre du DOM place l'action destructrice en premier pour
+  // qu'elle arrive en haut de la pile sur téléphone, mais à droite en desktop,
+  // où la convention reste « Annuler » puis l'action.
+  modalActions: { display: 'flex', flexDirection: 'row-reverse', justifyContent: 'flex-start', gap: 10, marginTop: 4 },
+  modalActionsMobile: { flexDirection: 'column', gap: 8 },
+  fullWidthBtn: { width: '100%', padding: '13px 18px' },
   cancelBtn: {
     background: 'transparent',
     border: '1px solid var(--border-neutral)',

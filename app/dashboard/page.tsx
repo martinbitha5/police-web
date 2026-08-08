@@ -614,6 +614,7 @@ function PassengerDetailModal({
   fallbackRoute: string;
   onClose: () => void;
 }) {
+  const isMobile = useIsMobile();
   const [legs, setLegs] = useState<PassengerLeg[]>([]);
   const [bags, setBags] = useState<Baggage[]>([]);
   const [agents, setAgents] = useState<Record<string, string>>({});
@@ -656,10 +657,15 @@ function PassengerDetailModal({
 
   return (
     <div style={s.overlay} onClick={onClose}>
-      <div style={s.paxModal} onClick={(e) => e.stopPropagation()}>
+      <div
+        style={isMobile ? { ...s.paxModal, ...s.paxModalMobile } : s.paxModal}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div style={s.modalHead}>
           <div style={{ minWidth: 0 }}>
-            <h2 style={{ margin: 0, fontSize: 20, letterSpacing: '-0.03em' }}>{p.full_name}</h2>
+            <h2 style={{ margin: 0, fontSize: isMobile ? 17 : 20, letterSpacing: '-0.03em', overflowWrap: 'anywhere' }}>
+              {p.full_name}
+            </h2>
             <div style={s.paxModalSub}>
               PNR {p.pnr} · Siège {p.seat ?? 'N/A'} · Classe {p.class ?? 'N/A'}
               {p.sequence_number ? ` · Séquence ${p.sequence_number}` : ''}
@@ -689,14 +695,16 @@ function PassengerDetailModal({
 
         <section style={s.paxSection}>
           <h3 style={s.paxSectionTitle}>Suivi</h3>
-          <div style={s.paxLine}>
-            <span style={s.paxLineLabel}>Enregistré</span>
+          {/* Sur mobile, libellé au-dessus de la valeur : côte à côte, « 08:42 par
+              Jean Mukeba » se coupe en plein milieu sur un écran de 320 px. */}
+          <div style={isMobile ? { ...s.paxLine, ...s.paxLineMobile } : s.paxLine}>
+            <span style={isMobile ? s.paxLineLabelMobile : s.paxLineLabel}>Enregistré</span>
             <span style={s.paxLineValue}>
               {formatTime(p.scanned_at)} par {agentName(p.scanned_by)}
             </span>
           </div>
-          <div style={s.paxLine}>
-            <span style={s.paxLineLabel}>Embarquement</span>
+          <div style={isMobile ? { ...s.paxLine, ...s.paxLineMobile } : s.paxLine}>
+            <span style={isMobile ? s.paxLineLabelMobile : s.paxLineLabel}>Embarquement</span>
             <span style={s.paxLineValue}>
               {p.boarded
                 ? `${formatTime(p.boarded_at)} par ${agentName(p.boarded_by)}`
@@ -715,7 +723,7 @@ function PassengerDetailModal({
           ) : bags.length === 0 ? (
             <div style={s.paxLineLabel}>Aucun bagage déclaré sur le boarding pass.</div>
           ) : (
-            bags.map((b) => <BaggageDetailRow key={b.id} b={b} />)
+            bags.map((b) => <BaggageDetailRow key={b.id} b={b} isMobile={isMobile} />)
           )}
         </section>
       </div>
@@ -724,7 +732,7 @@ function PassengerDetailModal({
 }
 
 /** Une étiquette et son parcours réel, étape par étape. */
-function BaggageDetailRow({ b }: { b: Baggage }) {
+function BaggageDetailRow({ b, isMobile }: { b: Baggage; isMobile: boolean }) {
   const steps: string[] = [];
   if (b.is_confirmed) steps.push(`Au tapis ${formatTime(b.scanned_at)}`);
   if (b.on_dolly) steps.push(`Dolly ${formatTime(b.on_dolly_at)}`);
@@ -734,8 +742,11 @@ function BaggageDetailRow({ b }: { b: Baggage }) {
   if (b.arrived) steps.push(`Arrivé ${formatTime(b.arrived_at)}`);
 
   return (
-    <div style={s.paxBag}>
-      <span style={s.paxBagTag}>{b.tag_number}</span>
+    // Le parcours d'un bagage tient sur une ligne en desktop (« Au tapis 08:43 ·
+    // Dolly 09:02 · Soute avant 09:10 ») mais pas à côté d'un numéro à 10
+    // chiffres sur un téléphone : on empile.
+    <div style={isMobile ? { ...s.paxBag, ...s.paxBagMobile } : s.paxBag}>
+      <span style={isMobile ? s.paxBagTagMobile : s.paxBagTag}>{b.tag_number}</span>
       {b.is_confirmed ? (
         <span style={s.paxLineValue}>{steps.join(' · ')}</span>
       ) : (
@@ -1005,17 +1016,27 @@ const s: Record<string, CSSProperties> = {
   overlay: { ...modalOverlay },
   modal: { ...modalPanel, width: 460, maxWidth: '100%', padding: 24, display: 'flex', flexDirection: 'column', gap: 14, maxHeight: '90vh', overflowY: 'auto' },
   paxModal: { ...modalPanel, width: 560, maxWidth: '100%', padding: 24, display: 'flex', flexDirection: 'column', gap: 20, maxHeight: '90vh', overflowY: 'auto' },
+  // Téléphone : la fiche prend toute la largeur disponible et respire moins.
+  // Sur un écran de 320 px, 24 px de marge de chaque côté mangeaient un sixième
+  // de la ligne.
+  paxModalMobile: { width: '100%', padding: 16, gap: 16, maxHeight: '92vh', borderRadius: 18 },
   paxModalSub: { color: 'var(--content-secondary)', fontSize: 13, marginTop: 4 },
   paxSection: { display: 'flex', flexDirection: 'column', gap: 8, borderTop: '1px solid var(--border-neutral)', paddingTop: 16 },
   paxSectionTitle: { margin: 0, fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5, color: 'var(--content-secondary)', fontWeight: 600 },
   paxLine: { display: 'flex', gap: 12, alignItems: 'baseline', flexWrap: 'wrap' },
+  paxLineMobile: { flexDirection: 'column', gap: 1, alignItems: 'stretch' },
   paxLineLabel: { color: 'var(--content-secondary)', fontSize: 13, minWidth: 110 },
-  paxLineValue: { fontSize: 14, color: 'var(--content-primary)' },
-  paxLeg: { display: 'flex', gap: 10, alignItems: 'center' },
+  paxLineLabelMobile: { color: 'var(--content-secondary)', fontSize: 12 },
+  paxLineValue: { fontSize: 14, color: 'var(--content-primary)', overflowWrap: 'anywhere' },
+  paxLeg: { display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' },
   paxBag: { display: 'flex', gap: 12, alignItems: 'baseline', flexWrap: 'wrap', paddingTop: 4 },
+  paxBagMobile: { flexDirection: 'column', gap: 1, alignItems: 'stretch', paddingTop: 8 },
   paxBagTag: { fontVariantNumeric: 'tabular-nums', fontSize: 14, fontWeight: 600, minWidth: 110 },
+  paxBagTagMobile: { fontVariantNumeric: 'tabular-nums', fontSize: 14, fontWeight: 600 },
   modalHead: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
-  modalClose: { background: 'transparent', border: 'none', color: 'var(--content-secondary)', display: 'grid', placeItems: 'center', padding: 4 },
+  // Cible tactile : 40 px de côté, sinon la croix est presque impossible à
+  // toucher au pouce sur un téléphone.
+  modalClose: { background: 'transparent', border: 'none', color: 'var(--content-secondary)', display: 'grid', placeItems: 'center', width: 40, height: 40, flexShrink: 0, cursor: 'pointer' },
   row: { display: 'flex', gap: 12 },
   field: { display: 'flex', flexDirection: 'column', gap: 5, flex: 1 },
   label: { fontSize: 12, color: 'var(--content-secondary)', fontWeight: 600 },
