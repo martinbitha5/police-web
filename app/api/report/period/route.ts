@@ -18,6 +18,7 @@ import {
   type Tone,
   type Cell,
 } from '@/lib/report-xlsx';
+import { injectNativeCharts, type ChartSpec } from '@/lib/report-charts';
 import { LOGO_ATS, LOGO_CSI } from '@/lib/report-logos';
 
 const HUB = process.env.NEXT_PUBLIC_HUB ?? 'FIH';
@@ -410,6 +411,110 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // FEUILLE 6 — GRAPHIQUES (périodes de plus d'un jour uniquement)
+  // Un export d'une seule journée n'a pas de tendance à tracer : la feuille et
+  // les graphiques natifs ne sont ajoutés que si la période couvre ≥ 2 jours.
+  let chartSpecs: ChartSpec[] = [];
+  if (from !== to) {
+    // Jours de la période, continus (les jours sans vol comptent zéro).
+    const days: string[] = [];
+    const end = new Date(`${to}T00:00:00Z`);
+    for (let d = new Date(`${from}T00:00:00Z`); d <= end && days.length < 1000; d.setUTCDate(d.getUTCDate() + 1)) {
+      days.push(d.toISOString().slice(0, 10));
+    }
+
+    // Agrégats par jour (via la date du vol de rattachement).
+    const zero = () => new Map<string, number>(days.map((d) => [d, 0]));
+    const add = (m: Map<string, number>, day: string | undefined, n: number) => {
+      if (day !== undefined && m.has(day)) m.set(day, (m.get(day) ?? 0) + n);
+    };
+    const flightsByDay = zero();
+    const paxByDay = zero();
+    const declaredByDay = zero();
+    const confirmedByDay = zero();
+    const alertsByDay = zero();
+    for (const f of flights) add(flightsByDay, f.date, 1);
+    for (const p of passengers) {
+      const day = flightById.get(p.flight_id)?.date;
+      add(paxByDay, day, 1);
+      add(declaredByDay, day, p.declared_baggage_count);
+    }
+    for (const b of baggage) {
+      if (b.is_confirmed) add(confirmedByDay, flightById.get(b.flight_id)?.date, 1);
+    }
+    for (const a of alerts) {
+      add(alertsByDay, a.flight_id ? flightById.get(a.flight_id)?.date : undefined, 1);
+    }
+
+    const dayLabels = days.map((d) => `${d.slice(8, 10)}/${d.slice(5, 7)}`);
+    const of = (m: Map<string, number>) => days.map((d) => m.get(d) ?? 0);
+
+    const ws = addSheet(wb, 'Graphiques', 'info');
+    const hr = titleBand(
+      ws,
+      { title: 'Graphiques', subtitle: periodStr, meta: [['Période', periodStr]] },
+      6,
+    );
+    const rows: Cell[][] = days.map((d, i) => [
+      dayLabels[i]!,
+      flightsByDay.get(d) ?? 0,
+      paxByDay.get(d) ?? 0,
+      declaredByDay.get(d) ?? 0,
+      confirmedByDay.get(d) ?? 0,
+      alertsByDay.get(d) ?? 0,
+    ]);
+    table(
+      ws,
+      hr,
+      [
+        { header: 'Jour', width: 10 },
+        { header: 'Vols', width: 9, align: 'right' },
+        { header: 'Passagers', width: 12, align: 'right' },
+        { header: 'Bag. déclarés', width: 14, align: 'right' },
+        { header: 'Bag. confirmés', width: 15, align: 'right' },
+        { header: 'Alertes', width: 10, align: 'right' },
+      ],
+      rows,
+      { emptyLabel: 'Aucune donnée sur la période' },
+    );
+
+    // Références des plages (lignes 1-based : données sous l'en-tête).
+    const r0 = hr + 1;
+    const r1 = hr + days.length;
+    const col = (letter: string) => `Graphiques!$${letter}$${r0}:$${letter}$${r1}`;
+    const cats = { ref: col('A'), labels: dayLabels };
+
+    // Ancrage sous la table (indices 0-based), pleine largeur d'impression.
+    const top = r1 + 2;
+    chartSpecs = [
+      {
+        type: 'line',
+        title: 'Activité par jour',
+        categories: cats,
+        anchor: { fromCol: 0, fromRow: top, toCol: 12, toRow: top + 20 },
+        series: [
+          { name: 'Passagers', color: '163300', ref: col('C'), values: of(paxByDay) },
+          { name: 'Bagages confirmés', color: '65CF21', ref: col('E'), values: of(confirmedByDay) },
+          { name: 'Alertes fraude', color: 'CB272F', ref: col('F'), values: of(alertsByDay) },
+        ],
+      },
+      {
+        type: 'column',
+        title: 'Bagages par jour : déclarés vs confirmés',
+        categories: cats,
+        anchor: { fromCol: 0, fromRow: top + 22, toCol: 12, toRow: top + 42 },
+        series: [
+          { name: 'Déclarés', color: 'A8ABA6', ref: col('D'), values: of(declaredByDay) },
+          { name: 'Confirmés', color: '163300', ref: col('E'), values: of(confirmedByDay) },
+        ],
+      },
+    ];
+  }
+
   const { buffer, headers } = await workbookResponse(wb, `rapport-${label.toLowerCase()}-${from}_${to}.xlsx`);
+  if (chartSpecs.length > 0) {
+    const withCharts = await injectNativeCharts(buffer, 'Graphiques', chartSpecs);
+    return new NextResponse(new Uint8Array(withCharts), { headers });
+  }
   return new NextResponse(buffer, { headers });
 }

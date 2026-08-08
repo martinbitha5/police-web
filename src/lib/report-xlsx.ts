@@ -461,12 +461,14 @@ export function sideBars(ws: ExcelJS.Worksheet, startRow: number, c0: number, ro
     const filled =
       row.max > 0 ? Math.min(BAR_LEN, Math.max(row.value > 0 ? 1 : 0, Math.round((row.value / row.max) * BAR_LEN))) : 0;
     const bc = ws.getCell(r, c0 + 3);
-    bc.value = {
-      richText: [
-        { font: { name: FONT, size: 9, color: { argb: t.strong } }, text: '█'.repeat(filled) },
-        { font: { name: FONT, size: 9, color: { argb: C.line } }, text: '█'.repeat(BAR_LEN - filled) },
-      ],
-    };
+    // Jamais de segment richText vide : Excel considère un run de texte vide
+    // comme invalide, « répare » le classeur à l'ouverture et perd au passage
+    // les couleurs des barres (symptôme : fichier ouvert en mode [Réparé]).
+    const runs = [
+      { font: { name: FONT, size: 9, color: { argb: t.strong } }, text: '█'.repeat(filled) },
+      { font: { name: FONT, size: 9, color: { argb: C.line } }, text: '█'.repeat(BAR_LEN - filled) },
+    ].filter((run) => run.text.length > 0);
+    bc.value = { richText: runs };
     bc.alignment = { vertical: 'middle' };
 
     for (let c = c0; c <= c0 + 3; c += 1) {
