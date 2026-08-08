@@ -4,6 +4,14 @@ import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { createClient } from '@/supabase/client';
 import { AppShell, useSession } from '@/components/AppShell';
 import { flightScope, scopeFlightQuery } from '@/lib/scope';
+import {
+  PERIOD_LABEL,
+  PERIOD_ORDER,
+  iso,
+  rangeLabel,
+  resolveRange,
+  type Period,
+} from '@/lib/period';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { card, btnPrimary, sectionHeading } from '@/ui/theme';
 import {
@@ -14,45 +22,6 @@ import {
   IconAlert,
   IconDownload,
 } from '@/components/icons';
-
-type Period = 'jour' | 'semaine' | 'mois' | 'annee' | 'perso';
-
-const PERIOD_LABEL: Record<Period, string> = {
-  jour: 'Jour',
-  semaine: 'Semaine',
-  mois: 'Mois',
-  annee: 'Année',
-  perso: 'Personnalisé',
-};
-
-function iso(d: Date): string {
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${d.getFullYear()}-${m}-${day}`;
-}
-
-/** Calcule la plage [from, to] (incluse) pour les périodes prédéfinies, jusqu'à aujourd'hui. */
-function rangeFor(period: Period): { from: string; to: string } {
-  const now = new Date();
-  const to = iso(now);
-  if (period === 'semaine') {
-    const d = new Date(now);
-    const dow = (d.getDay() + 6) % 7; // lundi = 0
-    d.setDate(d.getDate() - dow);
-    return { from: iso(d), to };
-  }
-  if (period === 'mois') {
-    return { from: iso(new Date(now.getFullYear(), now.getMonth(), 1)), to };
-  }
-  if (period === 'annee') {
-    return { from: iso(new Date(now.getFullYear(), 0, 1)), to };
-  }
-  return { from: to, to }; // jour (ou défaut)
-}
-
-function frDate(s: string): string {
-  return new Date(`${s}T00:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-}
 
 interface Stats {
   flights: number;
@@ -84,12 +53,7 @@ function ReportView() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Plage active : champs personnalisés si « Personnalisé », sinon plage calculée.
-  const range =
-    period === 'perso'
-      ? { from: customFrom <= customTo ? customFrom : customTo, to: customFrom <= customTo ? customTo : customFrom }
-      : rangeFor(period);
-  const { from, to } = range;
+  const { from, to } = resolveRange(period, customFrom, customTo);
 
   const load = useCallback(async (rg: { from: string; to: string }) => {
     setLoading(true);
@@ -149,9 +113,7 @@ function ReportView() {
       <div style={isMobile ? { ...s.head, ...s.headMobile } : s.head}>
         <div>
           <h1 style={s.title}>Rapports</h1>
-          <div style={s.sub}>
-            {period === 'jour' ? frDate(to) : `Du ${frDate(from)} au ${frDate(to)}`}
-          </div>
+          <div style={s.sub}>{rangeLabel(period, from, to)}</div>
         </div>
         <a style={{ ...btnPrimary, ...(loading ? { opacity: 0.6, pointerEvents: 'none' } : {}) }} href={downloadHref} download>
           <IconDownload size={16} /> Télécharger Excel
@@ -160,7 +122,7 @@ function ReportView() {
 
       {/* Sélecteur de période */}
       <div style={s.tabs}>
-        {(['jour', 'semaine', 'mois', 'annee', 'perso'] as Period[]).map((p) => (
+        {PERIOD_ORDER.map((p) => (
           <button
             key={p}
             style={{ ...s.tab, ...(period === p ? s.tabActive : {}) }}

@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import type { Profile } from '@police/shared';
 import { createClient } from '@/supabase/client';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { IconDashboard, IconUsers, IconLogout, IconReport, IconBag, IconUser } from './icons';
+import { IconDashboard, IconUsers, IconLogout, IconReport, IconBag, IconUser, IconPlane } from './icons';
 import { Footer } from './Footer';
 
 function formatToday(): string {
@@ -47,6 +47,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isAdmin = profile?.role === 'admin';
   const nav = [
     { href: '/dashboard', label: 'Tableau de bord', icon: IconDashboard, show: true },
+    { href: '/vols',      label: 'Vols',             icon: IconPlane,     show: true },
     { href: '/bagages',   label: 'Bagages',          icon: IconBag,       show: true },
     { href: '/rapport',   label: 'Rapports',         icon: IconReport,    show: true },
     { href: '/profil',    label: 'Profil',           icon: IconUser,      show: true },
