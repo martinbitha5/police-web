@@ -609,9 +609,11 @@ const s: Record<string, CSSProperties> = {
   cardHead: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 },
   cardTitle: { fontWeight: 700, fontSize: 16, letterSpacing: '-0.03em' },
   cardSub: { color: 'var(--content-secondary)', fontSize: 13, marginTop: 2 },
-  // Quatre colonnes fixes écrasaient « Manquants » sur un écran étroit : en
-  // auto-fit on passe à deux colonnes sous 320 px sans rien tronquer.
-  cardMeta: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(68px, 1fr))', gap: 8 },
+  // Quatre colonnes fixes écrasaient « Manquants » sur un écran étroit. En
+  // auto-fit à 120 px, un téléphone courant donne un carré 2 × 2 et les grands
+  // écrans retrouvent les quatre de front. Un seuil plus bas donnerait un
+  // 3 + 1 bancal sur 375 px.
+  cardMeta: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 8 },
   cardActions: { display: 'flex', gap: 8, alignItems: 'center' },
   meta: { display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 },
   metaLabel: { color: 'var(--content-secondary)', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.4, fontWeight: 600 },
