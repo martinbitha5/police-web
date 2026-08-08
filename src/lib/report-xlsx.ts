@@ -401,6 +401,95 @@ export function table(
 }
 
 // ─────────────────────────────────────────────────────────────
+// Panneau d'analyse latéral (barres dessinées dans les cellules)
+//
+// ExcelJS ne sait produire ni graphique natif ni vrai tableau croisé
+// dynamique. On dessine donc l'équivalent d'un graphique en barres
+// horizontales avec des caractères pleins colorés : lisible à l'écran,
+// imprimable, et sans dépendance de rendu côté serveur.
+// ─────────────────────────────────────────────────────────────
+
+const BAR_LEN = 22;
+
+/** Barre de section ancrée sur une plage de colonnes arbitraire. */
+export function sideSection(ws: ExcelJS.Worksheet, r: number, c0: number, c1: number, text: string): number {
+  ws.mergeCells(r, c0, r, c1);
+  const c = ws.getCell(r, c0);
+  c.value = text;
+  c.font = { name: FONT, bold: true, size: 11, color: { argb: C.forest } };
+  c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: C.surface } };
+  c.alignment = { vertical: 'middle', indent: 1 };
+  if (!ws.getRow(r).height || ws.getRow(r).height < 20) ws.getRow(r).height = 20;
+  c.border = { bottom: { style: 'medium', color: { argb: C.lime } } };
+  return r + 1;
+}
+
+export interface SideBar {
+  label: string;
+  value: number;
+  /** Dénominateur : échelle de la barre et base du pourcentage. */
+  max: number;
+  tone?: Tone;
+}
+
+/**
+ * Lignes « libellé · valeur · % · barre » sur 4 colonnes à partir de c0.
+ * La barre est un dégradé plein/estompé proportionnel à value/max.
+ */
+export function sideBars(ws: ExcelJS.Worksheet, startRow: number, c0: number, rows: SideBar[]): number {
+  let r = startRow;
+  for (const row of rows) {
+    const t = TONE[row.tone ?? 'brand'];
+
+    const lc = ws.getCell(r, c0);
+    lc.value = row.label;
+    lc.font = { name: FONT, size: 10, color: { argb: C.ink } };
+    lc.alignment = { vertical: 'middle', indent: 1 };
+
+    const vc = ws.getCell(r, c0 + 1);
+    vc.value = row.value;
+    vc.numFmt = FMT_INT;
+    vc.font = { name: FONT, bold: true, size: 10, color: { argb: t.strong } };
+    vc.alignment = { vertical: 'middle', horizontal: 'right' };
+
+    const pc = ws.getCell(r, c0 + 2);
+    pc.value = row.max > 0 ? row.value / row.max : 'N/A';
+    pc.numFmt = FMT_PCT;
+    pc.font = { name: FONT, size: 9.5, color: { argb: C.muted } };
+    pc.alignment = { vertical: 'middle', horizontal: 'right' };
+
+    const filled =
+      row.max > 0 ? Math.min(BAR_LEN, Math.max(row.value > 0 ? 1 : 0, Math.round((row.value / row.max) * BAR_LEN))) : 0;
+    const bc = ws.getCell(r, c0 + 3);
+    bc.value = {
+      richText: [
+        { font: { name: FONT, size: 9, color: { argb: t.strong } }, text: '█'.repeat(filled) },
+        { font: { name: FONT, size: 9, color: { argb: C.line } }, text: '█'.repeat(BAR_LEN - filled) },
+      ],
+    };
+    bc.alignment = { vertical: 'middle' };
+
+    for (let c = c0; c <= c0 + 3; c += 1) {
+      ws.getCell(r, c).border = { bottom: thin() };
+    }
+    if (!ws.getRow(r).height || ws.getRow(r).height < 16) ws.getRow(r).height = 16;
+    r += 1;
+  }
+  return r + 1;
+}
+
+/** Ligne « aucune donnée » du panneau latéral (même géométrie que sideBars). */
+export function sideEmpty(ws: ExcelJS.Worksheet, r: number, c0: number, c1: number, text: string): number {
+  ws.mergeCells(r, c0, r, c1);
+  const c = ws.getCell(r, c0);
+  c.value = text;
+  c.font = { name: FONT, italic: true, size: 10, color: { argb: C.muted } };
+  c.alignment = { vertical: 'middle', indent: 1 };
+  c.border = { bottom: thin() };
+  return r + 2;
+}
+
+// ─────────────────────────────────────────────────────────────
 // Utilitaires
 // ─────────────────────────────────────────────────────────────
 

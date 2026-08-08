@@ -13,6 +13,9 @@ import {
   table,
   ratio,
   PCT,
+  sideSection,
+  sideBars,
+  sideEmpty,
   workbookResponse,
   type Tone,
   type Cell,
@@ -144,6 +147,9 @@ export async function GET(request: NextRequest) {
     );
     placeLogos(wb, ws, [LOGO_ATS, LOGO_CSI]);
 
+    // Le panneau d'analyse (à droite) démarre à la même ligne que les KPI.
+    const panelTop = r;
+
     r = kpiGrid(
       ws,
       r,
@@ -215,6 +221,51 @@ export async function GET(request: NextRequest) {
       ],
       COLS,
     );
+
+    // ── Panneau d'analyse, dans l'espace vide à droite de la synthèse ──
+    // Barres proportionnelles (équivalent d'un graphique en barres) et
+    // agrégation des alertes par motif (équivalent d'un tableau croisé).
+    {
+      const A0 = COLS + 2; // colonne N : une colonne de respiration après le contenu
+      const A1 = A0 + 3; // colonne Q
+      ws.getColumn(A0).width = 26;
+      ws.getColumn(A0 + 1).width = 7;
+      ws.getColumn(A0 + 2).width = 7;
+      ws.getColumn(A0 + 3).width = 24;
+
+      let ar = panelTop;
+      ar = sideSection(ws, ar, A0, A1, 'Analyse · Parcours bagages');
+      ar = sideBars(ws, ar, A0, [
+        { label: 'Déclarés (check-in)', value: declaredTotal, max: declaredTotal, tone: 'neutral' },
+        { label: 'Confirmés au tapis', value: confirmedTotal, max: declaredTotal, tone: 'brand' },
+        { label: 'Contrôlés rayon X', value: onDollyTotal, max: declaredTotal, tone: 'info' },
+        { label: 'Chargés en soute', value: inHoldTotal, max: declaredTotal, tone: 'positive' },
+        { label: 'Arrivés à destination', value: arrivedTotal, max: declaredTotal, tone: 'positive' },
+        { label: 'Rush (réacheminés)', value: rushTotal, max: declaredTotal, tone: 'warning' },
+      ]);
+
+      ar = sideSection(ws, ar, A0, A1, 'Embarquement');
+      ar = sideBars(ws, ar, A0, [
+        { label: 'Embarqués', value: boardedTotal, max: passengers.length, tone: 'positive' },
+        { label: 'Reste à embarquer', value: passengers.length - boardedTotal, max: passengers.length, tone: 'warning' },
+      ]);
+
+      // Alertes par motif : agrégation façon tableau croisé, triée par volume.
+      ar = sideSection(ws, ar, A0, A1, 'Alertes fraude par motif');
+      const byReason = new Map<string, number>();
+      for (const a of alerts) byReason.set(a.reason, (byReason.get(a.reason) ?? 0) + 1);
+      const reasons = [...byReason.entries()].sort((a, b) => b[1] - a[1]);
+      if (reasons.length === 0) {
+        sideEmpty(ws, ar, A0, A1, 'Aucune alerte sur ce vol');
+      } else {
+        sideBars(
+          ws,
+          ar,
+          A0,
+          reasons.map(([reason, n]) => ({ label: reason, value: n, max: alerts.length, tone: 'negative' as Tone })),
+        );
+      }
+    }
   }
 
   // FEUILLE 2 — PASSAGERS
