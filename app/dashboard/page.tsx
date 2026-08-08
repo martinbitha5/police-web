@@ -469,21 +469,46 @@ function PassengerRowView({ p, fallbackRoute }: { p: PassengerRow; fallbackRoute
 }
 
 function FraudAlerts({ alerts }: { alerts: FraudAlert[] }) {
+  // Repliée par défaut : une vingtaine de rejets empilés remplissaient l'écran
+  // et repoussaient la liste des passagers hors de vue. Le détail reste à un
+  // clic — sur un système anti-fraude, on ne masque pas un rejet sans recours.
+  const [open, setOpen] = useState(false);
+  const last = alerts[0];
+
   return (
     <div style={s.alertsBox}>
-      {alerts.map((a) => (
-        <div key={a.id} style={s.alert}>
-          <span style={s.alertTag}>
-            <IconAlert size={15} /> ÉCARTÉ
-          </span>
-          <div style={{ flex: 1 }}>
-            <strong>{a.passenger_name ?? 'Passager inconnu'}</strong> · PNR {a.pnr ?? 'N/A'} · Tag {a.tag_number ?? 'N/A'}
-            <div style={{ color: 'var(--content-secondary)' }}>
-              {a.reason} {a.gate ? `· ${a.gate}` : ''} · {new Date(a.created_at).toLocaleString('fr-FR')}
+      <button
+        type="button"
+        style={s.alertSummary}
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+      >
+        <span style={s.alertTag}>
+          <IconAlert size={15} /> ÉCARTÉ +{alerts.length}
+        </span>
+        <span style={s.alertSummaryText}>
+          {alerts.length} bagage{alerts.length > 1 ? 's' : ''} écarté{alerts.length > 1 ? 's' : ''}
+          {last ? ` · dernier à ${new Date(last.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` : ''}
+        </span>
+        <span style={s.alertSummaryAction}>{open ? 'Masquer' : 'Voir le détail'}</span>
+      </button>
+
+      {open
+        ? alerts.map((a) => (
+            <div key={a.id} style={s.alert}>
+              <span style={s.alertTag}>
+                <IconAlert size={15} /> ÉCARTÉ
+              </span>
+              <div style={{ flex: 1 }}>
+                <strong>{a.passenger_name ?? 'Passager inconnu'}</strong> · PNR {a.pnr ?? 'N/A'} · Tag{' '}
+                {a.tag_number ?? 'N/A'}
+                <div style={{ color: 'var(--content-secondary)' }}>
+                  {a.reason} {a.gate ? `· ${a.gate}` : ''} · {new Date(a.created_at).toLocaleString('fr-FR')}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      ))}
+          ))
+        : null}
     </div>
   );
 }
@@ -716,6 +741,9 @@ const s: Record<string, CSSProperties> = {
   alertsBox: { display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 },
   alert: { display: 'flex', alignItems: 'center', gap: 12, background: 'var(--negative-bg)', border: 'none', borderRadius: 16, padding: 14 },
   alertTag: { display: 'inline-flex', alignItems: 'center', gap: 5, color: '#fff', background: 'var(--negative)', borderRadius: 9999, padding: '4px 12px', fontSize: 12, fontWeight: 700, letterSpacing: 0.5, whiteSpace: 'nowrap', flexShrink: 0 },
+  alertSummary: { display: 'flex', alignItems: 'center', gap: 12, width: '100%', background: 'var(--negative-bg)', border: 'none', borderRadius: 16, padding: 14, font: 'inherit', color: 'inherit', cursor: 'pointer', textAlign: 'left' },
+  alertSummaryText: { flex: 1, minWidth: 0, fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  alertSummaryAction: { color: 'var(--negative)', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 },
 
   tableWrap: { ...card, padding: 0, overflowX: 'auto' },
 
