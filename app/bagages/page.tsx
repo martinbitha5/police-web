@@ -2,14 +2,14 @@
 
 import { useCallback, useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import type { Flight, Baggage, Passenger, SoutePosition } from '@police/shared';
-import { SOUTE_LABEL } from '@police/shared';
+import { SOUTE_LABEL, todayAtAirport } from '@police/shared';
 import { flightScope, scopeFlightQuery } from '@/lib/scope';
 import { createClient } from '@/supabase/client';
 import { AppShell, useSession } from '@/components/AppShell';
 import { card, badge, modalOverlay, modalPanel } from '@/ui/theme';
 import { IconBag, IconClose, IconPlane } from '@/components/icons';
 
-const today = () => new Date().toISOString().slice(0, 10);
+// La journée d'exploitation bascule à minuit à l'aéroport, pas à minuit UTC.
 
 function formatTime(ts: string | null): string {
   if (!ts) return 'N/A';
@@ -59,7 +59,7 @@ function BagagesContent() {
     (async () => {
       // Périmètre du profil : aéroport ET compagnie.
       const { data } = await scopeFlightQuery(
-        supabase.from('flights').select('*').eq('date', today()),
+        supabase.from('flights').select('*').eq('date', todayAtAirport(airportCode)),
         scope,
       ).order('departure_time', { ascending: true });
       const list = (data as Flight[] | null) ?? [];

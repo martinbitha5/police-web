@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import type { FlightStatus } from '@police/shared';
-import { FLIGHT_STATUS_LABEL, formatRoute } from '@police/shared';
+import { FLIGHT_STATUS_LABEL, formatRoute, todayAtAirport } from '@police/shared';
 import { createClient } from '@/supabase/client';
 import { AppShell, useSession } from '@/components/AppShell';
 import { flightScope, scopeFlightQuery } from '@/lib/scope';
-import { PERIOD_LABEL, PERIOD_ORDER, iso, rangeLabel, resolveRange, type Period } from '@/lib/period';
+import { PERIOD_LABEL, PERIOD_ORDER, rangeLabel, resolveRange, type Period } from '@/lib/period';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { badge, modalOverlay, modalPanel } from '@/ui/theme';
 import { IconPlane, IconUser, IconBag, IconAlert, IconTrash, IconClose } from '@/components/icons';
@@ -67,7 +67,8 @@ function FlightsView() {
   const canManage = profile?.role === 'admin' || profile?.role === 'supervisor';
 
   const [period, setPeriod] = useState<Period>('jour');
-  const today = iso(new Date());
+  // Journée d'exploitation de l'aéroport du profil, pas celle de l'appareil.
+  const today = todayAtAirport(scope.airport);
   const [customFrom, setCustomFrom] = useState(today);
   const [customTo, setCustomTo] = useState(today);
   const [rows, setRows] = useState<FlightStatsRow[]>([]);
@@ -75,7 +76,7 @@ function FlightsView() {
   const [error, setError] = useState<string | null>(null);
   const [toDelete, setToDelete] = useState<FlightStatsRow | null>(null);
 
-  const { from, to } = resolveRange(period, customFrom, customTo);
+  const { from, to } = resolveRange(period, customFrom, customTo, today);
 
   const load = useCallback(
     async (rg: { from: string; to: string }) => {

@@ -4,14 +4,8 @@ import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { createClient } from '@/supabase/client';
 import { AppShell, useSession } from '@/components/AppShell';
 import { flightScope, scopeFlightQuery } from '@/lib/scope';
-import {
-  PERIOD_LABEL,
-  PERIOD_ORDER,
-  iso,
-  rangeLabel,
-  resolveRange,
-  type Period,
-} from '@/lib/period';
+import { PERIOD_LABEL, PERIOD_ORDER, rangeLabel, resolveRange, type Period } from '@/lib/period';
+import { todayAtAirport } from '@police/shared';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { card, btnPrimary, sectionHeading } from '@/ui/theme';
 import {
@@ -47,13 +41,15 @@ function ReportView() {
   const scope = flightScope(profile);
   const isMobile = useIsMobile();
   const [period, setPeriod] = useState<Period>('jour');
-  const today = iso(new Date());
+  // Journée d'exploitation de l'aéroport du profil : elle bascule à minuit sur
+  // place, pas à minuit UTC.
+  const today = todayAtAirport(scope.airport);
   const [customFrom, setCustomFrom] = useState(today);
   const [customTo, setCustomTo] = useState(today);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const { from, to } = resolveRange(period, customFrom, customTo);
+  const { from, to } = resolveRange(period, customFrom, customTo, today);
 
   const load = useCallback(async (rg: { from: string; to: string }) => {
     setLoading(true);

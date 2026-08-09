@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { flightScope, scopeFlightQuery } from '@/lib/scope';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import type { Flight, FraudAlert, Baggage, PassengerLeg } from '@police/shared';
-import { formatRoute, SOUTE_LABEL } from '@police/shared';
+import { formatRoute, SOUTE_LABEL, todayAtAirport } from '@police/shared';
 import { createClient } from '@/supabase/client';
 import { useFlightData, type PassengerRow } from '@/useFlightData';
 import { AppShell, useSession } from '@/components/AppShell';
@@ -36,7 +36,9 @@ const STATUS_STYLE: Record<Flight['status'], { bg: string; color: string }> = {
   cancelled: { bg: 'var(--warning-bg)', color: 'var(--warning-content)' },
 };
 
-const today = () => new Date().toISOString().slice(0, 10);
+// La journée d'exploitation bascule à minuit à l'aéroport du superviseur.
+// toISOString() renvoyait la date UTC : à Kinshasa (UTC+1), de 00h00 à 01h00,
+// le tableau de bord affichait encore les vols de la veille.
 
 function formatTime(ts: string | null): string {
   if (!ts) return 'N/A';
@@ -70,7 +72,7 @@ function Dashboard() {
     // Périmètre du profil : son aéroport ET sa compagnie. Sans le filtre
     // transporteur, un profil KQ voyait les vols ET du même aéroport.
     const { data: fl } = await scopeFlightQuery(
-      supabase.from('flights').select('*').eq('date', today()),
+      supabase.from('flights').select('*').eq('date', todayAtAirport(airportCode)),
       scope,
     ).order('departure_time', { ascending: true });
     const list = (fl as Flight[] | null) ?? [];
@@ -791,7 +793,7 @@ function FlightFormModal({ hub, onClose, onCreated }: { hub: string; onClose: ()
     flight_number: '',
     other_airport: '',
     stops: [] as string[],
-    date: today(),
+    date: todayAtAirport(hub),
     time: '',
     status: 'scheduled' as Flight['status'],
   });
