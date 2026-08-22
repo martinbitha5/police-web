@@ -7,6 +7,7 @@ import { flightScope, scopeFlightQuery } from '@/lib/scope';
 import { createClient } from '@/supabase/client';
 import { AppShell, useSession } from '@/components/AppShell';
 import { useUrlParam } from '@/hooks/useUrlParam';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import { RushPanel } from '@/components/RushPanel';
 import { card, badge, modalOverlay, modalPanel } from '@/ui/theme';
 import { IconBag, IconClose, IconPlane } from '@/components/icons';
@@ -44,6 +45,7 @@ type StatusFilter = 'all' | 'rush' | 'arrived' | 'in_hold' | 'confirmed' | 'pend
 
 function BagagesContent() {
   const profile = useSession();
+  const isMobile = useIsMobile();
   const scope = flightScope(profile);
   const airportCode = scope.airport;
 
@@ -150,9 +152,9 @@ function BagagesContent() {
   const hasFilter = q !== '' || souteFilter !== 'all' || statusFilter !== 'all';
 
   return (
-    <div style={s.page}>
-      {/* En-tête */}
-      <div style={s.header}>
+    <div style={isMobile ? { ...s.page, padding: '16px 14px 32px', gap: 16 } : s.page}>
+      {/* En-tête. Téléphone : titre puis sélecteur pleine largeur, empilés. */}
+      <div style={isMobile ? { ...s.header, flexDirection: 'column', alignItems: 'stretch', gap: 10 } : s.header}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <IconBag size={22} />
           <h1 style={s.title}>Bagages</h1>
@@ -160,7 +162,7 @@ function BagagesContent() {
 
         {/* Sélecteur de vol */}
         <select
-          style={s.select}
+          style={isMobile ? { ...s.select, minWidth: 0, width: '100%' } : s.select}
           value={selectedId ?? ''}
           onChange={(e) => { setSelectedId(e.target.value || null); resetFilters(); }}
         >

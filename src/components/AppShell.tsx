@@ -304,6 +304,9 @@ const m: Record<string, CSSProperties> = {
     background: 'var(--bg-screen)',
     borderBottom: '1px solid var(--border-neutral)',
     boxShadow: 'var(--shadow-card)',
+    // Petits écrans (SE, écrans courts) : le menu défile au lieu de déborder.
+    maxHeight: 'calc(100vh - 61px)',
+    overflowY: 'auto',
   },
   drawerUser: { display: 'flex', alignItems: 'center', gap: 12, padding: '6px 6px 14px', borderBottom: '1px solid var(--border-neutral)', marginBottom: 6 },
   drawerAvatar: {
@@ -412,12 +415,14 @@ const d: Record<string, CSSProperties> = {
   main: { flex: 1, overflow: 'auto', minWidth: 0, background: 'var(--bg-screen)' },
   centered: { color: 'var(--content-secondary)', display: 'grid', placeItems: 'center', height: '60vh' },
 
+  // Libellé et logo sur la MÊME ligne : le libellé à gauche, le logo à droite.
   partnerBox: {
     borderTop: '1px solid var(--border-neutral)',
     padding: '12px 12px 10px',
     display: 'flex',
-    flexDirection: 'column' as const,
-    gap: 7,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
   },
   partnerLabel: {
     fontSize: 10,
@@ -429,10 +434,10 @@ const d: Record<string, CSSProperties> = {
   partnerPill: {
     display: 'inline-flex',
     alignItems: 'center',
-    alignSelf: 'flex-start' as const,
     background: 'var(--bg-neutral)',
     borderRadius: 9999,
     padding: '7px 13px',
+    flexShrink: 0,
   },
   partnerLogo: {
     height: 22,
