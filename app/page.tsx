@@ -142,18 +142,21 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Bande partenaires */}
+      {/* Bande partenaires — les compagnies opérées par la plateforme */}
       <section style={s.partnerBand}>
-        <span style={s.partnerLabel}>Partenaire opérationnel</span>
+        <span style={s.partnerLabel}>Partenaires opérationnels</span>
         <div style={s.partnerDivider} />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/air.png" alt="Air Congo" style={s.partnerLogo} />
+        <div style={s.partnerDivider} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/caa.png" alt="CAA - Compagnie Africaine d'Aviation" style={s.partnerLogo} />
       </section>
 
       {/* Pied de page */}
       <footer className="lp-footer">
         <div className="lp-footer-inner">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.png" alt="Police Bagage" style={{ width: 28, height: 28, borderRadius: 7, objectFit: 'cover', display: 'block' }} />
             <span style={{ color: 'var(--content-primary)', fontWeight: 600 }}>Police Bagage</span>
@@ -162,8 +165,18 @@ export default function Landing() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/air.png" alt="Air Congo" style={{ height: 20, objectFit: 'contain', display: 'block' }} />
             </span>
+            <span style={s.footerAirPill}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/caa.png" alt="CAA - Compagnie Africaine d'Aviation" style={{ height: 20, objectFit: 'contain', display: 'block' }} />
+            </span>
           </div>
-          <span>Accès réservé au personnel autorisé</span>
+          <div style={s.footerLegal}>
+            <span>Accès réservé au personnel autorisé</span>
+            <span style={{ color: 'var(--content-tertiary)' }}>·</span>
+            <Link href="/legal" className="ft-link">Mentions légales</Link>
+            <span style={{ color: 'var(--content-tertiary)' }}>·</span>
+            <Link href="/conditions" className="ft-link">Conditions d’utilisation</Link>
+          </div>
         </div>
       </footer>
     </div>
@@ -238,6 +251,7 @@ const s: Record<string, CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
     gap: 16,
+    flexWrap: 'wrap' as const,
     padding: '28px 24px',
     background: 'var(--bg-screen)',
     borderTop: '1px solid var(--border-neutral)',
@@ -265,5 +279,11 @@ const s: Record<string, CSSProperties> = {
     background: '#fff',
     borderRadius: 9999,
     padding: '5px 12px',
+  },
+  footerLegal: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap' as const,
   },
 };

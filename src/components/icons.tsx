@@ -158,3 +158,13 @@ export function IconReport(p: IconProps) {
     </svg>
   );
 }
+
+export function IconAudit(p: IconProps) {
+  return (
+    <svg {...base(p)}>
+      <path d="M12 3a9 9 0 1 0 9 9" />
+      <path d="M21 3v6h-6" />
+      <path d="M12 7v5l3.5 2" />
+    </svg>
+  );
+}

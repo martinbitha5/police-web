@@ -26,6 +26,15 @@ const HUB = process.env.NEXT_PUBLIC_HUB ?? 'FIH';
 
 /** Étape d'un bagage : libellé + ton de la pastille (du plus avancé au moins avancé). */
 function bagStage(b: Baggage): { label: string; tone: Tone } {
+  if (b.cancelled) return { label: b.in_hold && !b.pulled ? 'Annulé · à retirer' : 'Annulé', tone: 'negative' };
+  if (b.kind === 'rush_forward') {
+    if (b.rush_status === 'expected') return { label: 'Rush · annoncé, pas arrivé', tone: 'neutral' };
+    if (b.rush_status === 'pending') return { label: 'Rush · à valider', tone: 'warning' };
+    if (b.rush_status === 'denied') return { label: 'Rush · refusé', tone: 'negative' };
+    if (b.arrived) return { label: 'Rush · arrivé', tone: 'positive' };
+    if (b.in_hold) return { label: 'Rush · chargé', tone: 'positive' };
+    return { label: 'Rush · autorisé', tone: 'warning' };
+  }
   if (b.arrived) return { label: 'Arrivé à destination', tone: 'positive' };
   if (b.rush) return { label: 'Réacheminement', tone: 'warning' };
   if (b.in_hold) return { label: 'Chargé en soute', tone: 'positive' };
@@ -93,30 +102,54 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // Réconciliation sur les bagages passagers actifs uniquement : l'expédition
+  // rush et les annulations sont comptées à part, jamais dans les ratios.
+  const paxBags = baggage.filter((b) => b.kind !== 'rush_forward' && !b.cancelled);
+  const rushFwd = baggage.filter((b) => b.kind === 'rush_forward');
+  // Physiquement passés au scan : les annoncés pas encore arrivés sont à part.
+  const rushFwdActive = rushFwd.filter((b) => b.rush_status === 'approved' || b.rush_status === 'pending');
+  const rushFwdPending = rushFwd.filter((b) => b.rush_status === 'pending');
+  const cancelledBags = baggage.filter((b) => b.cancelled);
+  const activePax = passengers.filter((p) => !p.offloaded);
+  const offloadedTotal = passengers.length - activePax.length;
+
   const confirmedByPax = new Map<string, number>();
   const paxById = new Map(passengers.map((p) => [p.id, p]));
-  for (const b of baggage) {
-    if (b.is_confirmed) confirmedByPax.set(b.passenger_id, (confirmedByPax.get(b.passenger_id) ?? 0) + 1);
+  for (const b of paxBags) {
+    if (b.is_confirmed && b.passenger_id)
+      confirmedByPax.set(b.passenger_id, (confirmedByPax.get(b.passenger_id) ?? 0) + 1);
   }
-  const declaredTotal = passengers.reduce((s, p) => s + p.declared_baggage_count, 0);
+  const declaredTotal = activePax.reduce((s, p) => s + p.declared_baggage_count, 0);
   const confirmedTotal = [...confirmedByPax.values()].reduce((s, n) => s + n, 0);
-  const inHoldTotal = baggage.filter((b) => b.in_hold).length;
-  const onDollyTotal = baggage.filter((b) => b.on_dolly).length;
-  const rushTotal = baggage.filter((b) => b.rush).length;
-  const arrivedTotal = baggage.filter((b) => b.arrived).length;
-  // Cible de l'arrivée : ce qui est réellement parti en soute (hors rush).
-  const expectedTotal = baggage.filter((b) => b.in_hold && !b.rush).length;
+  const inHoldTotal = paxBags.filter((b) => b.in_hold).length;
+  const onDollyTotal = paxBags.filter((b) => b.on_dolly).length;
+  const rushTotal = paxBags.filter((b) => b.rush).length;
+  const arrivedTotal = baggage.filter((b) => b.arrived && !b.cancelled).length;
+  // Cible de l'arrivée : ce qui est réellement parti en soute (hors rush et
+  // annulés), expéditions rush comprises.
+  const expectedTotal = baggage.filter((b) => b.in_hold && !b.rush && !b.cancelled).length;
   const missingTotal = Math.max(expectedTotal - arrivedTotal, 0);
-  const boardedTotal = passengers.reduce((s, p) => s + (p.boarded ? 1 : 0), 0);
+  const boardedTotal = activePax.reduce((s, p) => s + (p.boarded ? 1 : 0), 0);
   const ecart = declaredTotal - confirmedTotal;
 
   // Stats globales du jour.
   const { data: dayFlights } = await supabase.from('flights').select('id').eq('date', flight.date);
   const dayIds = ((dayFlights as { id: string }[] | null) ?? []).map((f) => f.id);
   const [{ count: dayPax }, { count: dayBoarded }, { count: dayBags }, { count: dayFraud }] = await Promise.all([
-    supabase.from('passengers').select('*', { count: 'exact', head: true }).in('flight_id', dayIds),
-    supabase.from('passengers').select('*', { count: 'exact', head: true }).in('flight_id', dayIds).eq('boarded', true),
-    supabase.from('baggage').select('*', { count: 'exact', head: true }).in('flight_id', dayIds).eq('is_confirmed', true),
+    supabase.from('passengers').select('*', { count: 'exact', head: true }).in('flight_id', dayIds).eq('offloaded', false),
+    supabase
+      .from('passengers')
+      .select('*', { count: 'exact', head: true })
+      .in('flight_id', dayIds)
+      .eq('offloaded', false)
+      .eq('boarded', true),
+    supabase
+      .from('baggage')
+      .select('*', { count: 'exact', head: true })
+      .in('flight_id', dayIds)
+      .eq('kind', 'passenger')
+      .eq('cancelled', false)
+      .eq('is_confirmed', true),
     supabase.from('fraud_alerts').select('*', { count: 'exact', head: true }).in('flight_id', dayIds),
   ]);
 
@@ -154,7 +187,7 @@ export async function GET(request: NextRequest) {
       ws,
       r,
       [
-        { label: 'Passagers', value: passengers.length, sub: `${boardedTotal} embarqués`, tone: 'brand' },
+        { label: 'Passagers', value: activePax.length, sub: `${boardedTotal} embarqués`, tone: 'brand' },
         {
           label: 'Bagages confirmés',
           value: confirmedTotal,
@@ -177,10 +210,13 @@ export async function GET(request: NextRequest) {
       ws,
       r,
       [
-        { label: 'Passagers enregistrés au check-in', value: passengers.length },
-        { label: 'Passagers embarqués', value: boardedTotal, tone: boardedTotal === passengers.length ? 'positive' : undefined },
-        { label: 'Reste à embarquer', value: passengers.length - boardedTotal, tone: passengers.length - boardedTotal > 0 ? 'warning' : undefined },
-        { label: "Taux d'embarquement", value: ratio(boardedTotal, passengers.length), numFmt: PCT },
+        { label: 'Passagers enregistrés au check-in', value: activePax.length },
+        { label: 'Passagers embarqués', value: boardedTotal, tone: boardedTotal === activePax.length ? 'positive' : undefined },
+        { label: 'Reste à embarquer', value: activePax.length - boardedTotal, tone: activePax.length - boardedTotal > 0 ? 'warning' : undefined },
+        ...(offloadedTotal > 0
+          ? [{ label: 'Débarqués par le superviseur', value: offloadedTotal, tone: 'negative' as Tone }]
+          : []),
+        { label: "Taux d'embarquement", value: ratio(boardedTotal, activePax.length), numFmt: PCT },
       ],
       COLS,
     );
@@ -201,7 +237,15 @@ export async function GET(request: NextRequest) {
           // Tant que la réception n'a pas commencé, l'écart n'a pas de sens.
           tone: arrivedTotal > 0 && missingTotal > 0 ? 'negative' : arrivedTotal > 0 ? 'positive' : undefined,
         },
-        { label: 'Rush (réacheminés)', value: rushTotal, tone: rushTotal > 0 ? 'warning' : undefined },
+        { label: 'Restants (à réacheminer)', value: rushTotal, tone: rushTotal > 0 ? 'warning' : undefined },
+        {
+          label: 'Expédition rush (sans passager)',
+          value: rushFwdActive.length,
+          tone: rushFwdPending.length > 0 ? 'warning' : rushFwdActive.length > 0 ? 'info' : undefined,
+        },
+        ...(cancelledBags.length > 0
+          ? [{ label: 'Annulés par le superviseur', value: cancelledBags.length, tone: 'negative' as Tone }]
+          : []),
         { label: 'Écart (déclarés − confirmés)', value: ecart, tone: ecart !== 0 ? 'negative' : 'positive' },
         { label: 'Taux de confirmation', value: ratio(confirmedTotal, declaredTotal), numFmt: PCT },
       ],
@@ -285,9 +329,11 @@ export async function GET(request: NextRequest) {
         p.seat ?? 'N/A',
         p.class ?? 'N/A',
         routeByPax.get(p.id) ?? routeStr,
-        { value: `${conf} / ${p.declared_baggage_count}`, pill: manque ? 'warning' : 'positive' },
+        { value: `${conf} / ${p.declared_baggage_count}`, pill: p.offloaded ? 'negative' : manque ? 'warning' : 'positive' },
         new Date(p.scanned_at),
-        { value: p.boarded ? 'Oui' : 'Non', pill: p.boarded ? 'positive' : 'neutral' },
+        p.offloaded
+          ? { value: 'Débarqué', pill: 'negative' }
+          : { value: p.boarded ? 'Oui' : 'Non', pill: p.boarded ? 'positive' : 'neutral' },
       ];
     });
     table(
@@ -321,12 +367,18 @@ export async function GET(request: NextRequest) {
     );
     const rows: Cell[][] = baggage.map((b) => {
       const st = bagStage(b);
-      const pax = paxById.get(b.passenger_id);
+      const pax = b.passenger_id ? paxById.get(b.passenger_id) : undefined;
       const soute = b.soute === 'avant' ? 'Soute avant' : b.soute === 'arriere' ? 'Soute arrière' : 'N/A';
+      const owner =
+        b.kind === 'rush_forward'
+          ? pax
+            ? `${pax.full_name} (restant connu)`
+            : 'Expédition rush · externe'
+          : (pax?.full_name ?? 'N/A');
       return [
-        b.tag_number,
+        b.rush_tag_number ? `${b.tag_number} / ${b.rush_tag_number}` : b.tag_number,
         b.serial_number ?? 'N/A',
-        pax?.full_name ?? 'N/A',
+        owner,
         pax?.pnr ?? 'N/A',
         { value: st.label, pill: st.tone },
         soute,

@@ -12,9 +12,9 @@ export async function POST(request: NextRequest) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, airline_code')
     .eq('id', auth.user.id)
-    .single<Pick<Profile, 'role'>>();
+    .single<Pick<Profile, 'role' | 'airline_code'>>();
 
   if (profile?.role !== 'admin') {
     return NextResponse.json({ error: 'Réservé aux administrateurs' }, { status: 403 });
@@ -29,6 +29,21 @@ export async function POST(request: NextRequest) {
   }
 
   const admin = createAdminClient();
+
+  // Cloisonnement par compagnie : on ne supprime jamais le compte d'une autre
+  // compagnie. La clé service contourne la RLS, le contrôle vit donc ici.
+  const myAirline = (profile.airline_code ?? '').trim().toUpperCase();
+  const { data: target } = await admin
+    .from('profiles')
+    .select('airline_code')
+    .eq('id', body.id)
+    .maybeSingle<Pick<Profile, 'airline_code'>>();
+  if (!target) {
+    return NextResponse.json({ error: 'Compte introuvable.' }, { status: 404 });
+  }
+  if ((target.airline_code ?? '').trim().toUpperCase() !== myAirline) {
+    return NextResponse.json({ error: "Ce compte appartient à une autre compagnie." }, { status: 403 });
+  }
 
   // Supprime le compte d'authentification (supprime la ligne profiles si la
   // contrainte est en ON DELETE CASCADE).

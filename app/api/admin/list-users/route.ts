@@ -12,18 +12,27 @@ export async function GET() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, airline_code')
     .eq('id', auth.user.id)
-    .single<Pick<Profile, 'role'>>();
+    .single<Pick<Profile, 'role' | 'airline_code'>>();
 
   if (profile?.role !== 'admin') {
     return NextResponse.json({ error: 'Réservé aux administrateurs' }, { status: 403 });
+  }
+
+  // Cloisonnement par compagnie : un admin ne gère que les comptes de la
+  // sienne. La clé service contourne la RLS, le filtre doit donc vivre ici
+  // aussi (même double barrière que le reste du schéma).
+  const airline = (profile.airline_code ?? '').trim().toUpperCase();
+  if (!airline) {
+    return NextResponse.json({ error: 'Profil admin sans compagnie : compte à corriger.' }, { status: 403 });
   }
 
   const admin = createAdminClient();
   const { data, error } = await admin
     .from('profiles')
     .select('*')
+    .eq('airline_code', airline)
     .order('created_at', { ascending: false });
 
   if (error) {

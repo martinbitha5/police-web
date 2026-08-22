@@ -37,12 +37,21 @@ function AdminGuard() {
   return <AccountManager />;
 }
 
-const EMPTY = { email: '', password: '', full_name: '', role: 'agent' as UserRole, gate: '', airport_code: '', airline_code: 'ET' };
+const EMPTY = { email: '', password: '', full_name: '', role: 'agent' as UserRole, gate: '', airport_code: '', airline_code: '' };
 
 function AccountManager() {
   const me = useSession();
   const isMobile = useIsMobile();
   const [form, setForm] = useState(EMPTY);
+
+  // Compagnie pré-remplie avec celle de l'admin connecté (un admin CAA crée des
+  // comptes CAA par défaut). Modifiable : saisir un autre code sert à amorcer
+  // une nouvelle compagnie, dont les comptes sortent aussitôt de ce périmètre.
+  useEffect(() => {
+    if (me?.airline_code) {
+      setForm((f) => (f.airline_code ? f : { ...f, airline_code: me.airline_code ?? '' }));
+    }
+  }, [me?.airline_code]);
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -156,7 +165,7 @@ function AccountManager() {
               <input style={input} placeholder="FIH, FBM, GMN…" value={form.airport_code} onChange={(e) => update('airport_code', e.target.value.toUpperCase())} maxLength={4} required />
             </Field>
             <Field label="Compagnie (code IATA)">
-              <input style={input} placeholder="ET" value={form.airline_code} onChange={(e) => update('airline_code', e.target.value.toUpperCase())} maxLength={3} required />
+              <input style={input} placeholder="ET, BU… (préfixe des numéros de vol)" value={form.airline_code} onChange={(e) => update('airline_code', e.target.value.toUpperCase())} maxLength={3} required />
             </Field>
 
             {message ? (

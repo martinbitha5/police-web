@@ -1,7 +1,7 @@
 // Aéroports desservis par Air Congo — référence partagée (portail vols, dashboard).
 // Toutes les lignes partent de Kinshasa (FIH), qui est le hub du réseau.
 
-import { todayInTimeZone } from './date.js';
+import { todayInTimeZone } from './date';
 
 export interface Airport {
   /** Code IATA (ex. "FBM"). */

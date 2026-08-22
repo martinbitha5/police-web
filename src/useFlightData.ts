@@ -21,6 +21,12 @@ export interface FlightData {
   /** Bagages réellement partis en soute (hors rush) : la cible de l'arrivée. */
   baggageExpected: number;
   boardedCount: number;
+  /** Passagers débarqués par le superviseur (déjà exclus des autres compteurs). */
+  offloadedCount: number;
+  /** Bagages expédition rush du vol (sans passager), hors refusés pour les compteurs. */
+  rushForward: Baggage[];
+  /** Bagages annulés encore en soute : à retirer physiquement. */
+  toPull: Baggage[];
   reload: () => void;
 }
 
@@ -34,6 +40,9 @@ export function useFlightData(flightId: string | null): FlightData {
   const [baggageArrived, setArrived] = useState(0);
   const [baggageExpected, setExpected] = useState(0);
   const [boardedCount, setBoarded] = useState(0);
+  const [offloadedCount, setOffloaded] = useState(0);
+  const [rushForward, setRushForward] = useState<Baggage[]>([]);
+  const [toPull, setToPull] = useState<Baggage[]>([]);
 
   const load = useCallback(async () => {
     if (!flightId) return;
@@ -48,8 +57,7 @@ export function useFlightData(flightId: string | null): FlightData {
       supabase.from('fraud_alerts').select('*').eq('flight_id', flightId).order('created_at', { ascending: false }),
     ]);
 
-    const baggage =
-      (bags as Pick<Baggage, 'passenger_id' | 'is_confirmed' | 'in_hold' | 'rush' | 'arrived'>[] | null) ?? [];
+    const baggage = (bags as Baggage[] | null) ?? [];
     const confirmedByPax = new Map<string, number>();
     let confirmedTotal = 0;
     let inHoldTotal = 0;
@@ -59,7 +67,14 @@ export function useFlightData(flightId: string | null): FlightData {
     // non retenu au départ. Un bagage rush ne doit pas compter comme manquant.
     let expectedTotal = 0;
     for (const b of baggage) {
-      if (b.is_confirmed) {
+      // Les ratios de réconciliation restent purs : bagages passagers, hors
+      // annulés. L'expédition rush est comptée à part (rushForward).
+      if (b.kind === 'rush_forward' || b.cancelled) {
+        if (!b.cancelled && b.arrived) arrivedTotal += 1;
+        if (!b.cancelled && b.in_hold && !b.rush) expectedTotal += 1;
+        continue;
+      }
+      if (b.is_confirmed && b.passenger_id) {
         confirmedByPax.set(b.passenger_id, (confirmedByPax.get(b.passenger_id) ?? 0) + 1);
         confirmedTotal += 1;
       }
@@ -68,6 +83,8 @@ export function useFlightData(flightId: string | null): FlightData {
       if (b.arrived) arrivedTotal += 1;
       if (b.in_hold && !b.rush) expectedTotal += 1;
     }
+    setRushForward(baggage.filter((b) => b.kind === 'rush_forward'));
+    setToPull(baggage.filter((b) => b.cancelled && b.in_hold && !b.pulled));
 
     const paxRows = (pax as Passenger[] | null) ?? [];
     const paxIds = paxRows.map((p) => p.id);
@@ -104,8 +121,12 @@ export function useFlightData(flightId: string | null): FlightData {
     setRush(rushTotal);
     setArrived(arrivedTotal);
     setExpected(expectedTotal);
-    setDeclared(rows.reduce((sum, p) => sum + p.declared_baggage_count, 0));
-    setBoarded(rows.reduce((sum, p) => sum + (p.boarded ? 1 : 0), 0));
+    // Un passager débarqué ne pèse plus sur les compteurs, mais reste visible
+    // (barré) dans la liste.
+    const active = rows.filter((p) => !p.offloaded);
+    setOffloaded(rows.length - active.length);
+    setDeclared(active.reduce((sum, p) => sum + p.declared_baggage_count, 0));
+    setBoarded(active.reduce((sum, p) => sum + (p.boarded ? 1 : 0), 0));
   }, [flightId]);
 
   useEffect(() => {
@@ -135,6 +156,9 @@ export function useFlightData(flightId: string | null): FlightData {
     baggageArrived,
     baggageExpected,
     boardedCount,
+    offloadedCount,
+    rushForward,
+    toPull,
     reload: load,
   };
 }

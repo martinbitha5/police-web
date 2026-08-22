@@ -5,36 +5,12 @@ import type { FlightStatus } from '@police/shared';
 import { FLIGHT_STATUS_LABEL, formatRoute, todayAtAirport } from '@police/shared';
 import { createClient } from '@/supabase/client';
 import { AppShell, useSession } from '@/components/AppShell';
-import { flightScope, scopeFlightQuery } from '@/lib/scope';
+import { flightScope } from '@/lib/scope';
+import { loadFlightStats, sumFlightStats, type FlightStatsRow } from '@/lib/flight-stats';
 import { PERIOD_LABEL, PERIOD_ORDER, rangeLabel, resolveRange, type Period } from '@/lib/period';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { badge, modalOverlay, modalPanel } from '@/ui/theme';
 import { IconPlane, IconUser, IconBag, IconAlert, IconTrash, IconClose } from '@/components/icons';
-
-/**
- * Ligne de la vue `flight_stats` : un vol et ses compteurs, agrégés en base.
- * Compter côté navigateur imposerait de rapatrier tous les passagers et tous
- * les bagages de la période, ce qui ne tient pas sur « Année ».
- */
-interface FlightStatsRow {
-  id: string;
-  flight_number: string;
-  origin: string;
-  destination: string;
-  stops: string[] | null;
-  airline_code: string | null;
-  departure_time: string | null;
-  arrival_time: string | null;
-  status: FlightStatus;
-  date: string;
-  pax_count: number;
-  boarded_count: number;
-  bag_declared: number;
-  bag_confirmed: number;
-  bag_in_hold: number;
-  alerts_open: number;
-  disputes_count: number;
-}
 
 const STATUS_STYLE: Record<FlightStatus, { bg: string; color: string }> = {
   scheduled: { bg: 'var(--bg-neutral)', color: 'var(--content-secondary)' },
@@ -82,19 +58,11 @@ function FlightsView() {
     async (rg: { from: string; to: string }) => {
       setLoading(true);
       setError(null);
-      const supabase = createClient();
-      const { data, error: err } = await scopeFlightQuery(
-        supabase.from('flight_stats').select('*').gte('date', rg.from).lte('date', rg.to),
-        scope,
-      )
-        .order('date', { ascending: false })
-        .order('departure_time', { ascending: true });
-
-      if (err) {
+      try {
+        setRows(await loadFlightStats(rg, scope));
+      } catch {
         setError("Impossible de charger les vols. Réessayez dans un instant.");
         setRows([]);
-      } else {
-        setRows((data as FlightStatsRow[] | null) ?? []);
       }
       setLoading(false);
     },
@@ -117,16 +85,7 @@ function FlightsView() {
   }
 
   // Totaux de la période, calculés sur les lignes déjà chargées.
-  const total = rows.reduce(
-    (acc, r) => ({
-      pax: acc.pax + r.pax_count,
-      boarded: acc.boarded + r.boarded_count,
-      declared: acc.declared + r.bag_declared,
-      confirmed: acc.confirmed + r.bag_confirmed,
-      alerts: acc.alerts + r.alerts_open,
-    }),
-    { pax: 0, boarded: 0, declared: 0, confirmed: 0, alerts: 0 },
-  );
+  const total = sumFlightStats(rows);
 
   return (
     <div style={isMobile ? { ...s.content, ...s.contentMobile } : s.content}>

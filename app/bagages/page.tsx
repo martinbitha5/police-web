@@ -1,11 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { Suspense, useCallback, useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import type { Flight, Baggage, Passenger, SoutePosition } from '@police/shared';
 import { SOUTE_LABEL, todayAtAirport } from '@police/shared';
 import { flightScope, scopeFlightQuery } from '@/lib/scope';
 import { createClient } from '@/supabase/client';
 import { AppShell, useSession } from '@/components/AppShell';
+import { useUrlParam } from '@/hooks/useUrlParam';
+import { RushPanel } from '@/components/RushPanel';
 import { card, badge, modalOverlay, modalPanel } from '@/ui/theme';
 import { IconBag, IconClose, IconPlane } from '@/components/icons';
 
@@ -29,7 +31,10 @@ interface BagRow extends Baggage {
 export default function BagagesPage() {
   return (
     <AppShell>
-      <BagagesContent />
+      {/* useSearchParams impose une frontière Suspense au prérendu statique. */}
+      <Suspense fallback={null}>
+        <BagagesContent />
+      </Suspense>
     </AppShell>
   );
 }
@@ -43,7 +48,8 @@ function BagagesContent() {
   const airportCode = scope.airport;
 
   const [flights, setFlights] = useState<Flight[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Le vol consulté vit dans l'URL (?vol=<id>) : F5 reste sur le même vol.
+  const [selectedId, setSelectedId] = useUrlParam('vol');
   const [bags, setBags] = useState<BagRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [detail, setDetail] = useState<BagRow | null>(null);
@@ -64,7 +70,9 @@ function BagagesContent() {
       ).order('departure_time', { ascending: true });
       const list = (data as Flight[] | null) ?? [];
       setFlights(list);
-      if (list.length > 0 && !selectedId) setSelectedId(list[0].id);
+      // Sélection automatique du premier vol : en `replace`, pour que le bouton
+      // Retour du navigateur ne repasse pas par la page sans sélection.
+      if (list.length > 0 && !selectedId) setSelectedId(list[0].id, { replace: true });
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [airportCode, scope.airline]);
@@ -87,10 +95,11 @@ function BagagesContent() {
     );
 
     const rows: BagRow[] = ((bagData as Baggage[] | null) ?? []).map((b) => {
-      const pax = paxById.get(b.passenger_id);
+      const pax = b.passenger_id ? paxById.get(b.passenger_id) : undefined;
       return {
         ...b,
-        passengerName: pax?.full_name ?? 'N/A',
+        passengerName:
+          pax?.full_name ?? (b.kind === 'rush_forward' ? 'Expédition rush (sans passager)' : 'N/A'),
         pnr: pax?.pnr ?? 'N/A',
         declaredCount: pax?.declared_baggage_count ?? 0,
       };
@@ -172,6 +181,17 @@ function BagagesContent() {
           <CounterCard label="Non scannés" value={nonScanneCount} color="var(--content-secondary)" />
           <CounterCard label="Total bagages" value={bags.length} color="var(--content-primary)" />
         </div>
+      )}
+
+      {/* Expédition rush : annonce + validation + suivi des colis sans passager */}
+      {selectedId && (
+        <RushPanel
+          flightId={selectedId}
+          bags={bags.filter((b) => b.kind === 'rush_forward')}
+          canManage={profile?.role === 'admin' || profile?.role === 'supervisor'}
+          onChanged={loadBags}
+          mode="full"
+        />
       )}
 
       {/* Barre recherche + filtres */}
@@ -343,6 +363,18 @@ function SouteBadge({ soute }: { soute: SoutePosition | null }) {
 }
 
 function StatusBadge({ bag }: { bag: Baggage }) {
+  if (bag.cancelled)
+    return (
+      <span style={{ ...badge, background: 'var(--negative-bg)', color: 'var(--negative)', fontSize: 12 }}>
+        {bag.in_hold && !bag.pulled ? 'Annulé · à retirer' : 'Annulé'}
+      </span>
+    );
+  if (bag.kind === 'rush_forward')
+    return (
+      <span style={{ ...badge, background: 'var(--warning-bg)', color: 'var(--warning-content)', fontSize: 12 }}>
+        {bag.rush_status === 'expected' ? 'Rush · annoncé' : bag.rush_status === 'pending' ? 'Rush · à valider' : bag.rush_status === 'denied' ? 'Rush · refusé' : bag.arrived ? 'Rush · arrivé' : bag.in_hold ? 'Rush · chargé' : 'Rush · autorisé'}
+      </span>
+    );
   if (bag.arrived) return <span style={{ ...badge, background: 'var(--positive-bg)', color: 'var(--positive)', fontSize: 12 }}>Arrivé</span>;
   if (bag.rush) return <span style={{ ...badge, background: 'var(--warning-bg)', color: 'var(--warning-content)', fontSize: 12 }}>Rush</span>;
   if (bag.in_hold) return <span style={{ ...badge, background: 'var(--brand-blue)', color: 'var(--content-primary)', fontSize: 12 }}>Chargé</span>;

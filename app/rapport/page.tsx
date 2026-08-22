@@ -1,9 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useState, type CSSProperties } from 'react';
-import { createClient } from '@/supabase/client';
 import { AppShell, useSession } from '@/components/AppShell';
-import { flightScope, scopeFlightQuery } from '@/lib/scope';
+import { flightScope } from '@/lib/scope';
+import { loadFlightStats, sumFlightStats } from '@/lib/flight-stats';
 import { PERIOD_LABEL, PERIOD_ORDER, rangeLabel, resolveRange, type Period } from '@/lib/period';
 import { todayAtAirport } from '@police/shared';
 import { useIsMobile } from '@/hooks/useIsMobile';
@@ -54,45 +54,31 @@ function ReportView() {
   const load = useCallback(async (rg: { from: string; to: string }) => {
     setLoading(true);
     setStats(null);
-    const { from, to } = rg;
-    const supabase = createClient();
 
-    const { data: fl } = await scopeFlightQuery(
-      supabase.from('flights').select('id').gte('date', from).lte('date', to),
-      scope,
-    );
-    const ids = ((fl as { id: string }[] | null) ?? []).map((f) => f.id);
-
-    if (ids.length === 0) {
-      setStats({ flights: 0, passengers: 0, boarded: 0, declared: 0, confirmed: 0, alerts: 0 });
-      setLoading(false);
-      return;
+    // Les compteurs viennent de `flight_stats`, agrégés par Postgres, une ligne
+    // par vol. La page rapatriait auparavant les passagers et les bagages pour
+    // les compter ici : au-delà de 1000 lignes PostgREST tronque en silence, et
+    // le bilan d'un mois s'arrêtait à 1000 passagers. C'est aussi la source que
+    // lit l'écran Vols, donc les deux pages ne peuvent plus se contredire.
+    //
+    // `alerts_open` ne compte que les alertes non résolues : une alerte levée
+    // (bagage scanné avant le check-in du passager) n'est pas une fraude et ne
+    // doit pas gonfler le chiffre. Le classeur Excel garde la trace complète.
+    try {
+      const rows = await loadFlightStats(rg, scope);
+      const t = sumFlightStats(rows);
+      setStats({
+        flights: t.flights,
+        passengers: t.pax,
+        boarded: t.boarded,
+        declared: t.declared,
+        confirmed: t.confirmed,
+        alerts: t.alerts,
+      });
+    } catch {
+      // Mieux vaut des tuiles vides qu'un bilan partiel pris pour un total.
+      setStats(null);
     }
-
-    const [pax, bags, fraud] = await Promise.all([
-      supabase.from('passengers').select('declared_baggage_count, boarded').in('flight_id', ids),
-      supabase.from('baggage').select('is_confirmed').in('flight_id', ids),
-      // Compteur d'écran : les alertes levées (bagage scanné avant le check-in
-      // du passager) ne sont pas des fraudes et ne doivent pas gonfler le
-      // chiffre. Le classeur Excel, lui, garde la trace complète.
-      supabase
-        .from('fraud_alerts')
-        .select('id', { count: 'exact', head: true })
-        .eq('resolved', false)
-        .in('flight_id', ids),
-    ]);
-
-    const passengers = (pax.data as { declared_baggage_count: number; boarded: boolean }[] | null) ?? [];
-    const baggage = (bags.data as { is_confirmed: boolean }[] | null) ?? [];
-
-    setStats({
-      flights: ids.length,
-      passengers: passengers.length,
-      boarded: passengers.reduce((s, p) => s + (p.boarded ? 1 : 0), 0),
-      declared: passengers.reduce((s, p) => s + p.declared_baggage_count, 0),
-      confirmed: baggage.reduce((s, b) => s + (b.is_confirmed ? 1 : 0), 0),
-      alerts: fraud.count ?? 0,
-    });
     setLoading(false);
   }, [scope.airport, scope.airline]);
 

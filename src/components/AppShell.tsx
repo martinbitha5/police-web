@@ -1,12 +1,13 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useLayoutEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import type { Profile } from '@police/shared';
 import { createClient } from '@/supabase/client';
+import { partnerBrand, type PartnerBrand } from '@/lib/partner';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { IconDashboard, IconUsers, IconLogout, IconReport, IconBag, IconUser, IconPlane } from './icons';
+import { IconDashboard, IconUsers, IconLogout, IconReport, IconBag, IconUser, IconPlane, IconAudit } from './icons';
 import { Footer } from './Footer';
 
 function formatToday(): string {
@@ -19,6 +20,19 @@ export function useSession(): Profile | null {
   return useContext(SessionCtx);
 }
 
+// Marque partenaire de la compagnie du profil, null tant qu'elle est inconnue.
+// Contexte séparé de la session : le Footer en a besoin sans porter tout le profil.
+const PartnerCtx = createContext<PartnerBrand | null>(null);
+export function usePartner(): PartnerBrand | null {
+  return useContext(PartnerCtx);
+}
+
+// Compagnie du dernier profil chargé, mémorisée sur l'appareil : au
+// rechargement, le bon logo s'affiche dès le premier rendu, sans attendre le
+// retour réseau du profil. Sans ce cache, un superviseur CAA voyait Air Congo
+// pendant le chargement.
+const AIRLINE_CACHE_KEY = 'pb.airline';
+
 export function AppShell({ children }: { children: ReactNode }) {
   const router   = useRouter();
   const pathname = usePathname();
@@ -26,6 +40,19 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [authed, setAuthed]   = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  // null = compagnie pas encore connue (ni cache, ni profil) : aucun logo.
+  const [airline, setAirline] = useState<string | null>(null);
+
+  // Avant la première peinture (useLayoutEffect, pas useEffect) : reprend la
+  // compagnie mémorisée pour que le logo soit juste dès le premier affichage.
+  useLayoutEffect(() => {
+    try {
+      const cached = localStorage.getItem(AIRLINE_CACHE_KEY);
+      if (cached) setAirline(cached);
+    } catch {
+      // stockage local indisponible : le logo attendra le profil
+    }
+  }, []);
 
   useEffect(() => {
     const supabase = createClient();
@@ -34,16 +61,39 @@ export function AppShell({ children }: { children: ReactNode }) {
       if (!auth.user) { router.replace('/login'); return; }
       setAuthed(true);
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', auth.user.id).single();
-      setProfile((prof as Profile | null) ?? null);
+      const p = (prof as Profile | null) ?? null;
+      setProfile(p);
+      // Le profil fait foi : il met à jour l'affichage et le cache. Une
+      // compagnie absente vide les deux, plutôt que d'afficher un logo hérité.
+      const code = (p?.airline_code ?? '').trim().toUpperCase();
+      setAirline(code);
+      try {
+        if (code) localStorage.setItem(AIRLINE_CACHE_KEY, code);
+        else localStorage.removeItem(AIRLINE_CACHE_KEY);
+      } catch {
+        // stockage local indisponible : tant pis pour le prochain rechargement
+      }
     })();
   }, [router]);
 
   async function logout() {
+    // Oublie la compagnie mémorisée : le prochain utilisateur de cet appareil
+    // ne doit pas voir le logo du précédent pendant son chargement de profil.
+    try { localStorage.removeItem(AIRLINE_CACHE_KEY); } catch { /* sans conséquence */ }
     await createClient().auth.signOut();
     router.replace('/login');
   }
 
-  // La page Comptes est RÉSERVÉE aux admins. Les superviseurs ne la voient pas.
+  // Logo partenaire : cache local d'abord, profil ensuite. Null tant que la
+  // compagnie est inconnue — on n'affiche alors AUCUN logo, jamais un défaut.
+  const partner = partnerBrand(airline);
+  // Sous-titre du logo : rien tant que le profil n'est pas chargé, plutôt
+  // qu'un « ET » par défaut qui serait faux pour un profil d'une autre compagnie.
+  const hubLine = profile ? `${profile.airport_code ?? 'N/A'} · ${profile.airline_code ?? 'N/A'}` : '';
+
+  // Les pages Comptes et Journal d'audit sont RÉSERVÉES aux admins. Les
+  // superviseurs ne les voient pas. Masquer l'entrée ne suffit pas : la page
+  // refuse l'accès, et la vue `movement_log` ne renvoie rien à un non-admin.
   const isAdmin = profile?.role === 'admin';
   const nav = [
     { href: '/dashboard', label: 'Tableau de bord', icon: IconDashboard, show: true },
@@ -51,6 +101,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     { href: '/bagages',   label: 'Bagages',          icon: IconBag,       show: true },
     { href: '/rapport',   label: 'Rapports',         icon: IconReport,    show: true },
     { href: '/profil',    label: 'Profil',           icon: IconUser,      show: true },
+    { href: '/audit',     label: "Journal d'audit",  icon: IconAudit,     show: isAdmin },
     { href: '/admin',     label: 'Comptes',          icon: IconUsers,     show: isAdmin },
   ].filter((n) => n.show);
 
@@ -58,6 +109,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   if (isMobile) {
     return (
       <SessionCtx.Provider value={profile}>
+        <PartnerCtx.Provider value={partner}>
         <div style={m.root}>
           {/* Barre du haut — blanche, sticky */}
           <header style={m.topBar}>
@@ -67,7 +119,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <img src="/logo.png" alt="Police Bagage" style={m.topLogo} />
                 <div>
                   <span style={m.topBrandName}>Police Bagage</span>
-                  <span style={m.topBrandHub}>{profile?.airport_code ?? 'N/A'} · {profile?.airline_code ?? 'ET'}</span>
+                  <span style={m.topBrandHub}>{hubLine}</span>
                 </div>
               </div>
             </div>
@@ -118,6 +170,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Footer />
           </main>
         </div>
+        </PartnerCtx.Provider>
       </SessionCtx.Provider>
     );
   }
@@ -125,6 +178,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   // ── Layout desktop ───────────────────────────────────────────
   return (
     <SessionCtx.Provider value={profile}>
+      <PartnerCtx.Provider value={partner}>
       <div style={d.layout}>
         <aside style={d.sidebar}>
           <div style={d.brandBox}>
@@ -132,7 +186,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <img src="/logo.png" alt="Police Bagage" style={d.brandLogo} />
             <div>
               <div style={d.brand}>Police Bagage</div>
-              <div style={d.brandSub}>{profile?.airport_code ?? 'N/A'} · {profile?.airline_code ?? 'ET'}</div>
+              <div style={d.brandSub}>{hubLine}</div>
             </div>
           </div>
 
@@ -152,14 +206,17 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           <div style={d.dateBox}>{formatToday()}</div>
 
-          {/* Partenaire */}
-          <div style={d.partnerBox}>
-            <span style={d.partnerLabel}>Partenaire</span>
-            <span style={d.partnerPill}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/air.png" alt="Air Congo" style={d.partnerLogo} />
-            </span>
-          </div>
+          {/* Partenaire — logo de la compagnie du profil connecté. Rien tant
+              qu'elle est inconnue : jamais le logo d'une autre compagnie. */}
+          {partner ? (
+            <div style={d.partnerBox}>
+              <span style={d.partnerLabel}>Partenaire</span>
+              <span style={d.partnerPill}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={partner.src} alt={partner.alt} style={d.partnerLogo} />
+              </span>
+            </div>
+          ) : null}
 
           <div style={d.user}>
             <div style={d.userRow}>
@@ -184,6 +241,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </main>
       </div>
+      </PartnerCtx.Provider>
     </SessionCtx.Provider>
   );
 }

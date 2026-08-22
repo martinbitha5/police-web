@@ -22,9 +22,9 @@ export async function POST(request: NextRequest) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, airline_code')
     .eq('id', auth.user.id)
-    .single<Pick<Profile, 'role'>>();
+    .single<Pick<Profile, 'role' | 'airline_code'>>();
 
   if (profile?.role !== 'admin') {
     return NextResponse.json({ error: 'Réservé aux administrateurs' }, { status: 403 });
@@ -35,6 +35,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'email, password, full_name et role sont requis' }, { status: 400 });
   }
 
+  // La compagnie du nouveau compte : celle saisie, sinon celle de l'admin.
+  // La création reste possible vers une AUTRE compagnie : c'est l'amorçage
+  // d'un nouveau transporteur (l'admin en place crée son premier admin, qui
+  // sort aussitôt du périmètre et gère ensuite ses effectifs seul). La
+  // lecture et la suppression, elles, sont strictement cloisonnées.
+  const airline = (body.airline_code ?? profile.airline_code ?? '').trim().toUpperCase();
+  if (!airline) {
+    return NextResponse.json({ error: 'Compagnie (code IATA) requise' }, { status: 400 });
+  }
+
   const admin = createAdminClient();
   const { data, error } = await admin.auth.admin.createUser({
     email: body.email,
@@ -43,9 +53,9 @@ export async function POST(request: NextRequest) {
     user_metadata: {
       full_name:    body.full_name,
       role:         body.role,
-      gate:         body.gate         ?? null,
-      airport_code: body.airport_code ?? 'FIH',
-      airline_code: body.airline_code ?? 'ET',
+      gate:         body.gate ?? null,
+      airport_code: (body.airport_code ?? 'FIH').trim().toUpperCase(),
+      airline_code: airline,
     },
   });
 

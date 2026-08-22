@@ -24,13 +24,57 @@ import { LOGO_ATS, LOGO_CSI } from '@/lib/report-logos';
 const HUB = process.env.NEXT_PUBLIC_HUB ?? 'FIH';
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-/** Récupère TOUTES les lignes par pages de 1000 (les grandes périodes dépassent la limite). */
-async function fetchAll<T>(supabase: SupabaseClient, tableName: string, columns: string, flightIds: string[]): Promise<T[]> {
-  const PAGE = 1000;
+const PAGE = 1000;
+
+/**
+ * Récupère TOUTES les lignes de la période, par pages de 1000 (les grandes
+ * périodes dépassent la limite PostgREST).
+ *
+ * Le filtre porte sur la date du vol de rattachement, par jointure
+ * `flights!inner`, et non sur une liste d'identifiants de vols. Transporter les
+ * identifiants ajoutait une quarantaine d'octets d'URL par vol : tenable sur une
+ * journée, hors de portée sur une année, où la requête atteindrait plusieurs
+ * dizaines de kilo-octets et serait refusée par la passerelle HTTP. Ici la
+ * requête garde la même taille quel que soit le nombre de vols.
+ *
+ * Le tri sur `id` n'est pas décoratif : sans ordre déterministe, deux pages
+ * successives peuvent renvoyer la même ligne ou en sauter une. Les feuilles
+ * retrient ensuite selon leur propre besoin.
+ */
+async function fetchAll<T>(supabase: SupabaseClient, tableName: string, from: string, to: string): Promise<T[]> {
   let out: T[] = [];
   for (let offset = 0; ; offset += PAGE) {
-    const { data } = await supabase.from(tableName).select(columns).in('flight_id', flightIds).range(offset, offset + PAGE - 1);
-    const rows = (data as T[] | null) ?? [];
+    const { data } = await supabase
+      .from(tableName)
+      .select('*, flights!inner(date)')
+      .gte('flights.date', from)
+      .lte('flights.date', to)
+      .order('id')
+      .range(offset, offset + PAGE - 1);
+    const rows = (data as (T & { flights?: unknown })[] | null) ?? [];
+    // La jointure ne sert qu'au filtre : on retire l'embed pour que les lignes
+    // gardent exactement la forme de la table.
+    for (const r of rows) delete r.flights;
+    out = out.concat(rows as T[]);
+    if (rows.length < PAGE) break;
+  }
+  return out;
+}
+
+/** Vols de la période, paginés eux aussi : une année dépasse les 1000 vols. */
+async function fetchFlights(supabase: SupabaseClient, from: string, to: string): Promise<Flight[]> {
+  let out: Flight[] = [];
+  for (let offset = 0; ; offset += PAGE) {
+    const { data } = await supabase
+      .from('flights')
+      .select('*')
+      .gte('date', from)
+      .lte('date', to)
+      .order('date')
+      .order('departure_time')
+      .order('id')
+      .range(offset, offset + PAGE - 1);
+    const rows = (data as Flight[] | null) ?? [];
     out = out.concat(rows);
     if (rows.length < PAGE) break;
   }
@@ -38,6 +82,15 @@ async function fetchAll<T>(supabase: SupabaseClient, tableName: string, columns:
 }
 
 function bagStage(b: Baggage): { label: string; tone: Tone } {
+  if (b.cancelled) return { label: b.in_hold && !b.pulled ? 'Annulé · à retirer' : 'Annulé', tone: 'negative' };
+  if (b.kind === 'rush_forward') {
+    if (b.rush_status === 'expected') return { label: 'Rush · annoncé, pas arrivé', tone: 'neutral' };
+    if (b.rush_status === 'pending') return { label: 'Rush · à valider', tone: 'warning' };
+    if (b.rush_status === 'denied') return { label: 'Rush · refusé', tone: 'negative' };
+    if (b.arrived) return { label: 'Rush · arrivé', tone: 'positive' };
+    if (b.in_hold) return { label: 'Rush · chargé', tone: 'positive' };
+    return { label: 'Rush · autorisé', tone: 'warning' };
+  }
   if (b.arrived) return { label: 'Arrivé à destination', tone: 'positive' };
   if (b.rush) return { label: 'Réacheminement', tone: 'warning' };
   if (b.in_hold) return { label: 'Chargé en soute', tone: 'positive' };
@@ -68,27 +121,20 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Réservé aux superviseurs et administrateurs' }, { status: 403 });
   }
 
-  const { data: flightsData } = await supabase
-    .from('flights')
-    .select('*')
-    .gte('date', from)
-    .lte('date', to)
-    .order('date')
-    .order('departure_time');
-  const flights = (flightsData as Flight[] | null) ?? [];
-  const flightIds = flights.map((f) => f.id);
+  const flights = await fetchFlights(supabase, from, to);
   const flightById = new Map(flights.map((f) => [f.id, f]));
 
   let passengers: Passenger[] = [];
   let baggage: Baggage[] = [];
   let alerts: FraudAlert[] = [];
-  if (flightIds.length > 0) {
-    [passengers, baggage] = await Promise.all([
-      fetchAll<Passenger>(supabase, 'passengers', '*', flightIds),
-      fetchAll<Baggage>(supabase, 'baggage', '*', flightIds),
+  if (flights.length > 0) {
+    [passengers, baggage, alerts] = await Promise.all([
+      fetchAll<Passenger>(supabase, 'passengers', from, to),
+      fetchAll<Baggage>(supabase, 'baggage', from, to),
+      fetchAll<FraudAlert>(supabase, 'fraud_alerts', from, to),
     ]);
-    const { data: fraud } = await supabase.from('fraud_alerts').select('*').in('flight_id', flightIds).order('created_at');
-    alerts = (fraud as FraudAlert[] | null) ?? [];
+    // Paginé sur `id`, donc remis dans l'ordre chronologique pour la feuille.
+    alerts.sort((a, b) => a.created_at.localeCompare(b.created_at));
   }
 
   const passengerById = new Map(passengers.map((p) => [p.id, p]));
@@ -100,13 +146,21 @@ export async function GET(request: NextRequest) {
   const confirmedByFlight = new Map<string, number>();
   const confirmedByPax = new Map<string, number>();
   const alertsByFlight = new Map<string, number>();
-  for (const p of passengers) {
+  // Mêmes exclusions que partout : passagers hors débarqués, bagages passagers
+  // hors annulés. L'expédition rush est comptée à part.
+  const activePassengers = passengers.filter((p) => !p.offloaded);
+  const paxBags = baggage.filter((b) => b.kind !== 'rush_forward' && !b.cancelled);
+  const rushFwdActive = baggage.filter(
+    (b) => b.kind === 'rush_forward' && (b.rush_status === 'approved' || b.rush_status === 'pending'),
+  );
+
+  for (const p of activePassengers) {
     paxByFlight.set(p.flight_id, (paxByFlight.get(p.flight_id) ?? 0) + 1);
     if (p.boarded) boardedByFlight.set(p.flight_id, (boardedByFlight.get(p.flight_id) ?? 0) + 1);
     declaredByFlight.set(p.flight_id, (declaredByFlight.get(p.flight_id) ?? 0) + p.declared_baggage_count);
   }
-  for (const b of baggage) {
-    if (b.is_confirmed) {
+  for (const b of paxBags) {
+    if (b.is_confirmed && b.passenger_id) {
       confirmedByFlight.set(b.flight_id, (confirmedByFlight.get(b.flight_id) ?? 0) + 1);
       confirmedByPax.set(b.passenger_id, (confirmedByPax.get(b.passenger_id) ?? 0) + 1);
     }
@@ -116,18 +170,20 @@ export async function GET(request: NextRequest) {
   }
 
   // Totaux période.
-  const totPax = passengers.length;
-  const totBoarded = passengers.reduce((s, p) => s + (p.boarded ? 1 : 0), 0);
-  const totDeclared = passengers.reduce((s, p) => s + p.declared_baggage_count, 0);
-  const totConfirmed = baggage.reduce((s, b) => s + (b.is_confirmed ? 1 : 0), 0);
-  const totInHold = baggage.reduce((s, b) => s + (b.in_hold ? 1 : 0), 0);
-  const totOnDolly = baggage.reduce((s, b) => s + (b.on_dolly ? 1 : 0), 0);
-  const totRush = baggage.reduce((s, b) => s + (b.rush ? 1 : 0), 0);
-  const totArrived = baggage.reduce((s, b) => s + (b.arrived ? 1 : 0), 0);
-  // Cible de l'arrivée : ce qui est réellement parti en soute (hors rush).
-  const totExpected = baggage.reduce((s, b) => s + (b.in_hold && !b.rush ? 1 : 0), 0);
+  const totPax = activePassengers.length;
+  const totBoarded = activePassengers.reduce((s, p) => s + (p.boarded ? 1 : 0), 0);
+  const totDeclared = activePassengers.reduce((s, p) => s + p.declared_baggage_count, 0);
+  const totConfirmed = paxBags.reduce((s, b) => s + (b.is_confirmed ? 1 : 0), 0);
+  const totInHold = paxBags.reduce((s, b) => s + (b.in_hold ? 1 : 0), 0);
+  const totOnDolly = paxBags.reduce((s, b) => s + (b.on_dolly ? 1 : 0), 0);
+  const totRush = paxBags.reduce((s, b) => s + (b.rush ? 1 : 0), 0);
+  const totRushFwd = rushFwdActive.length;
+  const totArrived = baggage.reduce((s, b) => s + (b.arrived && !b.cancelled ? 1 : 0), 0);
+  // Cible de l'arrivée : ce qui est réellement parti en soute (hors rush et
+  // annulés), expéditions rush comprises.
+  const totExpected = baggage.reduce((s, b) => s + (b.in_hold && !b.rush && !b.cancelled ? 1 : 0), 0);
   const totMissing = Math.max(totExpected - totArrived, 0);
-  const paxNoBag = passengers.filter((p) => p.declared_baggage_count === 0).length;
+  const paxNoBag = activePassengers.filter((p) => p.declared_baggage_count === 0).length;
   const totAlerts = alerts.length;
 
   const byStatus = { scheduled: 0, boarding: 0, closed: 0, cancelled: 0 } as Record<string, number>;
@@ -213,7 +269,8 @@ export async function GET(request: NextRequest) {
           // Tant que la réception n'a pas commencé, l'écart n'a pas de sens.
           tone: totArrived > 0 && totMissing > 0 ? 'negative' : totArrived > 0 ? 'positive' : undefined,
         },
-        { label: 'Rush (réacheminés)', value: totRush, tone: totRush > 0 ? 'warning' : undefined },
+        { label: 'Restants (à réacheminer)', value: totRush, tone: totRush > 0 ? 'warning' : undefined },
+        { label: 'Expédition rush (sans passager)', value: totRushFwd, tone: totRushFwd > 0 ? 'info' : undefined },
         { label: 'Écart (déclarés − confirmés)', value: totDeclared - totConfirmed, tone: totDeclared - totConfirmed !== 0 ? 'negative' : 'positive' },
         { label: 'Taux de confirmation', value: ratio(totConfirmed, totDeclared), numFmt: PCT },
         { label: 'Taux de chargement soute', value: ratio(totInHold, totConfirmed), numFmt: PCT },
@@ -341,15 +398,21 @@ export async function GET(request: NextRequest) {
     });
     const rows: Cell[][] = sorted.map((b) => {
       const f = flightById.get(b.flight_id);
-      const pax = passengerById.get(b.passenger_id);
+      const pax = b.passenger_id ? passengerById.get(b.passenger_id) : undefined;
       const st = bagStage(b);
       const soute = b.soute === 'avant' ? 'Soute avant' : b.soute === 'arriere' ? 'Soute arrière' : 'N/A';
+      const owner =
+        b.kind === 'rush_forward'
+          ? pax
+            ? `${pax.full_name} (restant connu)`
+            : 'Expédition rush · externe'
+          : (pax?.full_name ?? 'N/A');
       return [
         f?.date ?? 'N/A',
         f?.flight_number ?? 'N/A',
-        b.tag_number,
+        b.rush_tag_number ? `${b.tag_number} / ${b.rush_tag_number}` : b.tag_number,
         b.serial_number ?? 'N/A',
-        pax?.full_name ?? 'N/A',
+        owner,
         pax?.pnr ?? 'N/A',
         { value: st.label, pill: st.tone },
         soute,

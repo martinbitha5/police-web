@@ -1,8 +1,14 @@
 import type { CSSProperties } from 'react';
+import Link from 'next/link';
+import { usePartner } from './AppShell';
 
 const YEAR = new Date().getFullYear();
 
 export function Footer() {
+  // Logo partenaire résolu par AppShell (cache local puis profil). Null tant
+  // que la compagnie est inconnue : le bloc partenaire ne s'affiche pas,
+  // plutôt que de montrer le logo d'une autre compagnie.
+  const partner = usePartner();
   return (
     <footer style={s.footer}>
       <div style={s.inner}>
@@ -14,13 +20,15 @@ export function Footer() {
         </div>
 
         {/* Séparateur + partenaire */}
-        <div style={s.partnerBlock}>
-          <span style={s.partnerLabel}>Partenaire</span>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/air.png" alt="Air Congo" style={s.partnerLogo} />
-        </div>
+        {partner ? (
+          <div style={s.partnerBlock}>
+            <span style={s.partnerLabel}>Partenaire</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={partner.src} alt={partner.alt} style={s.partnerLogo} />
+          </div>
+        ) : null}
 
-        {/* Liens partenaires */}
+        {/* Liens partenaires et pages légales */}
         <div style={s.links}>
           <a href="https://fih-rva.com" target="_blank" rel="noopener noreferrer" className="ft-link">
             Aéroport International de Kinshasa
@@ -29,6 +37,10 @@ export function Footer() {
           <a href="https://www.ats-handling-rdc.com/" target="_blank" rel="noopener noreferrer" className="ft-link">
             ATS Handling RDC
           </a>
+          <span style={s.sep}>·</span>
+          <Link href="/legal" className="ft-link">Mentions légales</Link>
+          <span style={s.sep}>·</span>
+          <Link href="/conditions" className="ft-link">Conditions d’utilisation</Link>
         </div>
 
         {/* Copyright */}
@@ -67,6 +79,7 @@ const s: Record<string, CSSProperties> = {
     alignItems: 'center',
     gap: 10,
     flex: 1,
+    flexWrap: 'wrap' as const,
   },
   sep: {
     color: 'var(--content-tertiary)',

@@ -1,13 +1,15 @@
 'use client';
 
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { Suspense, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { flightScope, scopeFlightQuery } from '@/lib/scope';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import { useUrlParam } from '@/hooks/useUrlParam';
 import type { Flight, FraudAlert, Baggage, PassengerLeg } from '@police/shared';
 import { formatRoute, SOUTE_LABEL, todayAtAirport } from '@police/shared';
 import { createClient } from '@/supabase/client';
 import { useFlightData, type PassengerRow } from '@/useFlightData';
 import { AppShell, useSession } from '@/components/AppShell';
+import { RushPanel } from '@/components/RushPanel';
 import { card, btnPrimary, btnGhost, sectionHeading, badge, modalOverlay, modalPanel } from '@/ui/theme';
 import {
   IconPlane,
@@ -52,7 +54,10 @@ function formatToday(): string {
 export default function DashboardPage() {
   return (
     <AppShell>
-      <Dashboard />
+      {/* useSearchParams impose une frontière Suspense au prérendu statique. */}
+      <Suspense fallback={null}>
+        <Dashboard />
+      </Suspense>
     </AppShell>
   );
 }
@@ -64,7 +69,9 @@ function Dashboard() {
   const airportCode = scope.airport;
   const [flights, setFlights] = useState<Flight[]>([]);
   const [alertsByFlight, setAlertsByFlight] = useState<Record<string, number>>({});
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Le vol ouvert vit dans l'URL (?vol=<id>) : F5 rouvre le même vol au lieu
+  // de renvoyer à la vue d'ensemble, et Retour referme le détail.
+  const [selectedId, setSelectedId] = useUrlParam('vol');
   const [showForm, setShowForm] = useState(false);
 
   async function loadFlights() {
@@ -307,10 +314,23 @@ function FlightDetail({
     baggageArrived,
     baggageExpected,
     boardedCount,
+    offloadedCount,
+    rushForward,
+    toPull,
+    reload,
   } = useFlightData(flight.id);
 
   // Une alerte résolue reste consultable mais ne pèse plus sur les compteurs.
   const activeAlerts = useMemo(() => alerts.filter((a) => !a.resolved), [alerts]);
+  // Passagers actifs : les débarqués restent listés (barrés) mais ne comptent plus.
+  const activePax = passengers.length - offloadedCount;
+  // Physiquement présents (scannés) : les annoncés pas encore arrivés sont à part.
+  const rushActive = useMemo(
+    () => rushForward.filter((b) => b.rush_status === 'approved' || b.rush_status === 'pending'),
+    [rushForward],
+  );
+  const rushPending = useMemo(() => rushForward.filter((b) => b.rush_status === 'pending'), [rushForward]);
+  const rushExpected = useMemo(() => rushForward.filter((b) => b.rush_status === 'expected'), [rushForward]);
 
   // Passager dont on affiche la fiche. Le tableau ne montre qu'un compteur
   // « 1/2 » : savoir QUEL bagage manque demande d'ouvrir le détail.
@@ -354,8 +374,8 @@ function FlightDetail({
       </div>
 
       <div style={isMobile ? { ...s.statGrid, gridTemplateColumns: 'repeat(2, 1fr)' } : s.statGrid}>
-        <Stat label="Passagers" value={String(passengers.length)} icon={<IconUser size={20} />} />
-        <Stat label="Embarqués" value={`${boardedCount} / ${passengers.length}`} icon={<IconPlaneDepart size={20} />} />
+        <Stat label="Passagers" value={String(activePax)} icon={<IconUser size={20} />} />
+        <Stat label="Embarqués" value={`${boardedCount} / ${activePax}`} icon={<IconPlaneDepart size={20} />} />
         <Stat label="Bagages confirmés" value={`${baggageConfirmed} / ${baggageDeclared}`} icon={<IconBag size={20} />} />
         <Stat label="Chargés en soute" value={`${baggageInHold} / ${baggageConfirmed}`} icon={<IconBag size={20} />} />
         {/* Réception à destination. En alerte seulement une fois le déchargement
@@ -366,7 +386,22 @@ function FlightDetail({
           icon={<IconPlaneArrive size={20} />}
           danger={baggageArrived > 0 && baggageArrived < baggageExpected}
         />
-        <Stat label="Rush (réacheminés)" value={String(baggageRush)} icon={<IconBag size={20} />} danger={baggageRush > 0} />
+        <Stat label="Restants (à réacheminer)" value={String(baggageRush)} icon={<IconBag size={20} />} danger={baggageRush > 0} />
+        <Stat
+          label="Expédition rush"
+          value={
+            rushPending.length > 0
+              ? `${rushActive.length} · ${rushPending.length} à valider`
+              : rushExpected.length > 0
+                ? `${rushActive.length} · ${rushExpected.length} attendu${rushExpected.length > 1 ? 's' : ''}`
+                : String(rushActive.length)
+          }
+          icon={<IconBag size={20} />}
+          danger={rushPending.length > 0}
+        />
+        {offloadedCount > 0 ? (
+          <Stat label="Débarqués" value={String(offloadedCount)} icon={<IconUser size={20} />} danger />
+        ) : null}
         {/* Les alertes levées (check-in scanné après le bagage) ne comptent plus
             comme des écartés : sinon une inversion d'ordre de scan gonfle le
             compteur de fraude et noie les vrais rejets. */}
@@ -378,7 +413,11 @@ function FlightDetail({
         />
       </div>
 
+      {toPull.length > 0 ? <PullBanner bags={toPull} /> : null}
+
       {alerts.length > 0 ? <FraudAlerts alerts={alerts} active={activeAlerts} /> : null}
+
+      <RushPanel flightId={flight.id} bags={rushForward} canManage={canManage} onChanged={reload} mode="compact" />
 
       <h2 style={sectionHeading}>Passagers</h2>
       {isMobile ? (
@@ -437,6 +476,8 @@ function FlightDetail({
         <PassengerDetailModal
           p={detailPax}
           fallbackRoute={formatRoute(flight, '→')}
+          canManage={canManage}
+          onChanged={reload}
           onClose={() => setDetailPax(null)}
         />
       ) : null}
@@ -456,12 +497,20 @@ function PassengerCardMobile({
   const complete = p.declared_baggage_count > 0 && p.confirmedCount >= p.declared_baggage_count;
   const bagColor = p.declared_baggage_count === 0 ? 'var(--content-secondary)' : complete ? 'var(--positive)' : 'var(--warning-content)';
   return (
-    <div style={{ ...s.paxCard, cursor: 'pointer' }} onClick={onOpen}>
+    <div style={{ ...s.paxCard, cursor: 'pointer', ...(p.offloaded ? { opacity: 0.6 } : {}) }} onClick={onOpen}>
       <div style={s.paxCardHead}>
-        <button type="button" style={{ ...s.paxNameBtn, ...s.paxCardName }} onClick={onOpen}>
+        <button
+          type="button"
+          style={{ ...s.paxNameBtn, ...s.paxCardName, ...(p.offloaded ? { textDecoration: 'line-through' } : {}) }}
+          onClick={onOpen}
+        >
           {p.full_name}
         </button>
-        {p.boarded ? (
+        {p.offloaded ? (
+          <span style={{ ...badge, background: 'var(--negative-bg)', color: 'var(--negative)' }}>
+            <span style={{ ...s.statusDot, background: 'currentColor' }} /> Débarqué
+          </span>
+        ) : p.boarded ? (
           <span style={{ ...badge, background: 'var(--positive-bg)', color: 'var(--positive)' }}>
             <span style={{ ...s.statusDot, background: 'currentColor' }} /> Embarqué
           </span>
@@ -503,9 +552,13 @@ function PassengerRowView({
   return (
     // Toute la ligne est cliquable pour le confort, mais le nom reste un vrai
     // bouton : c'est lui qui rend la fiche atteignable au clavier.
-    <tr style={{ cursor: 'pointer' }} onClick={onOpen}>
+    <tr style={{ cursor: 'pointer', ...(p.offloaded ? { opacity: 0.6 } : {}) }} onClick={onOpen}>
       <td style={s.td}>
-        <button type="button" style={s.paxNameBtn} onClick={(e) => { e.stopPropagation(); onOpen(); }}>
+        <button
+          type="button"
+          style={{ ...s.paxNameBtn, ...(p.offloaded ? { textDecoration: 'line-through' } : {}) }}
+          onClick={(e) => { e.stopPropagation(); onOpen(); }}
+        >
           {p.full_name}
         </button>
       </td>
@@ -517,7 +570,12 @@ function PassengerRowView({
         {p.confirmedCount}/{p.declared_baggage_count}
       </td>
       <td style={s.td}>
-        {p.boarded ? (
+        {p.offloaded ? (
+          <span style={{ ...badge, background: 'var(--negative-bg)', color: 'var(--negative)' }}>
+            <span style={{ ...s.statusDot, background: 'currentColor' }} />
+            Débarqué
+          </span>
+        ) : p.boarded ? (
           <span style={{ ...badge, background: 'var(--positive-bg)', color: 'var(--positive)' }}>
             <span style={{ ...s.statusDot, background: 'currentColor' }} />
             Embarqué
@@ -527,6 +585,34 @@ function PassengerRowView({
         )}
       </td>
     </tr>
+  );
+}
+
+/**
+ * Bagages annulés encore en soute : le statut ne suffit pas, il faut que
+ * quelqu'un aille physiquement les sortir. Le bandeau reste affiché tant que
+ * le retrait n'a pas été confirmé par scan (écran Soute du PDA).
+ */
+function PullBanner({ bags }: { bags: Baggage[] }) {
+  return (
+    <div style={{ ...s.alert, marginBottom: 24, alignItems: 'flex-start' }}>
+      <span style={s.alertTag}>
+        <IconAlert size={15} /> À RETIRER
+      </span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <strong>
+          {bags.length} bagage{bags.length > 1 ? 's' : ''} annulé{bags.length > 1 ? 's' : ''} encore en soute
+        </strong>
+        <div style={{ color: 'var(--content-secondary)', marginTop: 4 }}>
+          {bags
+            .map((b) => `${b.tag_number}${b.soute ? ` (${SOUTE_LABEL[b.soute].toLowerCase()})` : ''}`)
+            .join(' · ')}
+        </div>
+        <div style={{ color: 'var(--content-secondary)', marginTop: 4 }}>
+          Faire rescanner chaque bagage dans l&apos;écran Soute du PDA pour confirmer le retrait.
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -610,17 +696,30 @@ function AlertRow({ alert: a }: { alert: FraudAlert }) {
 function PassengerDetailModal({
   p,
   fallbackRoute,
+  canManage,
+  onChanged,
   onClose,
 }: {
   p: PassengerRow;
   fallbackRoute: string;
+  canManage: boolean;
+  onChanged: () => void;
   onClose: () => void;
 }) {
   const isMobile = useIsMobile();
+  const profile = useSession();
   const [legs, setLegs] = useState<PassengerLeg[]>([]);
   const [bags, setBags] = useState<Baggage[]>([]);
   const [agents, setAgents] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  // p est une photographie prise à l'ouverture : le débarquement fait ici doit
+  // se voir sans refermer la fiche.
+  const [offloaded, setOffloaded] = useState(p.offloaded);
+  // Confirmation en deux temps (motif obligatoire à l'écran, facultatif à la saisie).
+  const [confirm, setConfirm] = useState<{ kind: 'bag'; bag: Baggage } | { kind: 'offload' } | null>(null);
+  const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -628,7 +727,7 @@ function PassengerDetailModal({
       const supabase = createClient();
       const [{ data: legRows }, { data: bagRows }] = await Promise.all([
         supabase.from('passenger_legs').select('*').eq('passenger_id', p.id).order('leg_order'),
-        supabase.from('baggage').select('*').eq('passenger_id', p.id).order('tag_number'),
+        supabase.from('baggage').select('*').eq('passenger_id', p.id).eq('kind', 'passenger').order('tag_number'),
       ]);
       if (cancelled) return;
       setLegs((legRows as PassengerLeg[] | null) ?? []);
@@ -647,14 +746,73 @@ function PassengerDetailModal({
     }
     void load();
     return () => { cancelled = true; };
-  }, [p.id, p.scanned_by, p.boarded_by]);
+  }, [p.id, p.scanned_by, p.boarded_by, refreshKey]);
 
   const route = legs.length > 0 ? null : (p.route ?? fallbackRoute);
-  const confirmed = bags.filter((b) => b.is_confirmed).length;
+  const confirmed = bags.filter((b) => b.is_confirmed && !b.cancelled).length;
+  const activeBags = bags.filter((b) => !b.cancelled).length;
 
   function agentName(id: string | null): string {
     if (!id) return 'agent inconnu';
     return agents[id] ?? 'agent inconnu';
+  }
+
+  /** Annule UN bagage. Une garde .eq('cancelled', false) évite le double clic. */
+  async function cancelBag(bag: Baggage, why: string) {
+    setBusy(true);
+    await createClient()
+      .from('baggage')
+      .update({
+        cancelled: true,
+        cancelled_at: new Date().toISOString(),
+        cancelled_by: profile?.id ?? null,
+        cancel_reason: why.trim() || null,
+      })
+      .eq('id', bag.id)
+      .eq('cancelled', false);
+    setBusy(false);
+    setConfirm(null);
+    setReason('');
+    setRefreshKey((k) => k + 1);
+    onChanged();
+  }
+
+  /**
+   * Débarque le passager : marquage (jamais de suppression) + annulation de
+   * tous ses bagages encore actifs. Un bagage déjà en soute passe dans le
+   * bandeau « à retirer » du vol jusqu'au scan de retrait.
+   */
+  async function offloadPassenger(why: string) {
+    setBusy(true);
+    const supabase = createClient();
+    const stamp = new Date().toISOString();
+    await supabase
+      .from('passengers')
+      .update({
+        offloaded: true,
+        offloaded_at: stamp,
+        offloaded_by: profile?.id ?? null,
+        offload_reason: why.trim() || null,
+      })
+      .eq('id', p.id)
+      .eq('offloaded', false);
+    await supabase
+      .from('baggage')
+      .update({
+        cancelled: true,
+        cancelled_at: stamp,
+        cancelled_by: profile?.id ?? null,
+        cancel_reason: 'Passager débarqué',
+      })
+      .eq('passenger_id', p.id)
+      .eq('kind', 'passenger')
+      .eq('cancelled', false);
+    setBusy(false);
+    setConfirm(null);
+    setReason('');
+    setOffloaded(true);
+    setRefreshKey((k) => k + 1);
+    onChanged();
   }
 
   return (
@@ -697,6 +855,13 @@ function PassengerDetailModal({
 
         <section style={s.paxSection}>
           <h3 style={s.paxSectionTitle}>Suivi</h3>
+          {offloaded ? (
+            <div style={{ ...s.paxLine, color: 'var(--negative)', fontWeight: 600 }}>
+              Passager débarqué par le superviseur
+              {p.offloaded && p.offloaded_at ? ` à ${formatTime(p.offloaded_at)}` : ''}
+              {p.offload_reason ? ` · ${p.offload_reason}` : ''}
+            </div>
+          ) : null}
           {/* Sur mobile, libellé au-dessus de la valeur : côte à côte, « 08:42 par
               Jean Mukeba » se coupe en plein milieu sur un écran de 320 px. */}
           <div style={isMobile ? { ...s.paxLine, ...s.paxLineMobile } : s.paxLine}>
@@ -717,24 +882,91 @@ function PassengerDetailModal({
 
         <section style={s.paxSection}>
           <h3 style={s.paxSectionTitle}>
-            Bagages · {confirmed} au tapis sur {p.declared_baggage_count} déclaré
-            {p.declared_baggage_count > 1 ? 's' : ''}
+            Bagages · {confirmed} au tapis sur {offloaded ? activeBags : p.declared_baggage_count} déclaré
+            {(offloaded ? activeBags : p.declared_baggage_count) > 1 ? 's' : ''}
           </h3>
           {loading ? (
             <div style={s.paxLineLabel}>Chargement…</div>
           ) : bags.length === 0 ? (
             <div style={s.paxLineLabel}>Aucun bagage déclaré sur le boarding pass.</div>
           ) : (
-            bags.map((b) => <BaggageDetailRow key={b.id} b={b} isMobile={isMobile} />)
+            bags.map((b) => (
+              <BaggageDetailRow
+                key={b.id}
+                b={b}
+                isMobile={isMobile}
+                onCancel={
+                  canManage && !b.cancelled && !offloaded
+                    ? () => { setConfirm({ kind: 'bag', bag: b }); setReason(''); }
+                    : undefined
+                }
+              />
+            ))
           )}
         </section>
+
+        {confirm ? (
+          <section style={{ ...s.paxSection, gap: 10 }}>
+            <h3 style={{ ...s.paxSectionTitle, color: 'var(--negative)' }}>
+              {confirm.kind === 'bag'
+                ? confirm.bag.in_hold
+                  ? `Débarquer le bagage ${confirm.bag.tag_number} de la soute ?`
+                  : `Annuler le bagage ${confirm.bag.tag_number} ?`
+                : `Débarquer ${p.full_name} ?`}
+            </h3>
+            <div style={{ color: 'var(--content-secondary)', fontSize: 13 }}>
+              {confirm.kind === 'bag'
+                ? confirm.bag.in_hold
+                  ? 'Ce bagage est déjà en soute : il devra être physiquement retiré (bandeau « à retirer » sur le vol).'
+                  : 'Le bagage sera refusé à tous les scans. Action tracée dans le journal.'
+                : 'Tous ses bagages seront annulés, son boarding pass sera refusé à la porte. Action tracée dans le journal.'}
+            </div>
+            <input
+              style={s.input}
+              placeholder="Motif (no-show, refus d'embarquement, bagage refusé au rayon X…)"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+            />
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button type="button" style={btnGhost} disabled={busy} onClick={() => { setConfirm(null); setReason(''); }}>
+                Retour
+              </button>
+              <button
+                type="button"
+                style={{ ...btnPrimary, background: 'var(--negative)' }}
+                disabled={busy}
+                onClick={() =>
+                  confirm.kind === 'bag' ? void cancelBag(confirm.bag, reason) : void offloadPassenger(reason)
+                }
+              >
+                {busy
+                  ? 'En cours…'
+                  : confirm.kind === 'bag'
+                    ? confirm.bag.in_hold
+                      ? 'Débarquer ce bagage'
+                      : 'Annuler ce bagage'
+                    : 'Débarquer le passager'}
+              </button>
+            </div>
+          </section>
+        ) : canManage && !offloaded ? (
+          <section style={s.paxSection}>
+            <button
+              type="button"
+              style={{ ...btnGhost, color: 'var(--negative)', alignSelf: 'flex-start' }}
+              onClick={() => { setConfirm({ kind: 'offload' }); setReason(''); }}
+            >
+              Débarquer le passager
+            </button>
+          </section>
+        ) : null}
       </div>
     </div>
   );
 }
 
 /** Une étiquette et son parcours réel, étape par étape. */
-function BaggageDetailRow({ b, isMobile }: { b: Baggage; isMobile: boolean }) {
+function BaggageDetailRow({ b, isMobile, onCancel }: { b: Baggage; isMobile: boolean; onCancel?: () => void }) {
   const steps: string[] = [];
   if (b.is_confirmed) steps.push(`Au tapis ${formatTime(b.scanned_at)}`);
   if (b.on_dolly) steps.push(`Dolly ${formatTime(b.on_dolly_at)}`);
@@ -748,8 +980,21 @@ function BaggageDetailRow({ b, isMobile }: { b: Baggage; isMobile: boolean }) {
     // Dolly 09:02 · Soute avant 09:10 ») mais pas à côté d'un numéro à 10
     // chiffres sur un téléphone : on empile.
     <div style={isMobile ? { ...s.paxBag, ...s.paxBagMobile } : s.paxBag}>
-      <span style={isMobile ? s.paxBagTagMobile : s.paxBagTag}>{b.tag_number}</span>
-      {b.is_confirmed ? (
+      <span
+        style={{
+          ...(isMobile ? s.paxBagTagMobile : s.paxBagTag),
+          ...(b.cancelled ? { textDecoration: 'line-through', color: 'var(--content-secondary)' } : {}),
+        }}
+      >
+        {b.tag_number}
+      </span>
+      {b.cancelled ? (
+        <span style={{ ...s.paxLineValue, color: 'var(--negative)' }}>
+          {b.in_hold ? 'Débarqué' : 'Annulé'} {formatTime(b.cancelled_at)}
+          {b.cancel_reason ? ` · ${b.cancel_reason}` : ''}
+          {b.in_hold ? (b.pulled ? ` · retiré de la soute ${formatTime(b.pulled_at)}` : ' · à retirer de la soute') : ''}
+        </span>
+      ) : b.is_confirmed ? (
         <span style={s.paxLineValue}>{steps.join(' · ')}</span>
       ) : (
         // Le cas qui n'apparaît nulle part ailleurs : déclaré au comptoir, mais
@@ -758,6 +1003,18 @@ function BaggageDetailRow({ b, isMobile }: { b: Baggage; isMobile: boolean }) {
           Déclaré au comptoir, jamais scanné au tapis
         </span>
       )}
+      {onCancel ? (
+        // Même mécanique (annulation tracée), deux libellés : un bagage déjà
+        // chargé se « débarque » de la soute, un bagage pas encore parti
+        // s'« annule ». C'est le vocabulaire du terrain, pas deux états.
+        <button
+          type="button"
+          style={{ background: 'transparent', border: 'none', color: 'var(--negative)', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: 0, textDecoration: 'underline', textUnderlineOffset: '0.3em' }}
+          onClick={onCancel}
+        >
+          {b.in_hold ? 'Débarquer' : 'Annuler'}
+        </button>
+      ) : null}
     </div>
   );
 }
