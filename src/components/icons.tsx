@@ -168,3 +168,45 @@ export function IconAudit(p: IconProps) {
     </svg>
   );
 }
+
+// Barre compacte du haut sur téléphone (voir PublicTopbar et AppShell).
+
+export function IconHome(p: IconProps) {
+  return (
+    <svg {...base(p)}>
+      <path d="M3 10.5 12 3l9 7.5" />
+      <path d="M5 9.6V20h14V9.6" />
+      <path d="M9.5 20v-5.5h5V20" />
+    </svg>
+  );
+}
+
+export function IconHelp(p: IconProps) {
+  return (
+    <svg {...base(p)}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.4 9.2a2.7 2.7 0 0 1 5.2.9c0 1.8-2.6 2.2-2.6 4" />
+      <path d="M12 17.4h.01" />
+    </svg>
+  );
+}
+
+export function IconLogin(p: IconProps) {
+  return (
+    <svg {...base(p)}>
+      <path d="M14 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+      <path d="M10 16l4-4-4-4" />
+      <path d="M14 12H4" />
+    </svg>
+  );
+}
+
+export function IconMenu(p: IconProps) {
+  return (
+    <svg {...base(p)}>
+      <path d="M4 7h16" />
+      <path d="M4 12h16" />
+      <path d="M4 17h16" />
+    </svg>
+  );
+}

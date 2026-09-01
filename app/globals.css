@@ -193,6 +193,125 @@ tbody tr:hover {
   background: var(--bg-neutral);
 }
 
+/* ════════════════════════════════════════════════════════════
+   Révélation au défilement (.rv) — voir RevealObserver.tsx
+   Le bloc monte de 24 px en s'affichant quand il entre dans l'écran.
+   Tout est conditionné à `js-reveal`, posée par le script de tête : sans
+   JavaScript, ou si l'utilisateur refuse les animations, rien ne bouge et
+   rien n'est masqué.
+   ════════════════════════════════════════════════════════════ */
+
+:root.js-reveal .rv {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:root.js-reveal .rv-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* ════════════════════════════════════════════════════════════
+   Barre du haut sur téléphone — deux états (.pb-*)
+   En haut de page : la barre complète (marque, actions).
+   Dès qu'on défile : elle cède la place à une rangée d'icônes, les
+   raccourcis les plus utiles à portée de pouce.
+   L'échange est fait en CSS depuis `data-scrolled`, sans état React :
+   la barre ne se reconstruit pas à chaque pixel défilé.
+   ════════════════════════════════════════════════════════════ */
+
+.pb-bar {
+  display: flex;
+  align-items: center;
+}
+
+/* Les deux états font la même hauteur : la barre est collante, une hauteur
+   qui change en cours de défilement décalerait tout le contenu sous elle. */
+.lp-topbar-icons {
+  min-height: var(--nav-height);
+}
+
+/* La rangée d'icônes ne sort que sur téléphone, et seulement en défilement. */
+.pb-icons {
+  display: none;
+  align-items: stretch;
+}
+
+@media (max-width: 767px) {
+  :root[data-scrolled='true'] .pb-full {
+    display: none;
+  }
+  :root[data-scrolled='true'] .pb-icons {
+    display: flex;
+  }
+}
+
+.pb-icon {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--border-neutral);
+  color: var(--content-secondary);
+  text-decoration: none;
+}
+
+.pb-icon:last-child {
+  border-right: none;
+}
+
+.pb-icon:active {
+  background: var(--bg-neutral);
+}
+
+/* Section en cours : la même touche de vert que la navigation latérale. */
+.pb-icon-on {
+  color: var(--brand-forest);
+}
+
+/* Dernière cellule : action principale, en pastille pleine. */
+.pb-icon-cta:active {
+  background: transparent;
+}
+
+.pb-icon-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-full);
+  background: var(--interactive-primary);
+  color: var(--brand-green);
+}
+
+.pb-icon-cta:active .pb-icon-pill {
+  background: var(--interactive-primary-hover);
+}
+
+/* Barre du haut au défilement : le filet cède la place à une ombre courte,
+   la barre se détache du contenu qui passe dessous. */
+.lp-topbar,
+.app-topbar {
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+:root[data-scrolled='true'] .lp-topbar {
+  border-bottom-color: transparent;
+  box-shadow: 0 1px 12px rgba(14, 15, 12, 0.1);
+}
+
+:root[data-scrolled='true'] .app-topbar {
+  box-shadow: 0 1px 12px rgba(14, 15, 12, 0.1);
+}
+
 /* Lien de pied de page (composant Footer) */
 .ft-link {
   color: var(--content-secondary);
@@ -605,23 +724,202 @@ tbody tr:hover {
   background: var(--interactive-primary-hover);
 }
 
-/* Pied de page — clair */
-.lp-footer {
+/* ════════════════════════════════════════════════════════════
+   Pied de page global (.sf-*) — colonnes de liens, marque,
+   partenaires puis ligne légale. Même bloc sur la vitrine, les
+   pages légales et le back-office (composant Footer).
+   ════════════════════════════════════════════════════════════ */
+
+.sf {
   background: var(--bg-neutral);
+  color: var(--content-secondary);
+  margin-top: auto;
+}
+
+.sf-inner {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 48px 32px 28px;
+}
+
+.sf-cols {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 32px 24px;
+}
+
+.sf-col-title {
+  margin: 0 0 14px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--content-primary);
+}
+
+.sf-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Marque et partenaires */
+.sf-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 36px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border-neutral);
+}
+
+.sf-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.sf-brand-logo {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  object-fit: cover;
+  display: block;
+  flex-shrink: 0;
+}
+
+.sf-brand-name {
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+  color: var(--content-primary);
+  white-space: nowrap;
+}
+
+.sf-partners {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sf-partner-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--content-tertiary);
+  white-space: nowrap;
+}
+
+/* Pastille blanche : les logos compagnie sont dessinés sur fond blanc et
+   perdent leur lisibilité sur le vert teinté du pied de page. */
+.sf-partner-pill {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg-screen);
+  border-radius: var(--radius-full);
+  padding: 6px 13px;
+}
+
+.sf-partner-logo {
+  height: 20px;
+  object-fit: contain;
+  display: block;
+}
+
+/* Ligne légale — centrée à toutes les largeurs */
+.sf-legal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border-neutral);
+  text-align: center;
+}
+
+.sf-legal-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 14px;
+  flex-wrap: wrap;
+}
+
+/* Point de séparation, masqué dès que la ligne se replie sur deux lignes :
+   un séparateur en fin de ligne serait orphelin. */
+.sf-legal-sep {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--content-tertiary);
+  flex-shrink: 0;
+}
+
+.sf-copy {
+  color: var(--content-secondary);
+  font-size: 13px;
+}
+
+.sf-social {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+/* Rendu identique qu'il s'agisse d'un lien ou, tant que le compte n'existe
+   pas, d'une simple icône : seul le survol distingue les deux. */
+.sf-social-item {
+  display: inline-flex;
   color: var(--content-secondary);
 }
 
-.lp-footer-inner {
-  max-width: var(--container-max);
-  margin: 0 auto;
-  padding: 40px 32px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  font-size: 14px;
-  font-weight: 500;
+a.sf-social-item:hover {
+  color: var(--content-link);
+}
+
+@media (max-width: 900px) {
+  .sf-cols {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 28px 20px;
+  }
+}
+
+@media (max-width: 560px) {
+  .sf-inner {
+    padding: 32px 16px 24px;
+  }
+  .sf-cols {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 26px;
+  }
+  /* Marque et partenaires empilés et centrés, dans l'axe du bloc légal. */
+  .sf-bottom {
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .sf-legal-text {
+    gap: 4px;
+  }
+}
+
+/* Sous cette largeur la ligne légale passe sur deux lignes : le point de
+   séparation se retrouverait seul en bout de ligne. */
+@media (max-width: 640px) {
+  .sf-legal-sep {
+    display: none;
+  }
 }
 
 /* ════════════════════════════════════════════════════════════

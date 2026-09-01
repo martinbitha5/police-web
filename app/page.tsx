@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { CSSProperties, ReactNode } from 'react';
-
-const HUB = process.env.NEXT_PUBLIC_HUB ?? 'FIH';
+import { Footer } from '@/components/Footer';
+import { PublicTopbar } from '@/components/PublicTopbar';
 
 export const metadata = {
   title: 'Police Bagage · Supervision',
@@ -41,25 +41,14 @@ const STEPS = [
 export default function Landing() {
   return (
     <div style={s.page}>
-      {/* Barre de navigation */}
-      <header className="lp-topbar">
-        <div className="lp-topbar-inner">
-          <div style={s.brandBox}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="Police Bagage" style={s.brandLogo} />
-            <span style={s.brandName}>Police Bagage</span>
-          </div>
-          <nav style={s.topNav}>
-            <span className="hub-chip" style={s.hubChip}>Hub {HUB}</span>
-            <Link href="/login" className="lp-login-btn">Connexion</Link>
-          </nav>
-        </div>
-      </header>
+      {/* Barre de navigation — bascule en rangée d'icônes au défilement sur
+          téléphone (voir PublicTopbar). */}
+      <PublicTopbar hub />
 
       {/* Héro — 2 colonnes, titre display, visuel arrondi */}
       <section className="lp-hero">
         <div className="lp-hero-grid">
-          <div className="lp-hero-copy">
+          <div className="lp-hero-copy rv">
             <h1 className="lp-title">
               Chaque bagage suivi, du comptoir à la soute.
             </h1>
@@ -73,7 +62,7 @@ export default function Landing() {
               <a href="#fonctionnement" className="lp-cta-link">Voir comment ça marche</a>
             </div>
 
-            <div className="lp-stats">
+            <div className="lp-stats" data-rv-auto>
               <div className="lp-stat">
                 <div className="lp-stat-value">Temps réel</div>
                 <div className="lp-stat-label">Terrain et supervision synchronisés en continu</div>
@@ -89,7 +78,7 @@ export default function Landing() {
             </div>
           </div>
 
-          <div className="lp-hero-media">
+          <div className="lp-hero-media rv" style={{ transitionDelay: '120ms' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/IMG_9478.jpeg" alt="Avion au contact et chargement des bagages sur le tarmac" />
           </div>
@@ -99,8 +88,8 @@ export default function Landing() {
       {/* Capacités — tuiles teintées, icônes en cercles */}
       <section className="lp-section">
         <div className="lp-section-inner">
-          <h2 className="lp-section-title">Gardez le contrôle, du check-in à l’avion</h2>
-          <div className="lp-cap-grid">
+          <h2 className="lp-section-title rv">Gardez le contrôle, du check-in à l’avion</h2>
+          <div className="lp-cap-grid" data-rv-auto>
             {CAPABILITIES.map((c) => (
               <div key={c.title} className="lp-cap">
                 <div className="lp-cap-icon">{c.icon}</div>
@@ -115,8 +104,8 @@ export default function Landing() {
       {/* Déroulé opérationnel — section teintée */}
       <section id="fonctionnement" className="lp-section lp-section-tinted">
         <div className="lp-section-inner">
-          <h2 className="lp-section-title">Un vol, quatre étapes</h2>
-          <div className="lp-steps">
+          <h2 className="lp-section-title rv">Un vol, quatre étapes</h2>
+          <div className="lp-steps" data-rv-auto>
             {STEPS.map((st) => (
               <div key={st.n} className="lp-step">
                 <div className="lp-step-num">{st.n}</div>
@@ -131,7 +120,7 @@ export default function Landing() {
       {/* Bandeau vert vif — appel à l'action inversé */}
       <section className="lp-section">
         <div className="lp-section-inner">
-          <div className="lp-band">
+          <div className="lp-band rv">
             <h2 className="lp-band-title">Prenez la main sur vos vols du jour.</h2>
             <p className="lp-band-text">
               Connectez-vous à l’espace superviseur : chaque passager, chaque bagage
@@ -143,7 +132,7 @@ export default function Landing() {
       </section>
 
       {/* Bande partenaires — les compagnies opérées par la plateforme */}
-      <section style={s.partnerBand}>
+      <section className="rv" style={s.partnerBand}>
         <span style={s.partnerLabel}>Partenaires opérationnels</span>
         <div style={s.partnerDivider} />
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -153,32 +142,8 @@ export default function Landing() {
         <img src="/caa.png" alt="CAA - Compagnie Africaine d'Aviation" style={s.partnerLogo} />
       </section>
 
-      {/* Pied de page */}
-      <footer className="lp-footer">
-        <div className="lp-footer-inner">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="Police Bagage" style={{ width: 28, height: 28, borderRadius: 7, objectFit: 'cover', display: 'block' }} />
-            <span style={{ color: 'var(--content-primary)', fontWeight: 600 }}>Police Bagage</span>
-            <span style={{ color: 'var(--content-tertiary)', fontSize: 16 }}>·</span>
-            <span style={s.footerAirPill}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/air.png" alt="Air Congo" style={{ height: 20, objectFit: 'contain', display: 'block' }} />
-            </span>
-            <span style={s.footerAirPill}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/caa.png" alt="CAA - Compagnie Africaine d'Aviation" style={{ height: 20, objectFit: 'contain', display: 'block' }} />
-            </span>
-          </div>
-          <div style={s.footerLegal}>
-            <span>Accès réservé au personnel autorisé</span>
-            <span style={{ color: 'var(--content-tertiary)' }}>·</span>
-            <Link href="/legal" className="ft-link">Mentions légales</Link>
-            <span style={{ color: 'var(--content-tertiary)' }}>·</span>
-            <Link href="/conditions" className="ft-link">Conditions d’utilisation</Link>
-          </div>
-        </div>
-      </footer>
+      {/* Pied de page — bloc commun à tout le site */}
+      <Footer variant="public" />
     </div>
   );
 }
@@ -227,23 +192,6 @@ function IconChart() {
 const s: Record<string, CSSProperties> = {
   page: { minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-screen)' },
 
-  brandBox: { display: 'flex', alignItems: 'center', gap: 10 },
-  brandLogo: { width: 32, height: 32, borderRadius: 8, objectFit: 'cover' as const, display: 'block', flexShrink: 0 },
-  brandName: { fontWeight: 700, fontSize: 16, letterSpacing: -0.2, color: 'var(--content-primary)', whiteSpace: 'nowrap' },
-  topNav: { display: 'flex', alignItems: 'center', gap: 12 },
-  // `display` volontairement absent : il est porté par la classe .hub-chip, afin
-  // que la media query mobile puisse masquer la pastille (un style inline
-  // l'emporterait sur la classe et empêcherait le display:none).
-  hubChip: {
-    alignItems: 'center',
-    background: 'var(--bg-neutral)',
-    borderRadius: 9999,
-    padding: '6px 14px',
-    fontSize: 13,
-    fontWeight: 600,
-    color: 'var(--content-primary)',
-    letterSpacing: 0.2,
-  },
 
   /* Bande partenaires */
   partnerBand: {
@@ -272,18 +220,5 @@ const s: Record<string, CSSProperties> = {
     height: 38,
     objectFit: 'contain' as const,
     display: 'block',
-  },
-  footerAirPill: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    background: '#fff',
-    borderRadius: 9999,
-    padding: '5px 12px',
-  },
-  footerLegal: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    flexWrap: 'wrap' as const,
   },
 };

@@ -91,7 +91,7 @@ function ReportView() {
   const boardRate = stats && stats.passengers > 0 ? Math.round((stats.boarded / stats.passengers) * 100) : 0;
 
   return (
-    <div style={isMobile ? { ...s.content, ...s.contentMobile } : s.content}>
+    <div data-rv-auto style={isMobile ? { ...s.content, ...s.contentMobile } : s.content}>
       <div style={isMobile ? { ...s.head, ...s.headMobile } : s.head}>
         <div>
           <h1 style={s.title}>Rapports</h1>

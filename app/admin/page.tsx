@@ -125,7 +125,7 @@ function AccountManager() {
   }
 
   return (
-    <div style={isMobile ? { ...s.page, padding: '20px 16px' } : s.page}>
+    <div data-rv-auto style={isMobile ? { ...s.page, padding: '20px 16px' } : s.page}>
       <header style={s.head}>
         <div>
           <h1 style={s.title}>Gestion des comptes</h1>

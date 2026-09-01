@@ -105,7 +105,7 @@ function Profil() {
 
   if (!loaded) {
     return (
-      <div style={isMobile ? { ...s.content, ...s.contentMobile } : s.content}>
+      <div data-rv-auto style={isMobile ? { ...s.content, ...s.contentMobile } : s.content}>
         <div style={s.loading}>Chargement…</div>
       </div>
     );

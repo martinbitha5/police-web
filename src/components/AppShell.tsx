@@ -1,30 +1,22 @@
 'use client';
 
-import { createContext, useContext, useEffect, useLayoutEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import type { Profile } from '@police/shared';
 import { createClient } from '@/supabase/client';
-import { partnerBrand, type PartnerBrand } from '@/lib/partner';
+import { partnerBrand } from '@/lib/partner';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { IconDashboard, IconUsers, IconLogout, IconReport, IconBag, IconUser, IconPlane, IconAudit } from './icons';
+import { IconDashboard, IconUsers, IconLogout, IconReport, IconBag, IconUser, IconPlane, IconAudit, IconMenu } from './icons';
 import { Footer } from './Footer';
+import { PartnerCtx, SessionCtx } from './session';
+
+// Réexport : les pages importent ces hooks depuis '@/components/AppShell'.
+export { useSession, usePartner } from './session';
 
 function formatToday(): string {
   const s = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
-const SessionCtx = createContext<Profile | null>(null);
-export function useSession(): Profile | null {
-  return useContext(SessionCtx);
-}
-
-// Marque partenaire de la compagnie du profil, null tant qu'elle est inconnue.
-// Contexte séparé de la session : le Footer en a besoin sans porter tout le profil.
-const PartnerCtx = createContext<PartnerBrand | null>(null);
-export function usePartner(): PartnerBrand | null {
-  return useContext(PartnerCtx);
 }
 
 // Compagnie du dernier profil chargé, mémorisée sur l'appareil : au
@@ -32,6 +24,17 @@ export function usePartner(): PartnerBrand | null {
 // retour réseau du profil. Sans ce cache, un superviseur CAA voyait Air Congo
 // pendant le chargement.
 const AIRLINE_CACHE_KEY = 'pb.airline';
+
+// Raccourcis de la barre compacte sur téléphone, entre le menu et les rapports.
+// Trois entrées seulement : les écrans consultés en cours d'exploitation. Le
+// reste (profil, audit, comptes) vit dans le tiroir, ouvert par la première
+// cellule. Aucun raccourci réservé aux admins : la rangée est la même pour
+// tous, elle ne doit pas changer de découpage selon le rôle.
+const QUICK_NAV = [
+  { href: '/dashboard', label: 'Tableau de bord', icon: IconDashboard },
+  { href: '/vols', label: 'Vols', icon: IconPlane },
+  { href: '/bagages', label: 'Bagages', icon: IconBag },
+];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const router   = useRouter();
@@ -111,26 +114,68 @@ export function AppShell({ children }: { children: ReactNode }) {
       <SessionCtx.Provider value={profile}>
         <PartnerCtx.Provider value={partner}>
         <div style={m.root}>
-          {/* Barre du haut — blanche, sticky */}
-          <header style={m.topBar}>
-            <div style={m.topBrand}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo.png" alt="Police Bagage" style={m.topLogo} />
-                <div>
-                  <span style={m.topBrandName}>Police Bagage</span>
-                  <span style={m.topBrandHub}>{hubLine}</span>
+          {/* Barre du haut — blanche, collante, deux états : la marque en haut
+              de page, une rangée de raccourcis dès qu'on défile. L'échange est
+              fait en CSS (globals.css, .pb-full / .pb-icons) d'après
+              `data-scrolled`, sans état React qui se rejouerait à chaque pixel.
+              Les deux états font 60 px, la hauteur sur laquelle le tiroir
+              s'ouvre : une barre qui rétrécit décalerait la page en défilant. */}
+          <header className="app-topbar" style={m.topBar}>
+            <div className="pb-bar pb-full" style={m.topBarInner}>
+              <div style={m.topBrand}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/logo.png" alt="Police Bagage" style={m.topLogo} />
+                  <div>
+                    <span style={m.topBrandName}>Police Bagage</span>
+                    <span style={m.topBrandHub}>{hubLine}</span>
+                  </div>
                 </div>
               </div>
+              <div style={m.topRight}>
+                {profile ? (
+                  <div style={m.topAvatar}>{(profile.full_name ?? '?').charAt(0).toUpperCase()}</div>
+                ) : null}
+                <button style={m.menuBtn} onClick={() => setMenuOpen((v) => !v)} aria-label="Menu">
+                  <HamburgerIcon open={menuOpen} />
+                </button>
+              </div>
             </div>
-            <div style={m.topRight}>
-              {profile ? (
-                <div style={m.topAvatar}>{(profile.full_name ?? '?').charAt(0).toUpperCase()}</div>
-              ) : null}
-              <button style={m.menuBtn} onClick={() => setMenuOpen((v) => !v)} aria-label="Menu">
-                <HamburgerIcon open={menuOpen} />
+
+            <nav className="pb-icons" style={m.topBarIcons} aria-label="Raccourcis">
+              <button
+                className={`pb-icon${menuOpen ? ' pb-icon-on' : ''}`}
+                onClick={() => setMenuOpen((v) => !v)}
+                aria-label="Menu"
+              >
+                <IconMenu size={22} />
               </button>
-            </div>
+              {QUICK_NAV.map((q) => {
+                const Icon = q.icon;
+                const active = pathname.startsWith(q.href);
+                return (
+                  <Link
+                    key={q.href}
+                    href={q.href}
+                    className={`pb-icon${active ? ' pb-icon-on' : ''}`}
+                    aria-label={q.label}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <Icon size={20} />
+                  </Link>
+                );
+              })}
+              <Link
+                href="/rapport"
+                className="pb-icon pb-icon-cta"
+                aria-label="Rapports"
+                onClick={() => setMenuOpen(false)}
+              >
+                <span className="pb-icon-pill">
+                  <IconReport size={19} />
+                </span>
+              </Link>
+            </nav>
           </header>
 
           {/* Drawer menu */}
@@ -167,7 +212,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           {/* Contenu principal */}
           <main style={m.main}>
             {authed ? children : <div style={m.loading}>Chargement…</div>}
-            <Footer />
+            <Footer variant="app" />
           </main>
         </div>
         </PartnerCtx.Provider>
@@ -237,7 +282,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div style={{ flex: 1 }}>
               {authed ? children : <div style={d.centered}>Chargement…</div>}
             </div>
-            <Footer />
+            <Footer variant="app" />
           </div>
         </main>
       </div>
@@ -262,17 +307,24 @@ function HamburgerIcon({ open }: { open: boolean }) {
 const m: Record<string, CSSProperties> = {
   root: { display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--bg-screen)' },
 
+  // L'enveloppe ne porte plus la mise en page : elle accueille deux rangées
+  // dont une seule est visible à la fois. Le `display` reste aux classes
+  // .pb-full / .pb-icons, qu'un style inline empêcherait de masquer.
   topBar: {
     position: 'sticky',
     top: 0,
     zIndex: 20,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '13px 16px',
     background: 'var(--bg-screen)',
     borderBottom: '1px solid var(--border-neutral)',
   },
+  topBarInner: {
+    height: 60,
+    justifyContent: 'space-between',
+    padding: '0 16px',
+  },
+  // Pas de marge latérale : les cellules vont d'un bord à l'autre, séparées
+  // par des filets, comme une rangée d'onglets.
+  topBarIcons: { height: 60 },
   topBrand: { display: 'flex', alignItems: 'center', gap: 1 },
   topLogo: { width: 30, height: 30, borderRadius: 7, objectFit: 'cover' as const, display: 'block', flexShrink: 0 },
   topBrandName: { display: 'block', fontWeight: 700, fontSize: 15, letterSpacing: '-0.03em', color: 'var(--content-primary)' },

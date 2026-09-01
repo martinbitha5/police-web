@@ -88,7 +88,7 @@ function FlightsView() {
   const total = sumFlightStats(rows);
 
   return (
-    <div style={isMobile ? { ...s.content, ...s.contentMobile } : s.content}>
+    <div data-rv-auto style={isMobile ? { ...s.content, ...s.contentMobile } : s.content}>
       <div style={s.head}>
         <h1 style={s.title}>Vols</h1>
         <div style={s.sub}>{rangeLabel(period, from, to)}</div>

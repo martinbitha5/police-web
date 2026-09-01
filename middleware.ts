@@ -27,10 +27,11 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  // Routes publiques : landing (/), connexion et pages légales.
+  // Routes publiques : landing (/), connexion, FAQ et pages légales.
   const isPublic =
     pathname === '/' ||
     pathname.startsWith('/login') ||
+    pathname.startsWith('/faq') ||
     pathname.startsWith('/legal') ||
     pathname.startsWith('/conditions');
 

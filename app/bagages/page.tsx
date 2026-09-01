@@ -152,7 +152,7 @@ function BagagesContent() {
   const hasFilter = q !== '' || souteFilter !== 'all' || statusFilter !== 'all';
 
   return (
-    <div style={isMobile ? { ...s.page, padding: '16px 14px 32px', gap: 16 } : s.page}>
+    <div data-rv-auto style={isMobile ? { ...s.page, padding: '16px 14px 32px', gap: 16 } : s.page}>
       {/* En-tête. Téléphone : titre puis sélecteur pleine largeur, empilés. */}
       <div style={isMobile ? { ...s.header, flexDirection: 'column', alignItems: 'stretch', gap: 10 } : s.header}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

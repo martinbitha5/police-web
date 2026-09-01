@@ -117,7 +117,7 @@ function Dashboard() {
   const totalAlerts = Object.values(alertsByFlight).reduce((a, b) => a + b, 0);
 
   return (
-    <div style={isMobile ? { ...s.content, ...s.contentMobile } : s.content}>
+    <div data-rv-auto style={isMobile ? { ...s.content, ...s.contentMobile } : s.content}>
       {selected ? (
         <FlightDetail hub={airportCode} flight={selected} onBack={() => setSelectedId(null)} canManage={canManage} onUpdated={loadFlights} isMobile={isMobile} />
       ) : (

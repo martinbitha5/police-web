@@ -103,7 +103,7 @@ function AuditView() {
 
   if (profile && !isAdmin) {
     return (
-      <div style={isMobile ? { ...s.content, ...s.contentMobile } : s.content}>
+      <div data-rv-auto style={isMobile ? { ...s.content, ...s.contentMobile } : s.content}>
         <h1 style={s.title}>Journal d’audit</h1>
         <p style={s.denied}>
           Cette page est réservée aux administrateurs. Votre compte est enregistré comme{' '}
