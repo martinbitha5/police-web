@@ -1,15 +1,15 @@
 :root {
-  /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  /* ════════════════════════════════════════════════════════════
      Tokens du registre Uber (voir apps/web/DESIGN.md).
 
      Noir et blanc pour la structure, un seul accent bleu qui signale
-     (liens, Ã©tats actifs, arcs des jauges) et ne dÃ©core jamais. Les NOMS
-     des variables sont ceux du thÃ¨me prÃ©cÃ©dent : des dizaines de styles
-     inline en dÃ©pendent. Seules les VALEURS changent.
-     â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+     (liens, états actifs, arcs des jauges) et ne décore jamais. Les NOMS
+     des variables sont ceux du thème précédent : des dizaines de styles
+     inline en dépendent. Seules les VALEURS changent.
+     ════════════════════════════════════════════════════════════ */
 
   /* Marque : l'encre. Les deux anciens verts pointent sur le noir pour que
-     tout style inline rÃ©siduel retombe sur un rendu monochrome lisible. */
+     tout style inline résiduel retombe sur un rendu monochrome lisible. */
   --brand-green: #000000;
   --brand-forest: #000000;
 
@@ -23,28 +23,28 @@
   /* Surfaces */
   --bg-screen: #FFFFFF;
   --bg-elevated: #FFFFFF;
-  --bg-neutral: #F3F3F3;           /* champs, sections teintÃ©es, pilules au repos */
-  --bg-neutral-hover: #E8E8E8;     /* boutons secondaires, entrÃ©e de nav active */
+  --bg-neutral: #F3F3F3;           /* champs, sections teintées, pilules au repos */
+  --bg-neutral-hover: #E8E8E8;     /* boutons secondaires, entrée de nav active */
   --bg-neutral-active: #DCDCDC;
 
   /* Filets */
   --border-neutral: #E2E2E2;
-  --divider: #EEEEEE;              /* cartes, lignes de tableau, sÃ©parateurs */
+  --divider: #EEEEEE;              /* cartes, lignes de tableau, séparateurs */
 
   /* Boutons : le primaire est noir, jamais bleu. */
   --interactive-accent: #000000;
   --interactive-accent-hover: #333333;
   --interactive-accent-active: #4B4B4B;
-  --interactive-control: #FFFFFF;  /* texte posÃ© sur le bouton primaire */
+  --interactive-control: #FFFFFF;  /* texte posé sur le bouton primaire */
   --interactive-primary: #000000;
   --interactive-primary-hover: #333333;
 
-  /* Accent unique : liens, Ã©tats actifs, arcs des jauges. Jamais en fond
+  /* Accent unique : liens, états actifs, arcs des jauges. Jamais en fond
      de bouton. */
   --accent: #0064D6;
   --accent-soft: #EAF3FF;
 
-  /* SÃ©mantiques : un statut, jamais une dÃ©coration. */
+  /* Sémantiques : un statut, jamais une décoration. */
   --positive: #067647; --positive-bg: #E1EFE9;
   --negative: #D3232F; --negative-bg: #FAE5E6;
   --warning: #B25E09;  --warning-bg: #F6ECE1; --warning-content: #975008;
@@ -74,13 +74,13 @@
   /* Layout */
   --container-max: 1440px; --container-text: 700px; --nav-height: 64px;
 
-  /* Ombres : une carte est portÃ©e par son ombre douce et un filet clair ;
+  /* Ombres : une carte est portée par son ombre douce et un filet clair ;
      la seconde ne sert qu'aux modales. */
   --shadow-card: 0 0 8px rgba(0, 0, 0, 0.1), 0 4px 4px rgba(0, 0, 0, 0.04);
   --shadow-pop: 0 0 25px rgba(0, 0, 0, 0.1);
 
-  /* â”€â”€ Alias hÃ©ritÃ©s â”€â”€
-     Filet de sÃ©curitÃ© : tout style inline rÃ©siduel qui rÃ©fÃ©rencerait
+  /* ── Alias hérités ──
+     Filet de sécurité : tout style inline résiduel qui référencerait
      encore les anciens noms retombe sur les tokens ci-dessus. */
   --bg: var(--bg-screen);
   --surface: var(--bg-elevated);
@@ -106,7 +106,7 @@
   --shadow-lg: var(--shadow-card);
   --shadow-xl: var(--shadow-pop);
   /* Encore lu par un badge de la page Bagages : alias transitoire vers le
-     fond d'accent, Ã  retirer quand la page sera passÃ©e sur --accent-soft. */
+     fond d'accent, à retirer quand la page sera passée sur --accent-soft. */
   --brand-blue: var(--accent-soft);
 }
 
@@ -149,7 +149,7 @@ a {
 }
 
 /* Micro-interactions globales : changement de fond au survol, 200 ms sur les
-   couleurs seulement, jamais de dÃ©placement ni d'Ã©lÃ©vation. */
+   couleurs seulement, jamais de déplacement ni d'élévation. */
 button,
 a {
   transition: background-color 0.2s cubic-bezier(0, 0, 1, 1), border-color 0.2s cubic-bezier(0, 0, 1, 1),
@@ -210,8 +210,8 @@ select option {
   background: #A6A6A6;
 }
 
-/* EntrÃ©e de navigation du back-office (AppShell) : le survol est ici, un
-   style inline ne sachant pas survoler. L'entrÃ©e active garde son fond
+/* Entrée de navigation du back-office (AppShell) : le survol est ici, un
+   style inline ne sachant pas survoler. L'entrée active garde son fond
    inline, plus soutenu, qui l'emporte. */
 .nav-item:hover {
   background: var(--bg-neutral);
@@ -226,13 +226,13 @@ tbody tr:hover {
   background: var(--bg-neutral);
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   RÃ©vÃ©lation au dÃ©filement (.rv) â€” voir RevealObserver.tsx
-   Le bloc monte de 24 px en s'affichant quand il entre dans l'Ã©cran.
-   Tout est conditionnÃ© Ã  `js-reveal`, posÃ©e par le script de tÃªte : sans
+/* ════════════════════════════════════════════════════════════
+   Révélation au défilement (.rv) — voir RevealObserver.tsx
+   Le bloc monte de 24 px en s'affichant quand il entre dans l'écran.
+   Tout est conditionné à `js-reveal`, posée par le script de tête : sans
    JavaScript, ou si l'utilisateur refuse les animations, rien ne bouge et
-   rien n'est masquÃ©.
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+   rien n'est masqué.
+   ════════════════════════════════════════════════════════════ */
 
 :root.js-reveal .rv {
   opacity: 0;
@@ -247,27 +247,27 @@ tbody tr:hover {
   transform: none;
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   Barre du haut sur tÃ©lÃ©phone â€” deux Ã©tats (.pb-*)
-   En haut de page : la barre complÃ¨te (marque, actions).
-   DÃ¨s qu'on dÃ©file : elle cÃ¨de la place Ã  une rangÃ©e d'icÃ´nes, les
-   raccourcis les plus utiles Ã  portÃ©e de pouce.
-   L'Ã©change est fait en CSS depuis `data-scrolled`, sans Ã©tat React :
-   la barre ne se reconstruit pas Ã  chaque pixel dÃ©filÃ©.
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ════════════════════════════════════════════════════════════
+   Barre du haut sur téléphone — deux états (.pb-*)
+   En haut de page : la barre complète (marque, actions).
+   Dès qu'on défile : elle cède la place à une rangée d'icônes, les
+   raccourcis les plus utiles à portée de pouce.
+   L'échange est fait en CSS depuis `data-scrolled`, sans état React :
+   la barre ne se reconstruit pas à chaque pixel défilé.
+   ════════════════════════════════════════════════════════════ */
 
 .pb-bar {
   display: flex;
   align-items: center;
 }
 
-/* Les deux Ã©tats font la mÃªme hauteur : la barre est collante, une hauteur
-   qui change en cours de dÃ©filement dÃ©calerait tout le contenu sous elle. */
+/* Les deux états font la même hauteur : la barre est collante, une hauteur
+   qui change en cours de défilement décalerait tout le contenu sous elle. */
 .lp-topbar-icons {
   min-height: var(--nav-height);
 }
 
-/* La rangÃ©e d'icÃ´nes ne sort que sur tÃ©lÃ©phone, et seulement en dÃ©filement. */
+/* La rangée d'icônes ne sort que sur téléphone, et seulement en défilement. */
 .pb-icons {
   display: none;
   align-items: stretch;
@@ -304,12 +304,12 @@ tbody tr:hover {
   background: var(--bg-neutral);
 }
 
-/* Section en cours : la mÃªme touche d'accent que la navigation latÃ©rale. */
+/* Section en cours : la même touche d'accent que la navigation latérale. */
 .pb-icon-on {
   color: var(--accent);
 }
 
-/* DerniÃ¨re cellule : action principale, en pastille pleine. */
+/* Dernière cellule : action principale, en pastille pleine. */
 .pb-icon-cta:active {
   background: transparent;
 }
@@ -329,8 +329,8 @@ tbody tr:hover {
   background: var(--interactive-primary-hover);
 }
 
-/* Barre du haut au dÃ©filement : le filet cÃ¨de la place Ã  une ombre courte,
-   la barre se dÃ©tache du contenu qui passe dessous. */
+/* Barre du haut au défilement : le filet cède la place à une ombre courte,
+   la barre se détache du contenu qui passe dessous. */
 .lp-topbar,
 .app-topbar {
   transition: box-shadow 0.25s ease, border-color 0.25s ease;
@@ -358,9 +358,9 @@ tbody tr:hover {
   text-underline-offset: 0.3em;
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ════════════════════════════════════════════════════════════
    Landing page (.lp-*)
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+   ════════════════════════════════════════════════════════════ */
 
 .lp-topbar {
   position: sticky;
@@ -402,7 +402,7 @@ tbody tr:hover {
   background: var(--bg-neutral);
 }
 
-/* Pastille Â« Hub Â» de l'en-tÃªte. Sous 640px, marque + hub + bouton ne tiennent
+/* Pastille « Hub » de l'en-tête. Sous 640px, marque + hub + bouton ne tiennent
    pas sur une ligne : on masque le hub (info secondaire) pour garder la marque
    et le bouton d'action lisibles. */
 .hub-chip {
@@ -414,7 +414,7 @@ tbody tr:hover {
   }
 }
 
-/* Bouton de connexion de l'en-tÃªte : pilule noire, texte blanc. */
+/* Bouton de connexion de l'en-tête : pilule noire, texte blanc. */
 .lp-login-btn {
   display: inline-flex;
   align-items: center;
@@ -436,7 +436,7 @@ tbody tr:hover {
   background: var(--interactive-accent-active);
 }
 
-/* HÃ©ro : 2 colonnes, texte Ã  gauche, visuel Ã  droite */
+/* Héro : 2 colonnes, texte à gauche, visuel à droite */
 .lp-hero {
   background: var(--bg-screen);
 }
@@ -482,8 +482,8 @@ tbody tr:hover {
   }
 }
 
-/* Titres : Figtree 700, resserrÃ©s de -0.02em. Tailles relevÃ©es sur uber.com :
-   52/64 pour le hÃ©ros, 36/44 pour les sections, 40/48 et 28/36 sur tÃ©lÃ©phone. */
+/* Titres : Figtree 700, resserrés de -0.02em. Tailles relevées sur uber.com :
+   52/64 pour le héros, 36/44 pour les sections, 40/48 et 28/36 sur téléphone. */
 .lp-title {
   margin: 0;
   font-family: var(--font-display);
@@ -539,7 +539,7 @@ tbody tr:hover {
   background: var(--interactive-accent-active);
 }
 
-/* Bouton tertiaire : lien noir soulignÃ© */
+/* Bouton tertiaire : lien noir souligné */
 .lp-cta-link {
   color: var(--content-primary);
   font-weight: 500;
@@ -551,7 +551,7 @@ tbody tr:hover {
   color: var(--content-secondary);
 }
 
-/* RepÃ¨res chiffrÃ©s sous le hÃ©ro : filets fins */
+/* Repères chiffrés sous le héro : filets fins */
 .lp-stats {
   margin-top: var(--space-8);
   padding-top: var(--space-6);
@@ -634,7 +634,7 @@ tbody tr:hover {
   }
 }
 
-/* Tuiles de capacitÃ©s : cartes blanches portÃ©es par l'ombre douce */
+/* Tuiles de capacités : cartes blanches portées par l'ombre douce */
 .lp-cap-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -653,7 +653,7 @@ tbody tr:hover {
   box-shadow: var(--shadow-pop);
 }
 
-/* IcÃ´ne en disque gris 56px, trait noir */
+/* Icône en disque gris 56px, trait noir */
 .lp-cap-icon {
   width: 56px;
   height: 56px;
@@ -681,7 +681,7 @@ tbody tr:hover {
   line-height: 1.6;
 }
 
-/* DÃ©roulÃ© : frise fine, numÃ©ros noirs, point d'accent */
+/* Déroulé : frise fine, numéros noirs, point d'accent */
 .lp-steps {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -735,7 +735,7 @@ tbody tr:hover {
   line-height: 1.6;
 }
 
-/* Bandeau d'encre : texte et bouton inversÃ©s */
+/* Bandeau d'encre : texte et bouton inversés */
 .lp-band {
   background: #000000;
   border-radius: var(--radius-md);
@@ -793,11 +793,11 @@ tbody tr:hover {
   background: var(--bg-neutral-active);
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   Pied de page global (.sf-*) â€” colonnes de liens, marque,
-   partenaires puis ligne lÃ©gale. MÃªme bloc sur la vitrine, les
-   pages lÃ©gales et le back-office (composant Footer).
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ════════════════════════════════════════════════════════════
+   Pied de page global (.sf-*) — colonnes de liens, marque,
+   partenaires puis ligne légale. Même bloc sur la vitrine, les
+   pages légales et le back-office (composant Footer).
+   ════════════════════════════════════════════════════════════ */
 
 .sf {
   background: var(--bg-neutral);
@@ -888,8 +888,8 @@ tbody tr:hover {
   white-space: nowrap;
 }
 
-/* Pastille blanche : les logos compagnie sont dessinÃ©s sur fond blanc et
-   perdent leur lisibilitÃ© sur le gris du pied de page. */
+/* Pastille blanche : les logos compagnie sont dessinés sur fond blanc et
+   perdent leur lisibilité sur le gris du pied de page. */
 .sf-partner-pill {
   display: inline-flex;
   align-items: center;
@@ -905,7 +905,7 @@ tbody tr:hover {
   display: block;
 }
 
-/* Ligne lÃ©gale : centrÃ©e Ã  toutes les largeurs */
+/* Ligne légale : centrée à toutes les largeurs */
 .sf-legal {
   display: flex;
   flex-direction: column;
@@ -925,8 +925,8 @@ tbody tr:hover {
   flex-wrap: wrap;
 }
 
-/* Point de sÃ©paration, masquÃ© dÃ¨s que la ligne se replie sur deux lignes :
-   un sÃ©parateur en fin de ligne serait orphelin. */
+/* Point de séparation, masqué dès que la ligne se replie sur deux lignes :
+   un séparateur en fin de ligne serait orphelin. */
 .sf-legal-sep {
   width: 3px;
   height: 3px;
@@ -949,7 +949,7 @@ tbody tr:hover {
 }
 
 /* Rendu identique qu'il s'agisse d'un lien ou, tant que le compte n'existe
-   pas, d'une simple icÃ´ne : seul le survol distingue les deux. */
+   pas, d'une simple icône : seul le survol distingue les deux. */
 .sf-social-item {
   display: inline-flex;
   color: var(--content-secondary);
@@ -974,7 +974,7 @@ a.sf-social-item:hover {
     grid-template-columns: minmax(0, 1fr);
     gap: 26px;
   }
-  /* Marque et partenaires empilÃ©s et centrÃ©s, dans l'axe du bloc lÃ©gal. */
+  /* Marque et partenaires empilés et centrés, dans l'axe du bloc légal. */
   .sf-bottom {
     flex-direction: column;
     align-items: center;
@@ -985,17 +985,17 @@ a.sf-social-item:hover {
   }
 }
 
-/* Sous cette largeur la ligne lÃ©gale passe sur deux lignes : le point de
-   sÃ©paration se retrouverait seul en bout de ligne. */
+/* Sous cette largeur la ligne légale passe sur deux lignes : le point de
+   séparation se retrouverait seul en bout de ligne. */
 @media (max-width: 640px) {
   .sf-legal-sep {
     display: none;
   }
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ════════════════════════════════════════════════════════════
    Login (.lg-*) : panneau d'encre et carte blanche
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+   ════════════════════════════════════════════════════════════ */
 
 .lg-side {
   position: relative;
@@ -1017,7 +1017,7 @@ a.sf-social-item:hover {
 .lg-card {
   /* width:100% + max-width, et non width:400px + max-width:100%, qui est
      circulaire dans une grille (la piste se dimensionne sur les 400px, donc
-     le 100% valait 400px et la carte dÃ©bordait sur mobile). */
+     le 100% valait 400px et la carte débordait sur mobile). */
   width: 100%;
   max-width: 400px;
   background: var(--bg-elevated);

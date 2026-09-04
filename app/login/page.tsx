@@ -20,7 +20,7 @@ export default function LoginPage() {
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     if (error) {
-      setError('Identifiants incorrects. VÃ©rifiez votre email et votre mot de passe.');
+      setError('Identifiants incorrects. Vérifiez votre email et votre mot de passe.');
       setBusy(false);
       return;
     }
@@ -30,7 +30,7 @@ export default function LoginPage() {
 
   return (
     <div style={styles.page}>
-      {/* Panneau gauche : identitÃ© sur fond d'encre (desktop). Le fond est posÃ©
+      {/* Panneau gauche : identité sur fond d'encre (desktop). Le fond est posé
           par .lg-side dans globals.css, le texte blanc est explicite ici. */}
       <aside className="lg-side">
         <div style={styles.sideTop}>
@@ -41,10 +41,10 @@ export default function LoginPage() {
           </div>
         </div>
         <div style={styles.sideBody}>
-          <h2 style={styles.sideTitle}>Vos vols, suivis Ã  chaque instant.</h2>
+          <h2 style={styles.sideTitle}>Vos vols, suivis à chaque instant.</h2>
           <p style={styles.sideText}>
-            Suivez vos vols du jour en temps rÃ©el, tracez chaque Ã©tiquette bagage et
-            interceptez les bagages non dÃ©clarÃ©s avant la soute.
+            Suivez vos vols du jour en temps réel, tracez chaque étiquette bagage et
+            interceptez les bagages non déclarés avant la soute.
           </p>
           <div style={styles.sidePoints}>
             <div style={styles.sidePoint}>
@@ -53,15 +53,15 @@ export default function LoginPage() {
             </div>
             <div style={styles.sidePoint}>
               <span style={styles.sideDot} />
-              Alertes de fraude instantanÃ©es
+              Alertes de fraude instantanées
             </div>
             <div style={styles.sidePoint}>
               <span style={styles.sideDot} />
-              Rapports dâ€™exploitation Excel
+              Rapports d’exploitation Excel
             </div>
           </div>
         </div>
-        <div style={styles.sideFoot}>Police Bagage Â· ATS Handling</div>
+        <div style={styles.sideFoot}>Police Bagage · ATS Handling</div>
       </aside>
 
       {/* Panneau droit : formulaire */}
@@ -90,7 +90,7 @@ export default function LoginPage() {
               id="password"
               style={input}
               type="password"
-              placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+              placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
@@ -101,11 +101,11 @@ export default function LoginPage() {
           {error ? <p style={styles.error}>{error}</p> : null}
 
           <button className="lg-btn" disabled={busy} type="submit">
-            {busy ? 'Connexionâ€¦' : 'Connexion'}
+            {busy ? 'Connexion…' : 'Connexion'}
           </button>
 
           <div style={styles.foot}>
-            <Link href="/" style={styles.backLink}>Retour Ã  lâ€™accueil</Link>
+            <Link href="/" style={styles.backLink}>Retour à l’accueil</Link>
           </div>
         </form>
       </main>
@@ -113,8 +113,8 @@ export default function LoginPage() {
   );
 }
 
-// Le panneau d'encre est le seul endroit du site oÃ¹ une couleur est Ã©crite en
-// clair : du blanc, et ses transparences, posÃ©s sur le noir de .lg-side.
+// Le panneau d'encre est le seul endroit du site où une couleur est écrite en
+// clair : du blanc, et ses transparences, posés sur le noir de .lg-side.
 const styles: Record<string, React.CSSProperties> = {
   page: { minHeight: '100vh', display: 'flex', background: 'var(--bg-screen)' },
 
@@ -152,7 +152,7 @@ const styles: Record<string, React.CSSProperties> = {
 
   // minWidth: 0 : sans lui, ce flex item garde `min-width: auto` et refuse de
   // descendre sous la largeur mini de son contenu (carte 400px + padding),
-  // soit 448px : la carte Ã©tait rognÃ©e sur un Ã©cran de 375px.
+  // soit 448px : la carte était rognée sur un écran de 375px.
   main: { flex: 1, minWidth: 0, display: 'grid', placeItems: 'center', padding: 24 },
   title: {
     margin: 0,

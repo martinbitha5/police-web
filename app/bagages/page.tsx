@@ -12,7 +12,7 @@ import { RushPanel } from '@/components/RushPanel';
 import { card, badge, btnText, eyebrow, input, modalOverlay, modalPanel } from '@/ui/theme';
 import { IconBag, IconClose, IconPlane } from '@/components/icons';
 
-// La journÃ©e d'exploitation bascule Ã  minuit Ã  l'aÃ©roport, pas Ã  minuit UTC.
+// La journée d'exploitation bascule à minuit à l'aéroport, pas à minuit UTC.
 
 function formatTime(ts: string | null): string {
   if (!ts) return 'N/A';
@@ -32,7 +32,7 @@ interface BagRow extends Baggage {
 export default function BagagesPage() {
   return (
     <AppShell>
-      {/* useSearchParams impose une frontiÃ¨re Suspense au prÃ©rendu statique. */}
+      {/* useSearchParams impose une frontière Suspense au prérendu statique. */}
       <Suspense fallback={null}>
         <BagagesContent />
       </Suspense>
@@ -50,7 +50,7 @@ function BagagesContent() {
   const airportCode = scope.airport;
 
   const [flights, setFlights] = useState<Flight[]>([]);
-  // Le vol consultÃ© vit dans l'URL (?vol=<id>) : F5 reste sur le mÃªme vol.
+  // Le vol consulté vit dans l'URL (?vol=<id>) : F5 reste sur le même vol.
   const [selectedId, setSelectedId] = useUrlParam('vol');
   const [bags, setBags] = useState<BagRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -65,21 +65,21 @@ function BagagesContent() {
   useEffect(() => {
     const supabase = createClient();
     (async () => {
-      // PÃ©rimÃ¨tre du profil : aÃ©roport ET compagnie.
+      // Périmètre du profil : aéroport ET compagnie.
       const { data } = await scopeFlightQuery(
         supabase.from('flights').select('*').eq('date', todayAtAirport(airportCode)),
         scope,
       ).order('departure_time', { ascending: true });
       const list = (data as Flight[] | null) ?? [];
       setFlights(list);
-      // SÃ©lection automatique du premier vol : en `replace`, pour que le bouton
-      // Retour du navigateur ne repasse pas par la page sans sÃ©lection.
+      // Sélection automatique du premier vol : en `replace`, pour que le bouton
+      // Retour du navigateur ne repasse pas par la page sans sélection.
       if (list.length > 0 && !selectedId) setSelectedId(list[0].id, { replace: true });
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [airportCode, scope.airline]);
 
-  // Charge les bagages du vol sÃ©lectionnÃ©
+  // Charge les bagages du vol sélectionné
   const loadBags = useCallback(async () => {
     if (!selectedId) return;
     setLoading(true);
@@ -101,7 +101,7 @@ function BagagesContent() {
       return {
         ...b,
         passengerName:
-          pax?.full_name ?? (b.kind === 'rush_forward' ? 'ExpÃ©dition rush (sans passager)' : 'N/A'),
+          pax?.full_name ?? (b.kind === 'rush_forward' ? 'Expédition rush (sans passager)' : 'N/A'),
         pnr: pax?.pnr ?? 'N/A',
         declaredCount: pax?.declared_baggage_count ?? 0,
       };
@@ -117,7 +117,7 @@ function BagagesContent() {
 
   const flight = flights.find((f) => f.id === selectedId);
 
-  // Compteurs soute (sur tous les bagages, pas sur les filtrÃ©s)
+  // Compteurs soute (sur tous les bagages, pas sur les filtrés)
   const avantCount = bags.filter((b) => b.soute === 'avant').length;
   const arriereCount = bags.filter((b) => b.soute === 'arriere').length;
   const nonScanneCount = bags.filter((b) => !b.soute && b.is_confirmed).length;
@@ -136,8 +136,8 @@ function BagagesContent() {
     if (souteFilter === 'none' && b.soute !== null) return false;
     if (statusFilter === 'rush' && !b.rush) return false;
     if (statusFilter === 'arrived' && !b.arrived) return false;
-    // Les filtres dÃ©signent l'Ã©tape COURANTE : un bagage dÃ©jÃ  rÃ©ceptionnÃ© Ã 
-    // destination n'apparaÃ®t plus sous Â« ChargÃ© Â».
+    // Les filtres désignent l'étape COURANTE : un bagage déjà réceptionné à
+    // destination n'apparaît plus sous « Chargé ».
     if (statusFilter === 'in_hold' && (!b.in_hold || b.arrived)) return false;
     if (statusFilter === 'confirmed' && (!b.is_confirmed || b.in_hold || b.rush)) return false;
     if (statusFilter === 'pending' && b.is_confirmed) return false;
@@ -153,14 +153,14 @@ function BagagesContent() {
 
   return (
     <div data-rv-auto style={isMobile ? { ...s.page, padding: '16px 14px 32px', gap: 16 } : s.page}>
-      {/* En-tÃªte. TÃ©lÃ©phone : titre puis sÃ©lecteur pleine largeur, empilÃ©s. */}
+      {/* En-tête. Téléphone : titre puis sélecteur pleine largeur, empilés. */}
       <div style={isMobile ? { ...s.header, flexDirection: 'column', alignItems: 'stretch', gap: 10 } : s.header}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--content-primary)' }}>
           <IconBag size={22} />
           <h1 style={s.title}>Bagages</h1>
         </div>
 
-        {/* SÃ©lecteur de vol */}
+        {/* Sélecteur de vol */}
         <select
           style={isMobile ? { ...s.select, minWidth: 0, width: '100%' } : s.select}
           value={selectedId ?? ''}
@@ -169,7 +169,7 @@ function BagagesContent() {
           {flights.length === 0 && <option value="">Aucun vol aujourd'hui</option>}
           {flights.map((f) => (
             <option key={f.id} value={f.id}>
-              {f.flight_number} Â· {f.origin} â†’ {f.destination} {formatTime(f.departure_time)}
+              {f.flight_number} · {f.origin} → {f.destination} {formatTime(f.departure_time)}
             </option>
           ))}
         </select>
@@ -179,13 +179,13 @@ function BagagesContent() {
       {selectedId && (
         <div style={s.counters}>
           <CounterCard label="Soute avant" value={avantCount} />
-          <CounterCard label="Soute arriÃ¨re" value={arriereCount} />
-          <CounterCard label="Non scannÃ©s" value={nonScanneCount} muted />
+          <CounterCard label="Soute arrière" value={arriereCount} />
+          <CounterCard label="Non scannés" value={nonScanneCount} muted />
           <CounterCard label="Total bagages" value={bags.length} />
         </div>
       )}
 
-      {/* ExpÃ©dition rush : annonce + validation + suivi des colis sans passager */}
+      {/* Expédition rush : annonce + validation + suivi des colis sans passager */}
       {selectedId && (
         <RushPanel
           flightId={selectedId}
@@ -203,7 +203,7 @@ function BagagesContent() {
           <input
             style={s.searchInput}
             type="text"
-            placeholder="Rechercher par Ã©tiquette, passager ou PNRâ€¦"
+            placeholder="Rechercher par étiquette, passager ou PNR…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -217,7 +217,7 @@ function BagagesContent() {
                 active={souteFilter === v}
                 onClick={() => setSouteFilter(v)}
               >
-                {v === 'all' ? 'Tous' : v === 'avant' ? 'Avant' : v === 'arriere' ? 'ArriÃ¨re' : 'Non scannÃ©s'}
+                {v === 'all' ? 'Tous' : v === 'avant' ? 'Avant' : v === 'arriere' ? 'Arrière' : 'Non scannés'}
               </FilterPill>
             ))}
           </div>
@@ -234,11 +234,11 @@ function BagagesContent() {
                 {v === 'all'
                   ? 'Tous'
                   : v === 'arrived'
-                    ? 'ArrivÃ©'
+                    ? 'Arrivé'
                     : v === 'in_hold'
-                      ? 'ChargÃ©'
+                      ? 'Chargé'
                       : v === 'confirmed'
-                        ? 'EnregistrÃ©'
+                        ? 'Enregistré'
                         : v === 'rush'
                           ? 'Rush'
                           : 'En attente'}
@@ -246,10 +246,10 @@ function BagagesContent() {
             ))}
           </div>
 
-          {/* RÃ©initialiser */}
+          {/* Réinitialiser */}
           {hasFilter && (
             <button style={s.resetBtn} onClick={resetFilters}>
-              <IconClose size={13} /> RÃ©initialiser
+              <IconClose size={13} /> Réinitialiser
             </button>
           )}
         </div>
@@ -259,17 +259,17 @@ function BagagesContent() {
       {selectedId && (
         <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
           {loading ? (
-            <div style={s.empty}>Chargementâ€¦</div>
+            <div style={s.empty}>Chargement…</div>
           ) : bags.length === 0 ? (
-            <div style={s.empty}>Aucun bagage enregistrÃ© pour ce vol.</div>
+            <div style={s.empty}>Aucun bagage enregistré pour ce vol.</div>
           ) : visibleBags.length === 0 ? (
-            <div style={s.empty}>Aucun rÃ©sultat pour ces critÃ¨res.</div>
+            <div style={s.empty}>Aucun résultat pour ces critères.</div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
               <table style={s.table}>
                 <thead>
                   <tr>
-                    <Th>Ã‰tiquette</Th>
+                    <Th>Étiquette</Th>
                     <Th>Passager</Th>
                     <Th>PNR</Th>
                     <Th>Soute</Th>
@@ -294,7 +294,7 @@ function BagagesContent() {
               </table>
               {hasFilter && (
                 <div style={s.resultCount}>
-                  {visibleBags.length} rÃ©sultat{visibleBags.length !== 1 ? 's' : ''} sur {bags.length}
+                  {visibleBags.length} résultat{visibleBags.length !== 1 ? 's' : ''} sur {bags.length}
                 </div>
               )}
             </div>
@@ -302,7 +302,7 @@ function BagagesContent() {
         </div>
       )}
 
-      {/* Modal dÃ©tail */}
+      {/* Modal détail */}
       {detail && (
         <DetailModal
           bag={detail}
@@ -314,9 +314,9 @@ function BagagesContent() {
   );
 }
 
-// â”€â”€ Sous-composants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Sous-composants ──────────────────────────────────────────────
 
-// Puce de filtre : pilule bordÃ©e, blanche au repos ; l'active est noire.
+// Puce de filtre : pilule bordée, blanche au repos ; l'active est noire.
 function FilterPill({
   children,
   active,
@@ -349,8 +349,8 @@ function FilterPill({
   );
 }
 
-// Compteur de soute : un total, pas une part ; le libellÃ© en eyebrow, le
-// chiffre en Figtree tabulaire. `muted` grise le chiffre des non scannÃ©s.
+// Compteur de soute : un total, pas une part ; le libellé en eyebrow, le
+// chiffre en Figtree tabulaire. `muted` grise le chiffre des non scannés.
 function CounterCard({ label, value, muted }: { label: string; value: number; muted?: boolean }) {
   return (
     <div style={{ ...card, flex: 1, minWidth: 120, padding: '14px 18px' }}>
@@ -373,19 +373,19 @@ function StatusBadge({ bag }: { bag: Baggage }) {
   if (bag.cancelled)
     return (
       <span style={{ ...badge, background: 'var(--negative-bg)', color: 'var(--negative)', fontSize: 12 }}>
-        {bag.in_hold && !bag.pulled ? 'AnnulÃ© Â· Ã  retirer' : 'AnnulÃ©'}
+        {bag.in_hold && !bag.pulled ? 'Annulé · à retirer' : 'Annulé'}
       </span>
     );
   if (bag.kind === 'rush_forward')
     return (
       <span style={{ ...badge, background: 'var(--warning-bg)', color: 'var(--warning-content)', fontSize: 12 }}>
-        {bag.rush_status === 'expected' ? 'Rush Â· annoncÃ©' : bag.rush_status === 'pending' ? 'Rush Â· Ã  valider' : bag.rush_status === 'denied' ? 'Rush Â· refusÃ©' : bag.arrived ? 'Rush Â· arrivÃ©' : bag.in_hold ? 'Rush Â· chargÃ©' : 'Rush Â· autorisÃ©'}
+        {bag.rush_status === 'expected' ? 'Rush · annoncé' : bag.rush_status === 'pending' ? 'Rush · à valider' : bag.rush_status === 'denied' ? 'Rush · refusé' : bag.arrived ? 'Rush · arrivé' : bag.in_hold ? 'Rush · chargé' : 'Rush · autorisé'}
       </span>
     );
-  if (bag.arrived) return <span style={{ ...badge, background: 'var(--positive-bg)', color: 'var(--positive)', fontSize: 12 }}>ArrivÃ©</span>;
+  if (bag.arrived) return <span style={{ ...badge, background: 'var(--positive-bg)', color: 'var(--positive)', fontSize: 12 }}>Arrivé</span>;
   if (bag.rush) return <span style={{ ...badge, background: 'var(--warning-bg)', color: 'var(--warning-content)', fontSize: 12 }}>Rush</span>;
-  if (bag.in_hold) return <span style={{ ...badge, background: 'var(--accent-soft)', color: 'var(--content-primary)', fontSize: 12 }}>ChargÃ©</span>;
-  if (bag.is_confirmed) return <span style={{ ...badge, background: 'var(--bg-neutral)', color: 'var(--content-primary)', fontSize: 12 }}>EnregistrÃ©</span>;
+  if (bag.in_hold) return <span style={{ ...badge, background: 'var(--accent-soft)', color: 'var(--content-primary)', fontSize: 12 }}>Chargé</span>;
+  if (bag.is_confirmed) return <span style={{ ...badge, background: 'var(--bg-neutral)', color: 'var(--content-primary)', fontSize: 12 }}>Enregistré</span>;
   return <span style={{ ...badge, background: 'var(--bg-neutral)', color: 'var(--content-secondary)', fontSize: 12 }}>En attente</span>;
 }
 
@@ -393,11 +393,11 @@ function DetailModal({ bag, flight, onClose }: { bag: BagRow; flight: Flight | n
   return (
     <div style={s.overlay} onClick={onClose}>
       <div style={s.modal} onClick={(e) => e.stopPropagation()}>
-        {/* En-tÃªte modal */}
+        {/* En-tête modal */}
         <div style={s.modalHeader}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--content-primary)' }}>
             <IconBag size={20} />
-            <span style={s.modalTitle}>DÃ©tail bagage</span>
+            <span style={s.modalTitle}>Détail bagage</span>
           </div>
           <button style={s.closeBtn} onClick={onClose} aria-label="Fermer"><IconClose size={18} /></button>
         </div>
@@ -415,7 +415,7 @@ function DetailModal({ bag, flight, onClose }: { bag: BagRow; flight: Flight | n
             <Row label="Vol">
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
                 <IconPlane size={14} />
-                {flight.flight_number} Â· {flight.origin} â†’ {flight.destination}
+                {flight.flight_number} · {flight.origin} → {flight.destination}
               </span>
             </Row>
           )}
@@ -430,19 +430,19 @@ function DetailModal({ bag, flight, onClose }: { bag: BagRow; flight: Flight | n
             {bag.soute ? (
               <SouteBadge soute={bag.soute} />
             ) : (
-              <span style={{ color: 'var(--content-secondary)' }}>Non scannÃ© en soute</span>
+              <span style={{ color: 'var(--content-secondary)' }}>Non scanné en soute</span>
             )}
           </Row>
-          {bag.soute_at && <Row label="ScannÃ© en soute">{formatDateTime(bag.soute_at)}</Row>}
+          {bag.soute_at && <Row label="Scanné en soute">{formatDateTime(bag.soute_at)}</Row>}
 
           <div style={s.divider} />
 
           {/* Statuts */}
           <Row label="Statut"><StatusBadge bag={bag} /></Row>
-          <Row label="EnregistrÃ©">{formatDateTime(bag.scanned_at)}</Row>
-          {bag.in_hold && <Row label="ChargÃ©">{formatDateTime(bag.in_hold_at)}</Row>}
+          <Row label="Enregistré">{formatDateTime(bag.scanned_at)}</Row>
+          {bag.in_hold && <Row label="Chargé">{formatDateTime(bag.in_hold_at)}</Row>}
           {bag.rush && <Row label="Rush">{formatDateTime(bag.rush_at)}</Row>}
-          {bag.arrived && <Row label="ReÃ§u Ã  destination">{formatDateTime(bag.arrived_at)}</Row>}
+          {bag.arrived && <Row label="Reçu à destination">{formatDateTime(bag.arrived_at)}</Row>}
         </div>
       </div>
     </div>
@@ -466,7 +466,7 @@ function Td({ children, mono }: { children: ReactNode; mono?: boolean }) {
   return <td style={{ ...s.td, ...(mono ? { fontFamily: 'monospace', fontSize: 13 } : {}) }}>{children}</td>;
 }
 
-// â”€â”€ Styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Styles ───────────────────────────────────────────────────────
 
 const s: Record<string, CSSProperties> = {
   page: { padding: '28px 28px 40px', display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 1100 },
@@ -547,7 +547,7 @@ const s: Record<string, CSSProperties> = {
     letterSpacing: '-0.02em',
     lineHeight: 1.2,
   },
-  // 40 px de cÃ´tÃ© : une croix de 18 px avec 4 px de marge est intouchable au pouce.
+  // 40 px de côté : une croix de 18 px avec 4 px de marge est intouchable au pouce.
   closeBtn: {
     background: 'transparent',
     border: 'none',

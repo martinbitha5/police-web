@@ -12,7 +12,7 @@ import { IconDashboard, IconUsers, IconLogout, IconReport, IconBag, IconUser, Ic
 import { Footer } from './Footer';
 import { PartnerCtx, SessionCtx } from './session';
 
-// RÃ©export : les pages importent ces hooks depuis '@/components/AppShell'.
+// Réexport : les pages importent ces hooks depuis '@/components/AppShell'.
 export { useSession, usePartner } from './session';
 
 function formatToday(): string {
@@ -20,17 +20,17 @@ function formatToday(): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-// Compagnie du dernier profil chargÃ©, mÃ©morisÃ©e sur l'appareil : au
-// rechargement, le bon logo s'affiche dÃ¨s le premier rendu, sans attendre le
-// retour rÃ©seau du profil. Sans ce cache, un superviseur CAA voyait Air Congo
+// Compagnie du dernier profil chargé, mémorisée sur l'appareil : au
+// rechargement, le bon logo s'affiche dès le premier rendu, sans attendre le
+// retour réseau du profil. Sans ce cache, un superviseur CAA voyait Air Congo
 // pendant le chargement.
 const AIRLINE_CACHE_KEY = 'pb.airline';
 
-// Raccourcis de la barre compacte sur tÃ©lÃ©phone, entre le menu et les rapports.
-// Trois entrÃ©es seulement : les Ã©crans consultÃ©s en cours d'exploitation. Le
-// reste (profil, audit, comptes) vit dans le tiroir, ouvert par la premiÃ¨re
-// cellule. Aucun raccourci rÃ©servÃ© aux admins : la rangÃ©e est la mÃªme pour
-// tous, elle ne doit pas changer de dÃ©coupage selon le rÃ´le.
+// Raccourcis de la barre compacte sur téléphone, entre le menu et les rapports.
+// Trois entrées seulement : les écrans consultés en cours d'exploitation. Le
+// reste (profil, audit, comptes) vit dans le tiroir, ouvert par la première
+// cellule. Aucun raccourci réservé aux admins : la rangée est la même pour
+// tous, elle ne doit pas changer de découpage selon le rôle.
 const QUICK_NAV = [
   { href: '/dashboard', label: 'Tableau de bord', icon: IconDashboard },
   { href: '/vols', label: 'Vols', icon: IconPlane },
@@ -47,8 +47,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   // null = compagnie pas encore connue (ni cache, ni profil) : aucun logo.
   const [airline, setAirline] = useState<string | null>(null);
 
-  // Avant la premiÃ¨re peinture (useLayoutEffect, pas useEffect) : reprend la
-  // compagnie mÃ©morisÃ©e pour que le logo soit juste dÃ¨s le premier affichage.
+  // Avant la première peinture (useLayoutEffect, pas useEffect) : reprend la
+  // compagnie mémorisée pour que le logo soit juste dès le premier affichage.
   useLayoutEffect(() => {
     try {
       const cached = localStorage.getItem(AIRLINE_CACHE_KEY);
@@ -67,8 +67,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', auth.user.id).single();
       const p = (prof as Profile | null) ?? null;
       setProfile(p);
-      // Le profil fait foi : il met Ã  jour l'affichage et le cache. Une
-      // compagnie absente vide les deux, plutÃ´t que d'afficher un logo hÃ©ritÃ©.
+      // Le profil fait foi : il met à jour l'affichage et le cache. Une
+      // compagnie absente vide les deux, plutôt que d'afficher un logo hérité.
       const code = (p?.airline_code ?? '').trim().toUpperCase();
       setAirline(code);
       try {
@@ -81,23 +81,23 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [router]);
 
   async function logout() {
-    // Oublie la compagnie mÃ©morisÃ©e : le prochain utilisateur de cet appareil
-    // ne doit pas voir le logo du prÃ©cÃ©dent pendant son chargement de profil.
-    try { localStorage.removeItem(AIRLINE_CACHE_KEY); } catch { /* sans consÃ©quence */ }
+    // Oublie la compagnie mémorisée : le prochain utilisateur de cet appareil
+    // ne doit pas voir le logo du précédent pendant son chargement de profil.
+    try { localStorage.removeItem(AIRLINE_CACHE_KEY); } catch { /* sans conséquence */ }
     await createClient().auth.signOut();
     router.replace('/login');
   }
 
   // Logo partenaire : cache local d'abord, profil ensuite. Null tant que la
-  // compagnie est inconnue â€” on n'affiche alors AUCUN logo, jamais un dÃ©faut.
+  // compagnie est inconnue — on n'affiche alors AUCUN logo, jamais un défaut.
   const partner = partnerBrand(airline);
-  // Sous-titre du logo : rien tant que le profil n'est pas chargÃ©, plutÃ´t
-  // qu'un Â« ET Â» par dÃ©faut qui serait faux pour un profil d'une autre compagnie.
-  const hubLine = profile ? `${profile.airport_code ?? 'N/A'} Â· ${profile.airline_code ?? 'N/A'}` : '';
+  // Sous-titre du logo : rien tant que le profil n'est pas chargé, plutôt
+  // qu'un « ET » par défaut qui serait faux pour un profil d'une autre compagnie.
+  const hubLine = profile ? `${profile.airport_code ?? 'N/A'} · ${profile.airline_code ?? 'N/A'}` : '';
 
-  // Les pages Comptes et Journal d'audit sont RÃ‰SERVÃ‰ES aux admins. Les
-  // superviseurs ne les voient pas. Masquer l'entrÃ©e ne suffit pas : la page
-  // refuse l'accÃ¨s, et la vue `movement_log` ne renvoie rien Ã  un non-admin.
+  // Les pages Comptes et Journal d'audit sont RÉSERVÉES aux admins. Les
+  // superviseurs ne les voient pas. Masquer l'entrée ne suffit pas : la page
+  // refuse l'accès, et la vue `movement_log` ne renvoie rien à un non-admin.
   const isAdmin = profile?.role === 'admin';
   const nav = [
     { href: '/dashboard', label: 'Tableau de bord', icon: IconDashboard, show: true },
@@ -109,18 +109,18 @@ export function AppShell({ children }: { children: ReactNode }) {
     { href: '/admin',     label: 'Comptes',          icon: IconUsers,     show: isAdmin },
   ].filter((n) => n.show);
 
-  // â”€â”€ Layout mobile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Layout mobile ────────────────────────────────────────────
   if (isMobile) {
     return (
       <SessionCtx.Provider value={profile}>
         <PartnerCtx.Provider value={partner}>
         <div style={m.root}>
-          {/* Barre du haut â€” blanche, collante, deux Ã©tats : la marque en haut
-              de page, une rangÃ©e de raccourcis dÃ¨s qu'on dÃ©file. L'Ã©change est
-              fait en CSS (globals.css, .pb-full / .pb-icons) d'aprÃ¨s
-              `data-scrolled`, sans Ã©tat React qui se rejouerait Ã  chaque pixel.
-              Les deux Ã©tats font 60 px, la hauteur sur laquelle le tiroir
-              s'ouvre : une barre qui rÃ©trÃ©cit dÃ©calerait la page en dÃ©filant. */}
+          {/* Barre du haut — blanche, collante, deux états : la marque en haut
+              de page, une rangée de raccourcis dès qu'on défile. L'échange est
+              fait en CSS (globals.css, .pb-full / .pb-icons) d'après
+              `data-scrolled`, sans état React qui se rejouerait à chaque pixel.
+              Les deux états font 60 px, la hauteur sur laquelle le tiroir
+              s'ouvre : une barre qui rétrécit décalerait la page en défilant. */}
           <header className="app-topbar" style={m.topBar}>
             <div className="pb-bar pb-full" style={m.topBarInner}>
               <div style={m.topBrand}>
@@ -201,7 +201,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     style={{ ...m.drawerItem, ...(active ? m.drawerItemActive : {}) }}
                     onClick={() => setMenuOpen(false)}
                   >
-                    {/* L'icÃ´ne seule porte l'accent : le libellÃ© reste noir. */}
+                    {/* L'icône seule porte l'accent : le libellé reste noir. */}
                     <span style={{ display: 'inline-flex', color: active ? 'var(--accent)' : 'inherit' }}>
                       <Icon size={18} />
                     </span>
@@ -210,14 +210,14 @@ export function AppShell({ children }: { children: ReactNode }) {
                 );
               })}
               <button style={m.drawerLogout} onClick={logout}>
-                <IconLogout size={16} /> DÃ©connexion
+                <IconLogout size={16} /> Déconnexion
               </button>
             </div>
           ) : null}
 
           {/* Contenu principal */}
           <main style={m.main}>
-            {authed ? children : <div style={m.loading}>Chargementâ€¦</div>}
+            {authed ? children : <div style={m.loading}>Chargement…</div>}
             <Footer variant="app" />
           </main>
         </div>
@@ -226,7 +226,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     );
   }
 
-  // â”€â”€ Layout desktop â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Layout desktop ───────────────────────────────────────────
   return (
     <SessionCtx.Provider value={profile}>
       <PartnerCtx.Provider value={partner}>
@@ -264,7 +264,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           <div style={d.dateBox}>{formatToday()}</div>
 
-          {/* Partenaire â€” logo de la compagnie du profil connectÃ©. Rien tant
+          {/* Partenaire — logo de la compagnie du profil connecté. Rien tant
               qu'elle est inconnue : jamais le logo d'une autre compagnie. */}
           {partner ? (
             <div style={d.partnerBox}>
@@ -285,7 +285,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </div>
             </div>
             <button onClick={logout} style={d.logout}>
-              <IconLogout size={16} /> DÃ©connexion
+              <IconLogout size={16} /> Déconnexion
             </button>
           </div>
         </aside>
@@ -293,7 +293,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <main style={d.main}>
           <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
             <div style={{ flex: 1 }}>
-              {authed ? children : <div style={d.centered}>Chargementâ€¦</div>}
+              {authed ? children : <div style={d.centered}>Chargement…</div>}
             </div>
             <Footer variant="app" />
           </div>
@@ -304,7 +304,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 }
 
-/** IcÃ´ne hamburger / croix animÃ©e. */
+/** Icône hamburger / croix animée. */
 function HamburgerIcon({ open }: { open: boolean }) {
   const bar: CSSProperties = { width: 22, height: 2, borderRadius: 2, background: 'var(--content-primary)', transition: 'all 0.2s' };
   return (
@@ -316,10 +316,10 @@ function HamburgerIcon({ open }: { open: boolean }) {
   );
 }
 
-// EntrÃ©e de navigation : pilule pleine largeur. Au repos texte gris poids
+// Entrée de navigation : pilule pleine largeur. Au repos texte gris poids
 // 500 ; active fond gris soutenu, texte noir poids 600 (en monochrome, deux
-// gris voisins ne suffisent pas Ã  distinguer Â« sÃ©lectionnÃ© Â» de Â« survolÃ© Â»,
-// la graisse fait la diffÃ©rence). Le survol (fond --bg-neutral) est portÃ© par
+// gris voisins ne suffisent pas à distinguer « sélectionné » de « survolé »,
+// la graisse fait la différence). Le survol (fond --bg-neutral) est porté par
 // la classe .nav-item dans globals.css : un style inline ne sait pas survoler.
 const NAV_ITEM: CSSProperties = {
   display: 'flex',
@@ -339,13 +339,13 @@ const NAV_ITEM_ACTIVE: CSSProperties = {
   fontWeight: 600,
 };
 
-// â”€â”€ Styles mobile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Styles mobile ───────────────────────────────────────────────
 const m: Record<string, CSSProperties> = {
   root: { display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--bg-screen)' },
 
-  // L'enveloppe ne porte plus la mise en page : elle accueille deux rangÃ©es
-  // dont une seule est visible Ã  la fois. Le `display` reste aux classes
-  // .pb-full / .pb-icons, qu'un style inline empÃªcherait de masquer.
+  // L'enveloppe ne porte plus la mise en page : elle accueille deux rangées
+  // dont une seule est visible à la fois. Le `display` reste aux classes
+  // .pb-full / .pb-icons, qu'un style inline empêcherait de masquer.
   topBar: {
     position: 'sticky',
     top: 0,
@@ -358,8 +358,8 @@ const m: Record<string, CSSProperties> = {
     justifyContent: 'space-between',
     padding: '0 16px',
   },
-  // Pas de marge latÃ©rale : les cellules vont d'un bord Ã  l'autre, sÃ©parÃ©es
-  // par des filets, comme une rangÃ©e d'onglets.
+  // Pas de marge latérale : les cellules vont d'un bord à l'autre, séparées
+  // par des filets, comme une rangée d'onglets.
   topBarIcons: { height: 60 },
   topBrand: { display: 'flex', alignItems: 'center', gap: 1 },
   topLogo: { width: 30, height: 30, borderRadius: 8, objectFit: 'cover' as const, display: 'block', flexShrink: 0 },
@@ -399,7 +399,7 @@ const m: Record<string, CSSProperties> = {
     background: 'var(--bg-screen)',
     borderBottom: '1px solid var(--divider)',
     boxShadow: 'var(--shadow-card)',
-    // Petits Ã©crans (SE, Ã©crans courts) : le menu dÃ©file au lieu de dÃ©border.
+    // Petits écrans (SE, écrans courts) : le menu défile au lieu de déborder.
     maxHeight: 'calc(100vh - 61px)',
     overflowY: 'auto',
   },
@@ -426,7 +426,7 @@ const m: Record<string, CSSProperties> = {
   loading: { color: 'var(--content-secondary)', display: 'grid', placeItems: 'center', height: '60vh' },
 };
 
-// â”€â”€ Styles desktop â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Styles desktop ──────────────────────────────────────────────
 const d: Record<string, CSSProperties> = {
   layout: { display: 'flex', minHeight: '100vh', background: 'var(--bg-screen)' },
   sidebar: {
@@ -485,7 +485,7 @@ const d: Record<string, CSSProperties> = {
   main: { flex: 1, overflow: 'auto', minWidth: 0, background: 'var(--bg-screen)' },
   centered: { color: 'var(--content-secondary)', display: 'grid', placeItems: 'center', height: '60vh' },
 
-  // LibellÃ© et logo sur la MÃŠME ligne : le libellÃ© Ã  gauche, le logo Ã  droite.
+  // Libellé et logo sur la MÊME ligne : le libellé à gauche, le logo à droite.
   partnerBox: {
     borderTop: '1px solid var(--divider)',
     padding: '12px 12px 10px',

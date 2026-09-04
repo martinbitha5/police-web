@@ -2,11 +2,11 @@
 
 import { useEffect } from 'react';
 import { btnPrimary, btnSecondary } from '@/ui/theme';
-// Cette frontiÃ¨re remplace le layout racine, donc sa feuille de style : on
-// rÃ©importe les tokens pour que les primitives aient leurs variables.
+// Cette frontière remplace le layout racine, donc sa feuille de style : on
+// réimporte les tokens pour que les primitives aient leurs variables.
 import './globals.css';
 
-/** FrontiÃ¨re d'erreur racine (remplace tout le document si le layout plante). */
+/** Frontière d'erreur racine (remplace tout le document si le layout plante). */
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
     const msg = `${error?.name ?? ''} ${error?.message ?? ''}`;
@@ -24,10 +24,10 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
       <body style={body}>
         <div style={{ textAlign: 'center', maxWidth: 420 }}>
           <h1 style={title}>Une erreur est survenue</h1>
-          <p style={text}>Rechargez la page pour rÃ©essayer.</p>
+          <p style={text}>Rechargez la page pour réessayer.</p>
           <div style={row}>
             <button onClick={() => reset()} style={btnPrimary}>
-              RÃ©essayer
+              Réessayer
             </button>
             <button onClick={() => window.location.reload()} style={btnSecondary}>
               Recharger

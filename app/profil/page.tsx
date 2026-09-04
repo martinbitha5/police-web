@@ -72,7 +72,7 @@ function Profil() {
     if (!userId) return;
     const value = fullName.trim();
     if (value.length === 0) {
-      setNameFeedback({ kind: 'error', text: 'Le nom complet ne peut pas Ãªtre vide.' });
+      setNameFeedback({ kind: 'error', text: 'Le nom complet ne peut pas être vide.' });
       return;
     }
     setSavingName(true);
@@ -84,13 +84,13 @@ function Profil() {
       return;
     }
     setProfile((prev) => (prev ? { ...prev, full_name: value } : prev));
-    setNameFeedback({ kind: 'success', text: 'Nom mis Ã  jour.' });
+    setNameFeedback({ kind: 'success', text: 'Nom mis à jour.' });
   }
 
   async function changePassword(e: React.FormEvent) {
     e.preventDefault();
     if (password.length < 8) {
-      setPwFeedback({ kind: 'error', text: 'Le mot de passe doit contenir au moins 8 caractÃ¨res.' });
+      setPwFeedback({ kind: 'error', text: 'Le mot de passe doit contenir au moins 8 caractères.' });
       return;
     }
     if (password !== confirm) {
@@ -107,13 +107,13 @@ function Profil() {
     }
     setPassword('');
     setConfirm('');
-    setPwFeedback({ kind: 'success', text: 'Mot de passe modifiÃ©.' });
+    setPwFeedback({ kind: 'success', text: 'Mot de passe modifié.' });
   }
 
   if (!loaded) {
     return (
       <div data-rv-auto style={isMobile ? { ...s.content, ...s.contentMobile } : s.content}>
-        <div style={s.loading}>Chargementâ€¦</div>
+        <div style={s.loading}>Chargement…</div>
       </div>
     );
   }
@@ -131,26 +131,26 @@ function Profil() {
         </div>
         <div>
           <h1 style={s.pageTitle}>Mon profil</h1>
-          <div style={s.pageSub}>GÃ©rez vos informations et votre mot de passe.</div>
+          <div style={s.pageSub}>Gérez vos informations et votre mot de passe.</div>
         </div>
       </div>
 
-      {/* RÃ©capitulatif en lecture */}
+      {/* Récapitulatif en lecture */}
       <div style={{ ...card, marginBottom: 16 }}>
-        <h2 style={sectionHeading}>RÃ©capitulatif</h2>
+        <h2 style={sectionHeading}>Récapitulatif</h2>
         <div style={s.infoGrid}>
           <Info label="Nom complet" value={profile?.full_name || ''} />
           <Info label="E-mail" value={email} />
-          <Info label="RÃ´le" value={roleLabel} />
+          <Info label="Rôle" value={roleLabel} />
           <Info
-            label="Code aÃ©roport / compagnie"
-            value={siteCode && airlineCode ? `${siteCode} Â· ${airlineCode}` : siteCode || airlineCode}
+            label="Code aéroport / compagnie"
+            value={siteCode && airlineCode ? `${siteCode} · ${airlineCode}` : siteCode || airlineCode}
           />
           <Info label="Membre depuis" value={formatDate(profile?.created_at ?? null)} />
         </div>
       </div>
 
-      {/* Bloc Informations Ã©ditable */}
+      {/* Bloc Informations éditable */}
       <div style={{ ...card, marginBottom: 16 }}>
         <h2 style={sectionHeading}>Informations</h2>
         <form onSubmit={saveName} style={s.form}>
@@ -168,7 +168,7 @@ function Profil() {
           {nameFeedback ? <Pill feedback={nameFeedback} /> : null}
           <div style={s.actions}>
             <button type="submit" style={btnPrimary} disabled={savingName}>
-              {savingName ? 'Enregistrementâ€¦' : 'Enregistrer'}
+              {savingName ? 'Enregistrement…' : 'Enregistrer'}
             </button>
           </div>
         </form>
@@ -186,7 +186,7 @@ function Profil() {
               style={input}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Au moins 8 caractÃ¨res"
+              placeholder="Au moins 8 caractères"
               autoComplete="new-password"
               disabled={savingPassword}
             />
@@ -199,17 +199,17 @@ function Profil() {
               style={input}
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              placeholder="RÃ©pÃ©tez le mot de passe"
+              placeholder="Répétez le mot de passe"
               autoComplete="new-password"
               disabled={savingPassword}
             />
           </div>
           {pwFeedback ? <Pill feedback={pwFeedback} /> : null}
           <div style={s.actions}>
-            {/* Second formulaire de l'Ã©cran : bouton secondaire, le primaire
-                reste Â« Enregistrer Â». */}
+            {/* Second formulaire de l'écran : bouton secondaire, le primaire
+                reste « Enregistrer ». */}
             <button type="submit" style={btnSecondary} disabled={savingPassword}>
-              {savingPassword ? 'Modificationâ€¦' : 'Changer le mot de passe'}
+              {savingPassword ? 'Modification…' : 'Changer le mot de passe'}
             </button>
           </div>
         </form>
@@ -284,7 +284,7 @@ const s: Record<string, CSSProperties> = {
   field: { display: 'flex', flexDirection: 'column', gap: 6 },
   actions: { display: 'flex', justifyContent: 'flex-end' },
 
-  // Retour de formulaire : bandeau rayon 8, la paire sÃ©mantique est posÃ©e
+  // Retour de formulaire : bandeau rayon 8, la paire sémantique est posée
   // par Pill.
   pill: {
     borderRadius: 8,

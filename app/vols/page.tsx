@@ -47,7 +47,7 @@ function FlightsView() {
   const canManage = profile?.role === 'admin' || profile?.role === 'supervisor';
 
   const [period, setPeriod] = useState<Period>('jour');
-  // JournÃ©e d'exploitation de l'aÃ©roport du profil, pas celle de l'appareil.
+  // Journée d'exploitation de l'aéroport du profil, pas celle de l'appareil.
   const today = todayAtAirport(scope.airport);
   const [customFrom, setCustomFrom] = useState(today);
   const [customTo, setCustomTo] = useState(today);
@@ -65,7 +65,7 @@ function FlightsView() {
       try {
         setRows(await loadFlightStats(rg, scope));
       } catch {
-        setError("Impossible de charger les vols. RÃ©essayez dans un instant.");
+        setError("Impossible de charger les vols. Réessayez dans un instant.");
         setRows([]);
       }
       setLoading(false);
@@ -83,12 +83,12 @@ function FlightsView() {
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
     const { error: err } = await createClient().from('flights').update({ status }).eq('id', id);
     if (err) {
-      setError('Le statut nâ€™a pas pu Ãªtre enregistrÃ©.');
+      setError('Le statut n’a pas pu être enregistré.');
       void load({ from, to });
     }
   }
 
-  // Totaux de la pÃ©riode, calculÃ©s sur les lignes dÃ©jÃ  chargÃ©es.
+  // Totaux de la période, calculés sur les lignes déjà chargées.
   const total = sumFlightStats(rows);
   const departed = rows.filter((r) => hasFlightDeparted(r.status)).length;
   const missing = total.declared - total.confirmed;
@@ -124,36 +124,36 @@ function FlightsView() {
 
       {error ? <div style={s.error}>{error}</div> : null}
 
-      {/* MÃªmes jauges que le tableau de bord et les rapports : le chiffre du
-          centre rapportÃ© Ã  une rÃ©fÃ©rence dite en clair dessous. */}
+      {/* Mêmes jauges que le tableau de bord et les rapports : le chiffre du
+          centre rapporté à une référence dite en clair dessous. */}
       <div style={isMobile ? { ...s.grid, gridTemplateColumns: '1fr' } : s.grid}>
         <Gauge
           label="Vols"
           value={rows.length}
           total={rows.length}
           ratio={rows.length > 0 ? departed / rows.length : 0}
-          caption={rows.length > 0 ? `${plural(departed, 'dÃ©collÃ©')} sur ${rows.length}` : 'aucun vol'}
+          caption={rows.length > 0 ? `${plural(departed, 'décollé')} sur ${rows.length}` : 'aucun vol'}
           loading={loading}
         />
         <Gauge
-          label="Passagers embarquÃ©s"
+          label="Passagers embarqués"
           value={total.boarded}
           total={total.pax}
-          caption={`sur ${plural(total.pax, 'enregistrÃ©')}`}
+          caption={`sur ${plural(total.pax, 'enregistré')}`}
           loading={loading}
         />
         <Gauge
           label="Bagages au tapis"
           value={total.confirmed}
           total={total.declared}
-          caption={`sur ${plural(total.declared, 'dÃ©clarÃ©')}`}
+          caption={`sur ${plural(total.declared, 'déclaré')}`}
           loading={loading}
         />
         <Gauge
           label="Bagages manquants"
           value={missing}
           total={total.declared}
-          caption={missing > 0 ? `sur ${plural(total.declared, 'dÃ©clarÃ©')}` : 'aucun manquant'}
+          caption={missing > 0 ? `sur ${plural(total.declared, 'déclaré')}` : 'aucun manquant'}
           danger={missing > 0}
           loading={loading}
         />
@@ -168,9 +168,9 @@ function FlightsView() {
       </div>
 
       {loading ? (
-        <div style={s.empty}>Chargementâ€¦</div>
+        <div style={s.empty}>Chargement…</div>
       ) : rows.length === 0 ? (
-        <div style={s.empty}>Aucun vol sur cette pÃ©riode.</div>
+        <div style={s.empty}>Aucun vol sur cette période.</div>
       ) : isMobile ? (
         <div style={s.cardList}>
           {rows.map((r) => (
@@ -185,7 +185,7 @@ function FlightsView() {
                 <th style={s.th}>Vol</th>
                 <th style={s.th}>Date</th>
                 <th style={s.th}>Route</th>
-                <th style={s.th}>DÃ©part</th>
+                <th style={s.th}>Départ</th>
                 <th style={s.th}>Passagers</th>
                 <th style={s.th}>Bagages</th>
                 <th style={s.th}>Manquants</th>
@@ -233,7 +233,7 @@ function FlightRow({
     <tr>
       <td style={{ ...s.td, fontWeight: 600 }}>{r.flight_number}</td>
       <td style={s.td}>{shortDate(r.date)}</td>
-      <td style={s.td}>{formatRoute(r, 'â†’')}</td>
+      <td style={s.td}>{formatRoute(r, '→')}</td>
       <td style={s.td}>{hhmm(r.departure_time)}</td>
       <td style={s.td}>
         {r.boarded_count} / {r.pax_count}
@@ -289,7 +289,7 @@ function FlightCardMobile({
         <div>
           <div style={s.cardTitle}>{r.flight_number}</div>
           <div style={s.cardSub}>
-            {shortDate(r.date)} Â· {formatRoute(r, 'â†’')} Â· {hhmm(r.departure_time)}
+            {shortDate(r.date)} · {formatRoute(r, '→')} · {hhmm(r.departure_time)}
           </div>
         </div>
         <StatusBadge status={r.status} />
@@ -320,12 +320,12 @@ function FlightCardMobile({
 
 /**
  * Suppression d'un vol. La base efface en cascade ses passagers, leurs escales,
- * leurs bagages et ses alertes : c'est irrÃ©versible et Ã§a peut reprÃ©senter des
- * centaines de scans. On affiche donc ce qui va disparaÃ®tre, et on exige que le
- * numÃ©ro de vol soit retapÃ© plutÃ´t qu'un simple Â« Confirmer Â» cliquÃ© de travers.
+ * leurs bagages et ses alertes : c'est irréversible et ça peut représenter des
+ * centaines de scans. On affiche donc ce qui va disparaître, et on exige que le
+ * numéro de vol soit retapé plutôt qu'un simple « Confirmer » cliqué de travers.
  *
  * Les litiges bagage ne sont PAS en cascade. Un vol qui en porte ne peut pas
- * Ãªtre supprimÃ© sans casser la rÃ©fÃ©rence, on bloque avant d'appeler la base.
+ * être supprimé sans casser la référence, on bloque avant d'appeler la base.
  */
 function DeleteFlightModal({ r, onClose, onDeleted }: { r: FlightStatsRow; onClose: () => void; onDeleted: () => void }) {
   const isMobile = useIsMobile();
@@ -342,7 +342,7 @@ function DeleteFlightModal({ r, onClose, onDeleted }: { r: FlightStatsRow; onClo
     const { error } = await createClient().from('flights').delete().eq('id', r.id);
     setBusy(false);
     if (error) {
-      setErr("La suppression a Ã©chouÃ©. Le vol a peut-Ãªtre des donnÃ©es rattachÃ©es ailleurs.");
+      setErr("La suppression a échoué. Le vol a peut-être des données rattachées ailleurs.");
       return;
     }
     onDeleted();
@@ -359,16 +359,16 @@ function DeleteFlightModal({ r, onClose, onDeleted }: { r: FlightStatsRow; onClo
         </div>
 
         <p style={s.modalText}>
-          {formatRoute(r, 'â†’')} du {shortDate(r.date)}. Cette suppression est dÃ©finitive et
-          emporte tout ce qui a Ã©tÃ© scannÃ© sur ce vol.
+          {formatRoute(r, '→')} du {shortDate(r.date)}. Cette suppression est définitive et
+          emporte tout ce qui a été scanné sur ce vol.
         </p>
 
         <ul style={s.lossList}>
           <li style={s.lossItem}>
-            <strong>{r.pax_count}</strong> passager{r.pax_count > 1 ? 's' : ''} enregistrÃ©{r.pax_count > 1 ? 's' : ''}
+            <strong>{r.pax_count}</strong> passager{r.pax_count > 1 ? 's' : ''} enregistré{r.pax_count > 1 ? 's' : ''}
           </li>
           <li style={s.lossItem}>
-            <strong>{r.bag_declared}</strong> bagage{r.bag_declared > 1 ? 's' : ''}, dont {r.bag_confirmed} passÃ©
+            <strong>{r.bag_declared}</strong> bagage{r.bag_declared > 1 ? 's' : ''}, dont {r.bag_confirmed} passé
             {r.bag_confirmed > 1 ? 's' : ''} au tapis
           </li>
           <li style={s.lossItem}>
@@ -378,8 +378,8 @@ function DeleteFlightModal({ r, onClose, onDeleted }: { r: FlightStatsRow; onClo
 
         {blocked ? (
           <div style={s.blocked}>
-            Ce vol porte {r.disputes_count} litige{r.disputes_count > 1 ? 's' : ''} bagage. Il ne peut pas Ãªtre
-            supprimÃ© tant que ces dossiers existent, sinon la rÃ©clamation du passager perdrait sa rÃ©fÃ©rence.
+            Ce vol porte {r.disputes_count} litige{r.disputes_count > 1 ? 's' : ''} bagage. Il ne peut pas être
+            supprimé tant que ces dossiers existent, sinon la réclamation du passager perdrait sa référence.
           </div>
         ) : (
           <>
@@ -400,8 +400,8 @@ function DeleteFlightModal({ r, onClose, onDeleted }: { r: FlightStatsRow; onClo
           </>
         )}
 
-        {/* Les deux boutons cÃ´te Ã  cÃ´te dÃ©bordaient sous 360 px : Â« Supprimer
-            dÃ©finitivement Â» fait Ã  lui seul la largeur de l'Ã©cran. Ils passent
+        {/* Les deux boutons côte à côte débordaient sous 360 px : « Supprimer
+            définitivement » fait à lui seul la largeur de l'écran. Ils passent
             l'un sous l'autre, l'action destructrice en dessous. */}
         <div style={isMobile ? { ...s.modalActions, ...s.modalActionsMobile } : s.modalActions}>
           {!blocked ? (
@@ -414,7 +414,7 @@ function DeleteFlightModal({ r, onClose, onDeleted }: { r: FlightStatsRow; onClo
               }}
               onClick={remove}
             >
-              {busy ? 'Suppressionâ€¦' : 'Supprimer dÃ©finitivement'}
+              {busy ? 'Suppression…' : 'Supprimer définitivement'}
             </button>
           ) : null}
           <button type="button" style={isMobile ? { ...s.cancelBtn, ...s.fullWidthBtn } : s.cancelBtn} onClick={onClose}>
@@ -456,7 +456,7 @@ const s: Record<string, CSSProperties> = {
   },
   sub: { color: 'var(--content-secondary)', fontSize: 14, marginTop: 4 },
 
-  // Puces de filtre : pilule bordÃ©e, blanche au repos ; l'active est noire.
+  // Puces de filtre : pilule bordée, blanche au repos ; l'active est noire.
   tabs: { display: 'flex', gap: 8, marginBottom: 22, flexWrap: 'wrap' },
   tab: {
     flex: '1 1 auto',
@@ -483,16 +483,16 @@ const s: Record<string, CSSProperties> = {
   customLabel: { ...fieldLabel },
   dateInput: {
     ...input,
-    // 16 px : en dessous, iOS Safari zoome automatiquement Ã  la mise au point
-    // et l'Ã©cran reste dÃ©calÃ© aprÃ¨s la saisie.
+    // 16 px : en dessous, iOS Safari zoome automatiquement à la mise au point
+    // et l'écran reste décalé après la saisie.
     fontSize: 16,
     maxWidth: '100%',
   },
   textInput: { ...input, fontSize: 16, boxSizing: 'border-box' },
 
-  // auto-fit plutÃ´t qu'un nombre fixe de colonnes : la grille se rÃ©organise
-  // seule du grand Ã©cran Ã  la tablette, sans palier codÃ© en dur ; une seule
-  // colonne sur tÃ©lÃ©phone.
+  // auto-fit plutôt qu'un nombre fixe de colonnes : la grille se réorganise
+  // seule du grand écran à la tablette, sans palier codé en dur ; une seule
+  // colonne sur téléphone.
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14, marginBottom: 22 },
 
   tableWrap: { ...card, padding: 0, overflowX: 'auto' },
@@ -533,9 +533,9 @@ const s: Record<string, CSSProperties> = {
   cardHead: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 },
   cardTitle: { fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, letterSpacing: '-0.02em' },
   cardSub: { color: 'var(--content-secondary)', fontSize: 13, marginTop: 2 },
-  // Quatre colonnes fixes Ã©crasaient Â« Manquants Â» sur un Ã©cran Ã©troit. En
-  // auto-fit Ã  120 px, un tÃ©lÃ©phone courant donne un carrÃ© 2 Ã— 2 et les grands
-  // Ã©crans retrouvent les quatre de front. Un seuil plus bas donnerait un
+  // Quatre colonnes fixes écrasaient « Manquants » sur un écran étroit. En
+  // auto-fit à 120 px, un téléphone courant donne un carré 2 × 2 et les grands
+  // écrans retrouvent les quatre de front. Un seuil plus bas donnerait un
   // 3 + 1 bancal sur 375 px.
   cardMeta: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 8 },
   cardActions: { display: 'flex', gap: 8, alignItems: 'center' },
@@ -565,15 +565,15 @@ const s: Record<string, CSSProperties> = {
     lineHeight: 1.2,
     color: 'var(--content-primary)',
   },
-  // 40 px de cÃ´tÃ© : une croix de 18 px avec 4 px de marge est intouchable au pouce.
+  // 40 px de côté : une croix de 18 px avec 4 px de marge est intouchable au pouce.
   modalClose: { background: 'transparent', border: 'none', color: 'var(--content-secondary)', display: 'grid', placeItems: 'center', width: 40, height: 40, flexShrink: 0, cursor: 'pointer' },
   modalText: { margin: 0, color: 'var(--content-secondary)', fontSize: 14, lineHeight: 1.5 },
   lossList: { margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6, borderTop: '1px solid var(--divider)', paddingTop: 14 },
   lossItem: { fontSize: 14, color: 'var(--content-primary)' },
   blocked: { background: 'var(--warning-bg)', color: 'var(--warning-content)', borderRadius: 8, padding: '12px 14px', fontSize: 14, lineHeight: 1.5 },
   // row-reverse : l'ordre du DOM place l'action destructrice en premier pour
-  // qu'elle arrive en haut de la pile sur tÃ©lÃ©phone, mais Ã  droite en desktop,
-  // oÃ¹ la convention reste Â« Annuler Â» puis l'action.
+  // qu'elle arrive en haut de la pile sur téléphone, mais à droite en desktop,
+  // où la convention reste « Annuler » puis l'action.
   modalActions: { display: 'flex', flexDirection: 'row-reverse', justifyContent: 'flex-start', gap: 10, marginTop: 4 },
   modalActionsMobile: { flexDirection: 'column', gap: 8 },
   fullWidthBtn: { width: '100%' },

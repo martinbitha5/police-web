@@ -1,8 +1,8 @@
 import type { CSSProperties } from 'react';
 
-// Primitives de style partagÃ©es, registre Uber (voir apps/web/DESIGN.md).
+// Primitives de style partagées, registre Uber (voir apps/web/DESIGN.md).
 // Noir et blanc pour la structure, un seul accent bleu qui signale. Rayon 8
-// ou pilule. Une carte est portÃ©e par une ombre douce et un filet clair.
+// ou pilule. Une carte est portée par une ombre douce et un filet clair.
 
 export const card: CSSProperties = {
   background: 'var(--bg-elevated)',
@@ -14,7 +14,7 @@ export const card: CSSProperties = {
   padding: 20,
 };
 
-// Carte teintÃ©e (mise en avant, encart) : aplat gris, sans bordure ni ombre.
+// Carte teintée (mise en avant, encart) : aplat gris, sans bordure ni ombre.
 export const cardTinted: CSSProperties = {
   background: 'var(--bg-neutral)',
   border: 'none',
@@ -22,7 +22,7 @@ export const cardTinted: CSSProperties = {
   padding: 20,
 };
 
-// Bouton primaire : pilule noire, texte blanc. Un seul par Ã©cran.
+// Bouton primaire : pilule noire, texte blanc. Un seul par écran.
 export const btnPrimary: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
@@ -40,7 +40,7 @@ export const btnPrimary: CSSProperties = {
   whiteSpace: 'nowrap',
 };
 
-// Bouton secondaire : aplat gris, texte noir, mÃªme pilule. Plus de bordure.
+// Bouton secondaire : aplat gris, texte noir, même pilule. Plus de bordure.
 export const btnSecondary: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
@@ -58,11 +58,11 @@ export const btnSecondary: CSSProperties = {
   whiteSpace: 'nowrap',
 };
 
-// Alias conservÃ© pour les pages qui importent encore `btnGhost` : c'est le
-// mÃªme bouton secondaire.
+// Alias conservé pour les pages qui importent encore `btnGhost` : c'est le
+// même bouton secondaire.
 export const btnGhost: CSSProperties = { ...btnSecondary };
 
-// Lien-bouton : transparent, texte noir soulignÃ©. Pour les actions tertiaires.
+// Lien-bouton : transparent, texte noir souligné. Pour les actions tertiaires.
 export const btnText: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
@@ -81,7 +81,7 @@ export const btnText: CSSProperties = {
   whiteSpace: 'nowrap',
 };
 
-// Modales : voile sombre, panneau blanc rayon 8 portÃ© par l'ombre de popover.
+// Modales : voile sombre, panneau blanc rayon 8 porté par l'ombre de popover.
 export const modalOverlay: CSSProperties = {
   position: 'fixed',
   inset: 0,
@@ -102,7 +102,7 @@ export const modalPanel: CSSProperties = {
 };
 
 // Champ : gris au repos, bordure transparente (le filet noir du focus,
-// posÃ© par globals.css, ne dÃ©cale alors rien).
+// posé par globals.css, ne décale alors rien).
 export const input: CSSProperties = {
   background: 'var(--bg-neutral)',
   border: '1px solid transparent',
@@ -128,7 +128,7 @@ export const sectionHeading: CSSProperties = {
   margin: '8px 0 14px',
 };
 
-// Petit libellÃ© en capitales, gris : quand un vrai titre serait trop lourd
+// Petit libellé en capitales, gris : quand un vrai titre serait trop lourd
 // (au-dessus d'un groupe de champs, d'une colonne de chiffres).
 export const eyebrow: CSSProperties = {
   fontSize: 12,
@@ -140,7 +140,7 @@ export const eyebrow: CSSProperties = {
 };
 
 // Pastille pilule neutre, casse normale. Les appelants peuvent surcharger
-// background/color avec les paires sÃ©mantiques (--positive-bg/--positive...).
+// background/color avec les paires sémantiques (--positive-bg/--positive...).
 export const badge: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
@@ -155,8 +155,8 @@ export const badge: CSSProperties = {
   whiteSpace: 'nowrap',
 };
 
-// Couleurs par rÃ´le (gestion des comptes) : l'encre pour tous, le rÃ´le se
-// lit dans le libellÃ©, pas dans une couleur.
+// Couleurs par rôle (gestion des comptes) : l'encre pour tous, le rôle se
+// lit dans le libellé, pas dans une couleur.
 export const ROLE_COLOR: Record<string, string> = {
   admin: 'var(--content-primary)',
   supervisor: 'var(--content-primary)',

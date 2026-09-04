@@ -31,13 +31,13 @@ export default function RapportPage() {
 
 function ReportView() {
   const profile = useSession();
-  // PÃ©rimÃ¨tre du profil : un superviseur ne totalise que les vols de son
-  // aÃ©roport et de sa compagnie. Sans cela, le rapport agrÃ©geait tous les vols.
+  // Périmètre du profil : un superviseur ne totalise que les vols de son
+  // aéroport et de sa compagnie. Sans cela, le rapport agrégeait tous les vols.
   const scope = flightScope(profile);
   const isMobile = useIsMobile();
   const [period, setPeriod] = useState<Period>('jour');
-  // JournÃ©e d'exploitation de l'aÃ©roport du profil : elle bascule Ã  minuit sur
-  // place, pas Ã  minuit UTC.
+  // Journée d'exploitation de l'aéroport du profil : elle bascule à minuit sur
+  // place, pas à minuit UTC.
   const today = todayAtAirport(scope.airport);
   const [customFrom, setCustomFrom] = useState(today);
   const [customTo, setCustomTo] = useState(today);
@@ -50,15 +50,15 @@ function ReportView() {
     setLoading(true);
     setStats(null);
 
-    // Les compteurs viennent de `flight_stats`, agrÃ©gÃ©s par Postgres, une ligne
+    // Les compteurs viennent de `flight_stats`, agrégés par Postgres, une ligne
     // par vol. La page rapatriait auparavant les passagers et les bagages pour
-    // les compter ici : au-delÃ  de 1000 lignes PostgREST tronque en silence, et
-    // le bilan d'un mois s'arrÃªtait Ã  1000 passagers. C'est aussi la source que
-    // lit l'Ã©cran Vols, donc les deux pages ne peuvent plus se contredire.
+    // les compter ici : au-delà de 1000 lignes PostgREST tronque en silence, et
+    // le bilan d'un mois s'arrêtait à 1000 passagers. C'est aussi la source que
+    // lit l'écran Vols, donc les deux pages ne peuvent plus se contredire.
     //
-    // `alerts_open` ne compte que les alertes non rÃ©solues : une alerte levÃ©e
-    // (bagage scannÃ© avant le check-in du passager) n'est pas une fraude et ne
-    // doit pas gonfler le chiffre. Le classeur Excel garde la trace complÃ¨te.
+    // `alerts_open` ne compte que les alertes non résolues : une alerte levée
+    // (bagage scanné avant le check-in du passager) n'est pas une fraude et ne
+    // doit pas gonfler le chiffre. Le classeur Excel garde la trace complète.
     try {
       const rows = await loadFlightStats(rg, scope);
       const t = sumFlightStats(rows);
@@ -94,11 +94,11 @@ function ReportView() {
           <div style={s.sub}>{rangeLabel(period, from, to)}</div>
         </div>
         <a style={{ ...btnPrimary, ...(loading ? { opacity: 0.6, pointerEvents: 'none' } : {}) }} href={downloadHref} download>
-          <IconDownload size={16} /> TÃ©lÃ©charger le rapport
+          <IconDownload size={16} /> Télécharger le rapport
         </a>
       </div>
 
-      {/* SÃ©lecteur de pÃ©riode */}
+      {/* Sélecteur de période */}
       <div style={s.tabs}>
         {PERIOD_ORDER.map((p) => (
           <button
@@ -111,7 +111,7 @@ function ReportView() {
         ))}
       </div>
 
-      {/* Champs de date personnalisÃ©e */}
+      {/* Champs de date personnalisée */}
       {period === 'perso' ? (
         <div style={isMobile ? { ...s.customRow, flexDirection: 'column', alignItems: 'stretch' } : s.customRow}>
           <label style={s.customField}>
@@ -125,47 +125,47 @@ function ReportView() {
         </div>
       ) : null}
 
-      <h2 style={sectionHeading}>Bilan de la pÃ©riode</h2>
+      <h2 style={sectionHeading}>Bilan de la période</h2>
 
-      {/* MÃªmes jauges que le tableau de bord : le chiffre du centre rapportÃ© Ã 
-          une rÃ©fÃ©rence dite en clair dessous. Tant que les compteurs ne sont
-          pas arrivÃ©s, l'anneau reste vide plutÃ´t que d'afficher un faux zÃ©ro. */}
+      {/* Mêmes jauges que le tableau de bord : le chiffre du centre rapporté à
+          une référence dite en clair dessous. Tant que les compteurs ne sont
+          pas arrivés, l'anneau reste vide plutôt que d'afficher un faux zéro. */}
       <div style={isMobile ? { ...s.grid, gridTemplateColumns: '1fr' } : s.grid}>
         <Gauge
-          label="Vols traitÃ©s"
+          label="Vols traités"
           value={stats?.flights ?? 0}
           total={stats?.flights ?? 0}
           ratio={stats && stats.flights > 0 ? stats.departed / stats.flights : 0}
-          caption={stats ? (stats.flights > 0 ? `${plural(stats.departed, 'dÃ©collÃ©')} sur ${stats.flights}` : 'aucun vol') : undefined}
+          caption={stats ? (stats.flights > 0 ? `${plural(stats.departed, 'décollé')} sur ${stats.flights}` : 'aucun vol') : undefined}
           loading={loading || !stats}
         />
         <Gauge
-          label="Passagers embarquÃ©s"
+          label="Passagers embarqués"
           value={stats?.boarded ?? 0}
           total={stats?.passengers ?? 0}
-          caption={stats ? `sur ${plural(stats.passengers, 'enregistrÃ©')}` : undefined}
+          caption={stats ? `sur ${plural(stats.passengers, 'enregistré')}` : undefined}
           loading={loading || !stats}
         />
         <Gauge
-          label="Bagages confirmÃ©s"
+          label="Bagages confirmés"
           value={stats?.confirmed ?? 0}
           total={stats?.declared ?? 0}
-          caption={stats ? `sur ${plural(stats.declared, 'dÃ©clarÃ©')}` : undefined}
+          caption={stats ? `sur ${plural(stats.declared, 'déclaré')}` : undefined}
           loading={loading || !stats}
         />
         <Gauge
-          label="Ã‰cart bagages"
+          label="Écart bagages"
           value={ecart}
           total={stats?.declared ?? 0}
-          caption={stats ? (ecart !== 0 ? `sur ${plural(stats.declared, 'dÃ©clarÃ©')}` : 'aucun Ã©cart') : undefined}
+          caption={stats ? (ecart !== 0 ? `sur ${plural(stats.declared, 'déclaré')}` : 'aucun écart') : undefined}
           danger={ecart !== 0}
           loading={loading || !stats}
         />
         <Gauge
-          label="Bagages Ã©cartÃ©s"
+          label="Bagages écartés"
           value={stats?.alerts ?? 0}
           total={(stats?.declared ?? 0) + (stats?.alerts ?? 0)}
-          caption={stats ? (stats.alerts > 0 ? `sur ${plural(stats.flights, 'vol')}` : 'aucun Ã©cart') : undefined}
+          caption={stats ? (stats.alerts > 0 ? `sur ${plural(stats.flights, 'vol')}` : 'aucun écart') : undefined}
           danger={(stats?.alerts ?? 0) > 0}
           loading={loading || !stats}
         />
@@ -192,7 +192,7 @@ const s: Record<string, CSSProperties> = {
   },
   sub: { color: 'var(--content-secondary)', fontSize: 14, marginTop: 4 },
 
-  // Puces de filtre : pilule bordÃ©e, blanche au repos ; l'active est noire.
+  // Puces de filtre : pilule bordée, blanche au repos ; l'active est noire.
   tabs: { display: 'flex', gap: 8, marginBottom: 22, flexWrap: 'wrap' },
   tab: {
     flex: '1 1 auto',
@@ -218,8 +218,8 @@ const s: Record<string, CSSProperties> = {
   customLabel: { ...fieldLabel },
   dateInput: {
     ...input,
-    // 16 px : en dessous, iOS Safari zoome automatiquement Ã  la mise au point
-    // et l'Ã©cran reste dÃ©calÃ© aprÃ¨s la saisie.
+    // 16 px : en dessous, iOS Safari zoome automatiquement à la mise au point
+    // et l'écran reste décalé après la saisie.
     fontSize: 16,
     maxWidth: '100%',
   },

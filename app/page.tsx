@@ -5,76 +5,76 @@ import { PublicTopbar } from '@/components/PublicTopbar';
 import { eyebrow } from '@/ui/theme';
 
 export const metadata = {
-  title: 'Police Bagage Â· Supervision',
-  description: 'Plateforme de supervision anti-fraude bagages et contrÃ´le dâ€™embarquement.',
+  title: 'Police Bagage · Supervision',
+  description: 'Plateforme de supervision anti-fraude bagages et contrôle d’embarquement.',
 };
 
 const CAPABILITIES: { icon: ReactNode; title: string; desc: string }[] = [
   {
     icon: <IconScan />,
-    title: 'ContrÃ´lez lâ€™embarquement',
-    desc: 'Scannez chaque boarding pass. Le passager est vÃ©rifiÃ© contre le vol en cours et comptÃ© en direct.',
+    title: 'Contrôlez l’embarquement',
+    desc: 'Scannez chaque boarding pass. Le passager est vérifié contre le vol en cours et compté en direct.',
   },
   {
     icon: <IconTag />,
     title: 'Suivez chaque bagage',
-    desc: 'Du comptoir Ã  lâ€™avion, chaque Ã©tiquette est tracÃ©e : enregistrement, chargement en soute, rÃ©acheminement.',
+    desc: 'Du comptoir à l’avion, chaque étiquette est tracée : enregistrement, chargement en soute, réacheminement.',
   },
   {
     icon: <IconShield />,
     title: 'Interceptez la fraude',
-    desc: 'Un bagage non dÃ©clarÃ© au check-in est bloquÃ© avant la soute et signalÃ© aussitÃ´t au superviseur.',
+    desc: 'Un bagage non déclaré au check-in est bloqué avant la soute et signalé aussitôt au superviseur.',
   },
   {
     icon: <IconChart />,
-    title: 'Ã‰ditez vos rapports',
-    desc: 'TÃ©lÃ©chargez vos bilans Excel par vol ou par pÃ©riode : passagers, bagages, Ã©carts et alertes, prÃªts Ã  archiver.',
+    title: 'Éditez vos rapports',
+    desc: 'Téléchargez vos bilans Excel par vol ou par période : passagers, bagages, écarts et alertes, prêts à archiver.',
   },
 ];
 
 const STEPS = [
-  { n: 'Ã‰tape 1', title: 'Check-in', desc: 'Scannez le boarding pass. Le passager et ses bagages dÃ©clarÃ©s entrent dans le systÃ¨me.' },
-  { n: 'Ã‰tape 2', title: 'Tri bagages', desc: 'Scannez chaque Ã©tiquette sur le tapis. Elle est confrontÃ©e Ã  la dÃ©claration du passager.' },
-  { n: 'Ã‰tape 3', title: 'Embarquement', desc: 'ContrÃ´lez Ã  la porte : seuls les passagers du vol passent, le comptage est automatique.' },
-  { n: 'Ã‰tape 4', title: 'Supervision', desc: 'Suivez vos vols en temps rÃ©el. Chaque alerte arrive avec le dÃ©tail du bagage.' },
+  { n: 'Étape 1', title: 'Check-in', desc: 'Scannez le boarding pass. Le passager et ses bagages déclarés entrent dans le système.' },
+  { n: 'Étape 2', title: 'Tri bagages', desc: 'Scannez chaque étiquette sur le tapis. Elle est confrontée à la déclaration du passager.' },
+  { n: 'Étape 3', title: 'Embarquement', desc: 'Contrôlez à la porte : seuls les passagers du vol passent, le comptage est automatique.' },
+  { n: 'Étape 4', title: 'Supervision', desc: 'Suivez vos vols en temps réel. Chaque alerte arrive avec le détail du bagage.' },
 ];
 
 export default function Landing() {
   return (
     <div style={s.page}>
-      {/* Barre de navigation : bascule en rangÃ©e d'icÃ´nes au dÃ©filement sur
-          tÃ©lÃ©phone (voir PublicTopbar). */}
+      {/* Barre de navigation : bascule en rangée d'icônes au défilement sur
+          téléphone (voir PublicTopbar). */}
       <PublicTopbar hub />
 
-      {/* HÃ©ro : 2 colonnes, titre display, visuel arrondi */}
+      {/* Héro : 2 colonnes, titre display, visuel arrondi */}
       <section className="lp-hero">
         <div className="lp-hero-grid">
           <div className="lp-hero-copy rv">
             <h1 className="lp-title">
-              Chaque bagage suivi, du comptoir Ã  la soute.
+              Chaque bagage suivi, du comptoir à la soute.
             </h1>
             <p className="lp-tagline">
-              Suivez vos vols, vos passagers et chaque Ã©tiquette en temps rÃ©el.
-              Un bagage non dÃ©clarÃ© est interceptÃ© avant la soute. Aucun Ã©cart
-              ne passe inaperÃ§u.
+              Suivez vos vols, vos passagers et chaque étiquette en temps réel.
+              Un bagage non déclaré est intercepté avant la soute. Aucun écart
+              ne passe inaperçu.
             </p>
             <div className="lp-actions">
               <Link href="/login" className="lp-cta">Commencer</Link>
-              <a href="#fonctionnement" className="lp-cta-link">Voir le dÃ©roulÃ©</a>
+              <a href="#fonctionnement" className="lp-cta-link">Voir le déroulé</a>
             </div>
 
             <div className="lp-stats" data-rv-auto>
               <div className="lp-stat">
-                <div className="lp-stat-value">Temps rÃ©el</div>
-                <div className="lp-stat-label">Terrain et supervision synchronisÃ©s en continu</div>
+                <div className="lp-stat-value">Temps réel</div>
+                <div className="lp-stat-label">Terrain et supervision synchronisés en continu</div>
               </div>
               <div className="lp-stat">
-                <div className="lp-stat-value">5 rÃ¨gles</div>
-                <div className="lp-stat-label">de rejet bagage appliquÃ©es sans exception</div>
+                <div className="lp-stat-value">5 règles</div>
+                <div className="lp-stat-label">de rejet bagage appliquées sans exception</div>
               </div>
               <div className="lp-stat">
                 <div className="lp-stat-value">100 %</div>
-                <div className="lp-stat-label">des Ã©tiquettes confrontÃ©es Ã  la dÃ©claration</div>
+                <div className="lp-stat-label">des étiquettes confrontées à la déclaration</div>
               </div>
             </div>
           </div>
@@ -86,10 +86,10 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* CapacitÃ©s : cartes blanches, icÃ´nes en disque gris */}
+      {/* Capacités : cartes blanches, icônes en disque gris */}
       <section className="lp-section">
         <div className="lp-section-inner">
-          <h2 className="lp-section-title rv">Gardez le contrÃ´le, du check-in Ã  lâ€™avion</h2>
+          <h2 className="lp-section-title rv">Gardez le contrôle, du check-in à l’avion</h2>
           <div className="lp-cap-grid" data-rv-auto>
             {CAPABILITIES.map((c) => (
               <div key={c.title} className="lp-cap">
@@ -102,10 +102,10 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* DÃ©roulÃ© opÃ©rationnel : section teintÃ©e */}
+      {/* Déroulé opérationnel : section teintée */}
       <section id="fonctionnement" className="lp-section lp-section-tinted">
         <div className="lp-section-inner">
-          <h2 className="lp-section-title rv">Un vol, quatre Ã©tapes</h2>
+          <h2 className="lp-section-title rv">Un vol, quatre étapes</h2>
           <div className="lp-steps" data-rv-auto>
             {STEPS.map((st) => (
               <div key={st.n} className="lp-step">
@@ -118,23 +118,23 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Bandeau d'encre : appel Ã  l'action inversÃ© */}
+      {/* Bandeau d'encre : appel à l'action inversé */}
       <section className="lp-section">
         <div className="lp-section-inner">
           <div className="lp-band rv">
             <h2 className="lp-band-title">Prenez la main sur vos vols du jour.</h2>
             <p className="lp-band-text">
-              Connectez-vous Ã  lâ€™espace superviseur. Chaque passager, chaque bagage
-              et chaque alerte vous attendent au mÃªme endroit.
+              Connectez-vous à l’espace superviseur. Chaque passager, chaque bagage
+              et chaque alerte vous attendent au même endroit.
             </p>
             <Link href="/login" className="lp-band-btn">Connexion</Link>
           </div>
         </div>
       </section>
 
-      {/* Bande partenaires : les compagnies opÃ©rÃ©es par la plateforme */}
+      {/* Bande partenaires : les compagnies opérées par la plateforme */}
       <section className="rv" style={s.partnerBand}>
-        <span style={s.partnerLabel}>Partenaires opÃ©rationnels</span>
+        <span style={s.partnerLabel}>Partenaires opérationnels</span>
         <div style={s.partnerDivider} />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/air.png" alt="Air Congo" style={s.partnerLogo} />
@@ -143,13 +143,13 @@ export default function Landing() {
         <img src="/caa.png" alt="CAA - Compagnie Africaine d'Aviation" style={s.partnerLogo} />
       </section>
 
-      {/* Pied de page : bloc commun Ã  tout le site */}
+      {/* Pied de page : bloc commun à tout le site */}
       <Footer variant="public" />
     </div>
   );
 }
 
-// IcÃ´nes : trait 1.8, couleur hÃ©ritÃ©e du disque qui les porte.
+// Icônes : trait 1.8, couleur héritée du disque qui les porte.
 
 function IconScan() {
   return (
@@ -193,8 +193,8 @@ function IconChart() {
 const s: Record<string, CSSProperties> = {
   page: { minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-screen)' },
 
-  /* Bande partenaires : un filet, un libellÃ© en capitales, les logos sur
-     fond blanc (ils sont dessinÃ©s pour le blanc). */
+  /* Bande partenaires : un filet, un libellé en capitales, les logos sur
+     fond blanc (ils sont dessinés pour le blanc). */
   partnerBand: {
     display: 'flex',
     alignItems: 'center',

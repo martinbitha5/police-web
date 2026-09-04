@@ -32,7 +32,7 @@ export default function AuditPage() {
 
 /**
  * Pastille par famille de mouvement : neutre pour l'exploitation courante,
- * paire sÃ©mantique quand le mouvement est un statut (fraude, litige).
+ * paire sémantique quand le mouvement est un statut (fraude, litige).
  */
 const FAMILY_STYLE: Record<MovementFamily, CSSProperties> = {
   passenger: { ...badge },
@@ -64,7 +64,7 @@ function AuditView() {
   const { from, to } = resolveRange(period, customFrom, customTo, today);
   const isAdmin = profile?.role === 'admin';
 
-  // `kinds` est un tableau recrÃ©Ã© Ã  chaque rendu : on le fige en clÃ© stable pour
+  // `kinds` est un tableau recréé à chaque rendu : on le fige en clé stable pour
   // que l'effet ne se relance pas en boucle.
   const kindsKey = kinds.join(',');
 
@@ -83,7 +83,7 @@ function AuditView() {
       setRows(res.rows);
       setTotal(res.total);
     } catch {
-      setError('Le journal nâ€™a pas pu Ãªtre chargÃ©. RÃ©essayez dans un instant.');
+      setError('Le journal n’a pas pu être chargé. Réessayez dans un instant.');
       setRows([]);
       setTotal(0);
     }
@@ -98,8 +98,8 @@ function AuditView() {
     if (isAdmin) void loadActors().then(setActors);
   }, [isAdmin]);
 
-  // Tout changement de filtre ramÃ¨ne Ã  la premiÃ¨re page, sinon on reste sur une
-  // page qui n'existe plus dans le nouveau rÃ©sultat.
+  // Tout changement de filtre ramène à la première page, sinon on reste sur une
+  // page qui n'existe plus dans le nouveau résultat.
   useEffect(() => {
     setPage(0);
   }, [from, to, kindsKey, actorId, search]);
@@ -107,9 +107,9 @@ function AuditView() {
   if (profile && !isAdmin) {
     return (
       <div data-rv-auto style={isMobile ? { ...s.content, ...s.contentMobile } : s.content}>
-        <h1 style={s.title}>Journal dâ€™audit</h1>
+        <h1 style={s.title}>Journal d’audit</h1>
         <p style={s.denied}>
-          Cette page est rÃ©servÃ©e aux administrateurs. Votre compte est enregistrÃ© comme{' '}
+          Cette page est réservée aux administrateurs. Votre compte est enregistré comme{' '}
           {profile.role === 'supervisor' ? 'superviseur' : 'agent'}.
         </p>
       </div>
@@ -128,11 +128,11 @@ function AuditView() {
     <div style={isMobile ? { ...s.content, ...s.contentMobile } : s.content}>
       <div style={s.head}>
         <div>
-          <h1 style={s.title}>Journal dâ€™audit</h1>
+          <h1 style={s.title}>Journal d’audit</h1>
           <div style={s.sub}>{rangeLabel(period, from, to)}</div>
         </div>
         <div style={s.countBox}>
-          <div style={s.countValue}>{loading ? 'â€¦' : total.toLocaleString('fr-FR')}</div>
+          <div style={s.countValue}>{loading ? '…' : total.toLocaleString('fr-FR')}</div>
           <div style={s.countLabel}>mouvement{total > 1 ? 's' : ''}</div>
         </div>
       </div>
@@ -165,7 +165,7 @@ function AuditView() {
           <span style={label}>Recherche</span>
           <input
             style={input}
-            placeholder="Passager, PNR, Ã©tiquette ou vol"
+            placeholder="Passager, PNR, étiquette ou vol"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -201,9 +201,9 @@ function AuditView() {
       {error ? <div style={s.error}>{error}</div> : null}
 
       {loading ? (
-        <div style={s.empty}>Chargementâ€¦</div>
+        <div style={s.empty}>Chargement…</div>
       ) : rows.length === 0 ? (
-        <div style={s.empty}>Aucun mouvement pour ces critÃ¨res.</div>
+        <div style={s.empty}>Aucun mouvement pour ces critères.</div>
       ) : isMobile ? (
         <div style={s.cards}>
           {rows.map((m, i) => (
@@ -220,8 +220,8 @@ function AuditView() {
                 <th style={s.th}>Auteur</th>
                 <th style={s.th}>Vol</th>
                 <th style={s.th}>Passager</th>
-                <th style={s.th}>Ã‰tiquette</th>
-                <th style={s.th}>DÃ©tail</th>
+                <th style={s.th}>Étiquette</th>
+                <th style={s.th}>Détail</th>
               </tr>
             </thead>
             <tbody>
@@ -233,11 +233,11 @@ function AuditView() {
                       {MOVEMENT_LABEL[m.kind]}
                     </span>
                   </td>
-                  <td style={s.td}>{m.actor_name ?? <span style={s.system}>SystÃ¨me</span>}</td>
+                  <td style={s.td}>{m.actor_name ?? <span style={s.system}>Système</span>}</td>
                   <td style={s.td}>{m.flight_number ?? 'N/A'}</td>
                   <td style={s.td}>
                     {m.passenger_name ?? 'N/A'}
-                    {m.pnr ? <span style={s.muted}> Â· {m.pnr}</span> : null}
+                    {m.pnr ? <span style={s.muted}> · {m.pnr}</span> : null}
                   </td>
                   <td style={{ ...s.td, fontVariantNumeric: 'tabular-nums' }}>{m.tag_number ?? 'N/A'}</td>
                   <td style={{ ...s.td, color: 'var(--content-secondary)' }}>{m.detail ?? ''}</td>
@@ -251,11 +251,11 @@ function AuditView() {
       {total > 0 ? (
         <div style={s.pager}>
           <span style={s.pagerInfo}>
-            {firstShown} Ã  {lastShown} sur {total.toLocaleString('fr-FR')}
+            {firstShown} à {lastShown} sur {total.toLocaleString('fr-FR')}
           </span>
           <div style={s.pagerBtns}>
             <button style={s.pagerBtn} disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
-              PrÃ©cÃ©dent
+              Précédent
             </button>
             <span style={s.pagerPage}>
               Page {page + 1} sur {pageCount}
@@ -279,7 +279,7 @@ function MovementCard({ m }: { m: Movement }) {
       </div>
       <div style={s.cardMain}>{m.passenger_name ?? m.tag_number ?? m.flight_number ?? 'N/A'}</div>
       <div style={s.cardMeta}>
-        <span>{m.actor_name ?? 'SystÃ¨me'}</span>
+        <span>{m.actor_name ?? 'Système'}</span>
         <span>{m.flight_number ?? 'N/A'}</span>
         {m.pnr ? <span>{m.pnr}</span> : null}
         {m.tag_number && m.passenger_name ? <span>{m.tag_number}</span> : null}
@@ -327,7 +327,7 @@ const s: Record<string, CSSProperties> = {
 
   denied: { color: 'var(--content-secondary)', fontSize: 15, marginTop: 12, maxWidth: 560, lineHeight: 1.5 },
 
-  // Puces de pÃ©riode et de type : filet gris au repos, encre pleine en actif.
+  // Puces de période et de type : filet gris au repos, encre pleine en actif.
   tabs: { display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' },
   tab: {
     flex: '1 1 auto',
@@ -410,6 +410,6 @@ const s: Record<string, CSSProperties> = {
   pagerInfo: { color: 'var(--content-secondary)', fontSize: 13, fontVariantNumeric: 'tabular-nums' },
   pagerBtns: { display: 'flex', alignItems: 'center', gap: 10 },
   pagerPage: { color: 'var(--content-secondary)', fontSize: 13, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' },
-  // Petit bouton secondaire ; l'Ã©tat dÃ©sactivÃ© est rendu par button:disabled.
+  // Petit bouton secondaire ; l'état désactivé est rendu par button:disabled.
   pagerBtn: { ...btnSecondary, height: 36, padding: '0 16px', fontSize: 13.5 },
 };

@@ -3,15 +3,15 @@ import { Footer } from './Footer';
 import { PublicTopbar } from './PublicTopbar';
 
 /**
- * Gabarit des pages lÃ©gales publiques (mentions lÃ©gales, CGU).
+ * Gabarit des pages légales publiques (mentions légales, CGU).
  *
- * Pages serveur statiques, accessibles sans connexion : elles sont listÃ©es
+ * Pages serveur statiques, accessibles sans connexion : elles sont listées
  * comme routes publiques dans middleware.ts. Typographie sobre, filets fins,
- * mÃªme langage visuel que la vitrine.
+ * même langage visuel que la vitrine.
  */
 
-// `updated` est facultatif : la FAQ n'affiche pas de date de mise Ã  jour,
-// contrairement aux mentions lÃ©gales et aux CGU qui font foi Ã  une date donnÃ©e.
+// `updated` est facultatif : la FAQ n'affiche pas de date de mise à jour,
+// contrairement aux mentions légales et aux CGU qui font foi à une date donnée.
 export function LegalShell({ title, updated, children }: { title: string; updated?: string; children: ReactNode }) {
   return (
     <div style={s.page}>
@@ -19,7 +19,7 @@ export function LegalShell({ title, updated, children }: { title: string; update
 
       <main style={s.main}>
         <h1 style={s.title}>{title}</h1>
-        {updated ? <div style={s.updated}>DerniÃ¨re mise Ã  jour : {updated}</div> : null}
+        {updated ? <div style={s.updated}>Dernière mise à jour : {updated}</div> : null}
         {children}
       </main>
 
