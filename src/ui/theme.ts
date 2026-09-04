@@ -1,64 +1,91 @@
 import type { CSSProperties } from 'react';
 
-// Tokens de style partagés — thème clair Wise (Neptune).
-// Cartes blanches plates, boutons pilule, aucune ombre par défaut, aucun blur.
+// Primitives de style partagÃ©es, registre Uber (voir apps/web/DESIGN.md).
+// Noir et blanc pour la structure, un seul accent bleu qui signale. Rayon 8
+// ou pilule. Une carte est portÃ©e par une ombre douce et un filet clair.
 
 export const card: CSSProperties = {
   background: 'var(--bg-elevated)',
   borderWidth: 1,
   borderStyle: 'solid',
-  borderColor: 'var(--border-neutral)',
-  borderRadius: 16,
+  borderColor: 'var(--divider)',
+  borderRadius: 8,
+  boxShadow: 'var(--shadow-card)',
   padding: 20,
 };
 
-// Carte teintée gris-vert (marketing / mise en avant) — plate, sans bordure.
+// Carte teintÃ©e (mise en avant, encart) : aplat gris, sans bordure ni ombre.
 export const cardTinted: CSSProperties = {
   background: 'var(--bg-neutral)',
   border: 'none',
-  borderRadius: 24,
-  padding: '32px 24px',
+  borderRadius: 8,
+  padding: 20,
 };
 
-// Bouton primaire — pilule verte, texte vert forêt.
+// Bouton primaire : pilule noire, texte blanc. Un seul par Ã©cran.
 export const btnPrimary: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
   gap: 8,
+  height: 44,
   background: 'var(--interactive-accent)',
   color: 'var(--interactive-control)',
   border: 'none',
   borderRadius: 9999,
-  padding: '10px 24px',
-  fontWeight: 600,
+  padding: '0 20px',
+  fontWeight: 500,
   fontSize: 15,
   textDecoration: 'none',
   whiteSpace: 'nowrap',
 };
 
-// Bouton secondaire — pilule transparente, bordure vert forêt.
-export const btnGhost: CSSProperties = {
+// Bouton secondaire : aplat gris, texte noir, mÃªme pilule. Plus de bordure.
+export const btnSecondary: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
   gap: 8,
-  background: 'transparent',
-  color: 'var(--interactive-primary)',
-  border: '1px solid var(--interactive-primary)',
+  height: 44,
+  background: 'var(--bg-neutral-hover)',
+  color: 'var(--content-primary)',
+  border: 'none',
   borderRadius: 9999,
-  padding: '9px 22px',
-  fontWeight: 600,
+  padding: '0 20px',
+  fontWeight: 500,
   fontSize: 15,
   textDecoration: 'none',
   whiteSpace: 'nowrap',
 };
 
-// Modales — voile sombre léger (sans blur), panneau blanc arrondi.
+// Alias conservÃ© pour les pages qui importent encore `btnGhost` : c'est le
+// mÃªme bouton secondaire.
+export const btnGhost: CSSProperties = { ...btnSecondary };
+
+// Lien-bouton : transparent, texte noir soulignÃ©. Pour les actions tertiaires.
+export const btnText: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 6,
+  height: 44,
+  background: 'transparent',
+  color: 'var(--content-primary)',
+  border: 'none',
+  borderRadius: 9999,
+  padding: '0 8px',
+  fontWeight: 500,
+  fontSize: 15,
+  textDecoration: 'underline',
+  textUnderlineOffset: '0.3em',
+  whiteSpace: 'nowrap',
+};
+
+// Modales : voile sombre, panneau blanc rayon 8 portÃ© par l'ombre de popover.
 export const modalOverlay: CSSProperties = {
   position: 'fixed',
   inset: 0,
-  background: 'var(--overlay)',
+  background: 'rgba(0, 0, 0, 0.45)',
   zIndex: 50,
   display: 'grid',
   placeItems: 'center',
@@ -69,52 +96,71 @@ export const modalPanel: CSSProperties = {
   background: 'var(--bg-elevated)',
   borderWidth: 1,
   borderStyle: 'solid',
-  borderColor: 'var(--border-neutral)',
-  borderRadius: 24,
-  boxShadow: 'var(--shadow-card)',
+  borderColor: 'var(--divider)',
+  borderRadius: 8,
+  boxShadow: 'var(--shadow-pop)',
 };
 
+// Champ : gris au repos, bordure transparente (le filet noir du focus,
+// posÃ© par globals.css, ne dÃ©cale alors rien).
 export const input: CSSProperties = {
-  background: 'var(--bg-elevated)',
-  border: '1px solid var(--border-neutral)',
-  borderRadius: 10,
-  padding: '10px 12px',
+  background: 'var(--bg-neutral)',
+  border: '1px solid transparent',
+  borderRadius: 8,
+  padding: '10px 14px',
+  minHeight: 44,
   color: 'var(--content-primary)',
   fontSize: 14,
   colorScheme: 'light',
   width: '100%',
 };
 
-export const label: CSSProperties = { fontSize: 13, color: 'var(--content-secondary)', fontWeight: 600 };
+export const label: CSSProperties = { fontSize: 14, color: 'var(--content-secondary)', fontWeight: 500 };
 
+// Titre de section : Figtree 700, casse normale.
 export const sectionHeading: CSSProperties = {
-  fontSize: 12,
-  textTransform: 'uppercase',
-  letterSpacing: 0.8,
-  color: 'var(--content-secondary)',
-  margin: '8px 0 14px',
+  fontFamily: 'var(--font-display)',
+  fontSize: 20,
   fontWeight: 700,
+  letterSpacing: '-0.02em',
+  lineHeight: 1.2,
+  color: 'var(--content-primary)',
+  margin: '8px 0 14px',
 };
 
-// Pastille pilule neutre — les appelants peuvent surcharger background/color
-// avec les paires sémantiques (--positive-bg/--positive, etc.).
+// Petit libellÃ© en capitales, gris : quand un vrai titre serait trop lourd
+// (au-dessus d'un groupe de champs, d'une colonne de chiffres).
+export const eyebrow: CSSProperties = {
+  fontSize: 12,
+  fontWeight: 600,
+  letterSpacing: 0.5,
+  textTransform: 'uppercase',
+  color: 'var(--content-tertiary)',
+  margin: '8px 0 10px',
+};
+
+// Pastille pilule neutre, casse normale. Les appelants peuvent surcharger
+// background/color avec les paires sÃ©mantiques (--positive-bg/--positive...).
 export const badge: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
   gap: 6,
   background: 'var(--bg-neutral)',
+  color: 'var(--content-secondary)',
   border: 'none',
   borderRadius: 9999,
-  padding: '3px 12px',
+  padding: '3px 10px',
   fontSize: 12,
   fontWeight: 600,
+  whiteSpace: 'nowrap',
 };
 
-// Couleurs par rôle (gestion des comptes) — thème clair, contraste AA.
+// Couleurs par rÃ´le (gestion des comptes) : l'encre pour tous, le rÃ´le se
+// lit dans le libellÃ©, pas dans une couleur.
 export const ROLE_COLOR: Record<string, string> = {
-  admin: '#163300',
-  supervisor: '#054D28',
-  agent: '#4A3B1C',
+  admin: 'var(--content-primary)',
+  supervisor: 'var(--content-primary)',
+  agent: 'var(--content-primary)',
 };
 
 export const ROLE_LABEL: Record<string, string> = {

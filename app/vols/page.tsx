@@ -2,21 +2,25 @@
 
 import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import type { FlightStatus } from '@police/shared';
-import { FLIGHT_STATUS_LABEL, formatRoute, todayAtAirport } from '@police/shared';
+import { FLIGHT_STATUS_LABEL, formatRoute, hasFlightDeparted, todayAtAirport } from '@police/shared';
 import { createClient } from '@/supabase/client';
 import { AppShell, useSession } from '@/components/AppShell';
 import { flightScope } from '@/lib/scope';
 import { loadFlightStats, sumFlightStats, type FlightStatsRow } from '@/lib/flight-stats';
 import { PERIOD_LABEL, PERIOD_ORDER, rangeLabel, resolveRange, type Period } from '@/lib/period';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { badge, modalOverlay, modalPanel } from '@/ui/theme';
-import { IconPlane, IconUser, IconBag, IconAlert, IconTrash, IconClose } from '@/components/icons';
+import { badge, btnSecondary, card, eyebrow, input, label as fieldLabel, modalOverlay, modalPanel } from '@/ui/theme';
+import { IconTrash, IconClose } from '@/components/icons';
+import { Gauge } from '@/components/Gauge';
 
 const STATUS_STYLE: Record<FlightStatus, { bg: string; color: string }> = {
   scheduled: { bg: 'var(--bg-neutral)', color: 'var(--content-secondary)' },
+  delayed: { bg: 'var(--warning-bg)', color: 'var(--warning-content)' },
   boarding: { bg: 'var(--positive-bg)', color: 'var(--positive)' },
-  closed: { bg: 'var(--negative-bg)', color: 'var(--negative)' },
-  cancelled: { bg: 'var(--warning-bg)', color: 'var(--warning-content)' },
+  closed: { bg: 'var(--bg-neutral)', color: 'var(--content-primary)' },
+  departed: { bg: 'var(--positive-bg)', color: 'var(--positive)' },
+  arrived: { bg: 'var(--positive-bg)', color: 'var(--positive)' },
+  cancelled: { bg: 'var(--negative-bg)', color: 'var(--negative)' },
 };
 
 function hhmm(ts: string | null): string {
@@ -43,7 +47,7 @@ function FlightsView() {
   const canManage = profile?.role === 'admin' || profile?.role === 'supervisor';
 
   const [period, setPeriod] = useState<Period>('jour');
-  // Journée d'exploitation de l'aéroport du profil, pas celle de l'appareil.
+  // JournÃ©e d'exploitation de l'aÃ©roport du profil, pas celle de l'appareil.
   const today = todayAtAirport(scope.airport);
   const [customFrom, setCustomFrom] = useState(today);
   const [customTo, setCustomTo] = useState(today);
@@ -61,7 +65,7 @@ function FlightsView() {
       try {
         setRows(await loadFlightStats(rg, scope));
       } catch {
-        setError("Impossible de charger les vols. Réessayez dans un instant.");
+        setError("Impossible de charger les vols. RÃ©essayez dans un instant.");
         setRows([]);
       }
       setLoading(false);
@@ -79,13 +83,16 @@ function FlightsView() {
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
     const { error: err } = await createClient().from('flights').update({ status }).eq('id', id);
     if (err) {
-      setError('Le statut n’a pas pu être enregistré.');
+      setError('Le statut nâ€™a pas pu Ãªtre enregistrÃ©.');
       void load({ from, to });
     }
   }
 
-  // Totaux de la période, calculés sur les lignes déjà chargées.
+  // Totaux de la pÃ©riode, calculÃ©s sur les lignes dÃ©jÃ  chargÃ©es.
   const total = sumFlightStats(rows);
+  const departed = rows.filter((r) => hasFlightDeparted(r.status)).length;
+  const missing = total.declared - total.confirmed;
+  const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? 's' : ''}`;
 
   return (
     <div data-rv-auto style={isMobile ? { ...s.content, ...s.contentMobile } : s.content}>
@@ -117,25 +124,53 @@ function FlightsView() {
 
       {error ? <div style={s.error}>{error}</div> : null}
 
-      <div style={s.grid}>
-        <Stat label="Vols" value={rows.length} icon={<IconPlane size={20} />} loading={loading} isMobile={isMobile} />
-        <Stat label="Passagers" value={total.pax} icon={<IconUser size={20} />} loading={loading} isMobile={isMobile} />
-        <Stat label="Bagages au tapis" value={`${total.confirmed} / ${total.declared}`} icon={<IconBag size={20} />} loading={loading} isMobile={isMobile} />
-        <Stat
-          label="Bagages manquants"
-          value={total.declared - total.confirmed}
-          icon={<IconBag size={20} />}
-          danger={total.declared - total.confirmed > 0}
+      {/* MÃªmes jauges que le tableau de bord et les rapports : le chiffre du
+          centre rapportÃ© Ã  une rÃ©fÃ©rence dite en clair dessous. */}
+      <div style={isMobile ? { ...s.grid, gridTemplateColumns: '1fr' } : s.grid}>
+        <Gauge
+          label="Vols"
+          value={rows.length}
+          total={rows.length}
+          ratio={rows.length > 0 ? departed / rows.length : 0}
+          caption={rows.length > 0 ? `${plural(departed, 'dÃ©collÃ©')} sur ${rows.length}` : 'aucun vol'}
           loading={loading}
-          isMobile={isMobile}
         />
-        <Stat label="Alertes ouvertes" value={total.alerts} icon={<IconAlert size={20} />} danger={total.alerts > 0} loading={loading} isMobile={isMobile} />
+        <Gauge
+          label="Passagers embarquÃ©s"
+          value={total.boarded}
+          total={total.pax}
+          caption={`sur ${plural(total.pax, 'enregistrÃ©')}`}
+          loading={loading}
+        />
+        <Gauge
+          label="Bagages au tapis"
+          value={total.confirmed}
+          total={total.declared}
+          caption={`sur ${plural(total.declared, 'dÃ©clarÃ©')}`}
+          loading={loading}
+        />
+        <Gauge
+          label="Bagages manquants"
+          value={missing}
+          total={total.declared}
+          caption={missing > 0 ? `sur ${plural(total.declared, 'dÃ©clarÃ©')}` : 'aucun manquant'}
+          danger={missing > 0}
+          loading={loading}
+        />
+        <Gauge
+          label="Alertes ouvertes"
+          value={total.alerts}
+          total={total.declared + total.alerts}
+          caption={total.alerts > 0 ? `sur ${plural(rows.length, 'vol')}` : 'aucune alerte'}
+          danger={total.alerts > 0}
+          loading={loading}
+        />
       </div>
 
       {loading ? (
-        <div style={s.empty}>Chargement…</div>
+        <div style={s.empty}>Chargementâ€¦</div>
       ) : rows.length === 0 ? (
-        <div style={s.empty}>Aucun vol sur cette période.</div>
+        <div style={s.empty}>Aucun vol sur cette pÃ©riode.</div>
       ) : isMobile ? (
         <div style={s.cardList}>
           {rows.map((r) => (
@@ -150,7 +185,7 @@ function FlightsView() {
                 <th style={s.th}>Vol</th>
                 <th style={s.th}>Date</th>
                 <th style={s.th}>Route</th>
-                <th style={s.th}>Départ</th>
+                <th style={s.th}>DÃ©part</th>
                 <th style={s.th}>Passagers</th>
                 <th style={s.th}>Bagages</th>
                 <th style={s.th}>Manquants</th>
@@ -198,7 +233,7 @@ function FlightRow({
     <tr>
       <td style={{ ...s.td, fontWeight: 600 }}>{r.flight_number}</td>
       <td style={s.td}>{shortDate(r.date)}</td>
-      <td style={s.td}>{formatRoute(r, '→')}</td>
+      <td style={s.td}>{formatRoute(r, 'â†’')}</td>
       <td style={s.td}>{hhmm(r.departure_time)}</td>
       <td style={s.td}>
         {r.boarded_count} / {r.pax_count}
@@ -254,7 +289,7 @@ function FlightCardMobile({
         <div>
           <div style={s.cardTitle}>{r.flight_number}</div>
           <div style={s.cardSub}>
-            {shortDate(r.date)} · {formatRoute(r, '→')} · {hhmm(r.departure_time)}
+            {shortDate(r.date)} Â· {formatRoute(r, 'â†’')} Â· {hhmm(r.departure_time)}
           </div>
         </div>
         <StatusBadge status={r.status} />
@@ -285,12 +320,12 @@ function FlightCardMobile({
 
 /**
  * Suppression d'un vol. La base efface en cascade ses passagers, leurs escales,
- * leurs bagages et ses alertes : c'est irréversible et ça peut représenter des
- * centaines de scans. On affiche donc ce qui va disparaître, et on exige que le
- * numéro de vol soit retapé plutôt qu'un simple « Confirmer » cliqué de travers.
+ * leurs bagages et ses alertes : c'est irrÃ©versible et Ã§a peut reprÃ©senter des
+ * centaines de scans. On affiche donc ce qui va disparaÃ®tre, et on exige que le
+ * numÃ©ro de vol soit retapÃ© plutÃ´t qu'un simple Â« Confirmer Â» cliquÃ© de travers.
  *
  * Les litiges bagage ne sont PAS en cascade. Un vol qui en porte ne peut pas
- * être supprimé sans casser la référence, on bloque avant d'appeler la base.
+ * Ãªtre supprimÃ© sans casser la rÃ©fÃ©rence, on bloque avant d'appeler la base.
  */
 function DeleteFlightModal({ r, onClose, onDeleted }: { r: FlightStatsRow; onClose: () => void; onDeleted: () => void }) {
   const isMobile = useIsMobile();
@@ -307,7 +342,7 @@ function DeleteFlightModal({ r, onClose, onDeleted }: { r: FlightStatsRow; onClo
     const { error } = await createClient().from('flights').delete().eq('id', r.id);
     setBusy(false);
     if (error) {
-      setErr("La suppression a échoué. Le vol a peut-être des données rattachées ailleurs.");
+      setErr("La suppression a Ã©chouÃ©. Le vol a peut-Ãªtre des donnÃ©es rattachÃ©es ailleurs.");
       return;
     }
     onDeleted();
@@ -317,23 +352,23 @@ function DeleteFlightModal({ r, onClose, onDeleted }: { r: FlightStatsRow; onClo
     <div style={s.overlay} onClick={onClose}>
       <div style={isMobile ? { ...s.modal, ...s.modalMobile } : s.modal} onClick={(e) => e.stopPropagation()}>
         <div style={s.modalHead}>
-          <h2 style={{ margin: 0, fontSize: isMobile ? 17 : 20 }}>Supprimer {r.flight_number} ?</h2>
+          <h2 style={{ ...s.modalTitle, fontSize: isMobile ? 17 : 20 }}>Supprimer {r.flight_number} ?</h2>
           <button type="button" style={s.modalClose} onClick={onClose} aria-label="Fermer">
             <IconClose size={18} />
           </button>
         </div>
 
         <p style={s.modalText}>
-          {formatRoute(r, '→')} du {shortDate(r.date)}. Cette suppression est définitive et
-          emporte tout ce qui a été scanné sur ce vol.
+          {formatRoute(r, 'â†’')} du {shortDate(r.date)}. Cette suppression est dÃ©finitive et
+          emporte tout ce qui a Ã©tÃ© scannÃ© sur ce vol.
         </p>
 
         <ul style={s.lossList}>
           <li style={s.lossItem}>
-            <strong>{r.pax_count}</strong> passager{r.pax_count > 1 ? 's' : ''} enregistré{r.pax_count > 1 ? 's' : ''}
+            <strong>{r.pax_count}</strong> passager{r.pax_count > 1 ? 's' : ''} enregistrÃ©{r.pax_count > 1 ? 's' : ''}
           </li>
           <li style={s.lossItem}>
-            <strong>{r.bag_declared}</strong> bagage{r.bag_declared > 1 ? 's' : ''}, dont {r.bag_confirmed} passé
+            <strong>{r.bag_declared}</strong> bagage{r.bag_declared > 1 ? 's' : ''}, dont {r.bag_confirmed} passÃ©
             {r.bag_confirmed > 1 ? 's' : ''} au tapis
           </li>
           <li style={s.lossItem}>
@@ -343,8 +378,8 @@ function DeleteFlightModal({ r, onClose, onDeleted }: { r: FlightStatsRow; onClo
 
         {blocked ? (
           <div style={s.blocked}>
-            Ce vol porte {r.disputes_count} litige{r.disputes_count > 1 ? 's' : ''} bagage. Il ne peut pas être
-            supprimé tant que ces dossiers existent, sinon la réclamation du passager perdrait sa référence.
+            Ce vol porte {r.disputes_count} litige{r.disputes_count > 1 ? 's' : ''} bagage. Il ne peut pas Ãªtre
+            supprimÃ© tant que ces dossiers existent, sinon la rÃ©clamation du passager perdrait sa rÃ©fÃ©rence.
           </div>
         ) : (
           <>
@@ -365,8 +400,8 @@ function DeleteFlightModal({ r, onClose, onDeleted }: { r: FlightStatsRow; onClo
           </>
         )}
 
-        {/* Les deux boutons côte à côte débordaient sous 360 px : « Supprimer
-            définitivement » fait à lui seul la largeur de l'écran. Ils passent
+        {/* Les deux boutons cÃ´te Ã  cÃ´te dÃ©bordaient sous 360 px : Â« Supprimer
+            dÃ©finitivement Â» fait Ã  lui seul la largeur de l'Ã©cran. Ils passent
             l'un sous l'autre, l'action destructrice en dessous. */}
         <div style={isMobile ? { ...s.modalActions, ...s.modalActionsMobile } : s.modalActions}>
           {!blocked ? (
@@ -379,7 +414,7 @@ function DeleteFlightModal({ r, onClose, onDeleted }: { r: FlightStatsRow; onClo
               }}
               onClick={remove}
             >
-              {busy ? 'Suppression…' : 'Supprimer définitivement'}
+              {busy ? 'Suppressionâ€¦' : 'Supprimer dÃ©finitivement'}
             </button>
           ) : null}
           <button type="button" style={isMobile ? { ...s.cancelBtn, ...s.fullWidthBtn } : s.cancelBtn} onClick={onClose}>
@@ -405,179 +440,108 @@ function Meta({ label, value, color }: { label: string; value: string; color?: s
   );
 }
 
-function Stat({
-  label,
-  value,
-  icon,
-  danger,
-  loading,
-  isMobile,
-}: {
-  label: string;
-  value: number | string;
-  icon: React.ReactNode;
-  danger?: boolean;
-  loading?: boolean;
-  isMobile?: boolean;
-}) {
-  return (
-    <div style={isMobile ? { ...s.stat, ...s.statMobile } : s.stat}>
-      {/* L'icône disparaît sur téléphone : sur une tuile de 145 px elle prend la
-          place du chiffre, qui est la seule chose qu'on vient lire. */}
-      {isMobile ? null : <div style={s.statIcon}>{icon}</div>}
-      <div style={{ minWidth: 0 }}>
-        <div style={s.statLabel}>{label}</div>
-        <div
-          style={{
-            fontSize: isMobile ? 20 : 24,
-            fontWeight: 700,
-            letterSpacing: '-0.03em',
-            color: danger ? 'var(--negative)' : 'var(--content-primary)',
-            lineHeight: 1.1,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {loading ? '…' : value}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 const s: Record<string, CSSProperties> = {
   content: { padding: 28, maxWidth: 1400, margin: '0 auto', width: '100%' },
   contentMobile: { padding: '16px 14px' },
 
   head: { marginBottom: 20 },
-  title: { margin: 0, fontSize: 26, fontWeight: 600, letterSpacing: '-0.03em', color: 'var(--content-primary)' },
+  title: {
+    margin: 0,
+    fontFamily: 'var(--font-display)',
+    fontSize: 26,
+    fontWeight: 700,
+    letterSpacing: '-0.02em',
+    lineHeight: 1.2,
+    color: 'var(--content-primary)',
+  },
   sub: { color: 'var(--content-secondary)', fontSize: 14, marginTop: 4 },
 
+  // Puces de filtre : pilule bordÃ©e, blanche au repos ; l'active est noire.
   tabs: { display: 'flex', gap: 8, marginBottom: 22, flexWrap: 'wrap' },
   tab: {
     flex: '1 1 auto',
     minWidth: 80,
-    background: 'transparent',
+    background: 'var(--bg-elevated)',
     borderWidth: 1,
     borderStyle: 'solid',
     borderColor: 'var(--border-neutral)',
-    color: 'var(--content-secondary)',
+    color: 'var(--content-primary)',
     borderRadius: 9999,
-    padding: '10px 16px',
-    fontWeight: 600,
+    padding: '9px 16px',
+    fontWeight: 500,
     fontSize: 14,
     cursor: 'pointer',
   },
-  tabActive: { background: 'var(--interactive-primary)', borderColor: 'var(--interactive-primary)', color: '#fff' },
+  tabActive: {
+    background: 'var(--interactive-accent)',
+    borderColor: 'var(--interactive-accent)',
+    color: 'var(--interactive-control)',
+  },
 
   customRow: { display: 'flex', gap: 12, marginBottom: 22, alignItems: 'flex-end', flexWrap: 'wrap' },
   customField: { display: 'flex', flexDirection: 'column', gap: 6 },
-  customLabel: { fontSize: 13, color: 'var(--content-secondary)', fontWeight: 600 },
+  customLabel: { ...fieldLabel },
   dateInput: {
-    background: 'var(--bg-elevated)',
-    border: '1px solid var(--border-neutral)',
-    color: 'var(--content-primary)',
-    borderRadius: 10,
-    padding: '10px 13px',
-    // 16 px : en dessous, iOS Safari zoome automatiquement à la mise au point
-    // et l'écran reste décalé après la saisie.
+    ...input,
+    // 16 px : en dessous, iOS Safari zoome automatiquement Ã  la mise au point
+    // et l'Ã©cran reste dÃ©calÃ© aprÃ¨s la saisie.
     fontSize: 16,
     maxWidth: '100%',
   },
-  textInput: {
-    background: 'var(--bg-elevated)',
-    border: '1px solid var(--border-neutral)',
-    color: 'var(--content-primary)',
-    borderRadius: 10,
-    padding: '11px 13px',
-    fontSize: 16,
-    width: '100%',
-    boxSizing: 'border-box',
-  },
+  textInput: { ...input, fontSize: 16, boxSizing: 'border-box' },
 
-  // auto-fit plutôt qu'un nombre fixe de colonnes : la grille se réorganise
-  // seule du petit Android 320 px au grand écran, sans palier codé en dur.
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(132px, 1fr))', gap: 10, marginBottom: 22 },
-  stat: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 13,
-    background: 'var(--bg-elevated)',
-    border: '1px solid var(--border-neutral)',
-    borderRadius: 16,
-    padding: 16,
-  },
-  statMobile: { padding: 12, borderRadius: 14, gap: 0 },
-  statIcon: { color: 'var(--content-secondary)', display: 'grid', placeItems: 'center', flexShrink: 0 },
-  statLabel: { color: 'var(--content-secondary)', fontSize: 12.5, marginBottom: 3 },
+  // auto-fit plutÃ´t qu'un nombre fixe de colonnes : la grille se rÃ©organise
+  // seule du grand Ã©cran Ã  la tablette, sans palier codÃ© en dur ; une seule
+  // colonne sur tÃ©lÃ©phone.
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14, marginBottom: 22 },
 
-  tableWrap: { background: 'var(--bg-elevated)', border: '1px solid var(--border-neutral)', borderRadius: 16, overflowX: 'auto' },
+  tableWrap: { ...card, padding: 0, overflowX: 'auto' },
   table: { width: '100%', borderCollapse: 'collapse', background: 'transparent' },
   th: {
     textAlign: 'left',
     padding: 14,
-    color: 'var(--content-secondary)',
+    color: 'var(--content-tertiary)',
     fontSize: 12,
+    fontWeight: 600,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    borderBottom: '1px solid var(--border-neutral)',
+    borderBottom: '1px solid var(--divider)',
     whiteSpace: 'nowrap',
   },
-  td: { padding: 14, color: 'var(--content-primary)', borderBottom: '1px solid var(--border-neutral)', whiteSpace: 'nowrap' },
+  td: {
+    padding: 14,
+    color: 'var(--content-primary)',
+    borderBottom: '1px solid var(--divider)',
+    whiteSpace: 'nowrap',
+    fontVariantNumeric: 'tabular-nums',
+  },
   empty: { padding: '40px 14px', textAlign: 'center', color: 'var(--content-secondary)' },
   error: {
     background: 'var(--negative-bg)',
     color: 'var(--negative)',
-    borderRadius: 12,
+    borderRadius: 8,
     padding: '10px 14px',
     fontSize: 14,
     marginBottom: 16,
   },
 
-  statusSelect: {
-    background: 'var(--bg-elevated)',
-    border: '1px solid var(--border-neutral)',
-    color: 'var(--content-primary)',
-    borderRadius: 10,
-    padding: '9px 10px',
-    fontSize: 14,
-    minHeight: 40,
-    maxWidth: '100%',
-  },
-  deleteBtn: {
-    background: 'transparent',
-    border: '1px solid var(--border-neutral)',
-    color: 'var(--negative)',
-    borderRadius: 9999,
-    width: 40,
-    height: 40,
-    flexShrink: 0,
-    display: 'grid',
-    placeItems: 'center',
-    cursor: 'pointer',
-  },
+  statusSelect: { ...input, width: 'auto', padding: '8px 10px', minHeight: 40, maxWidth: '100%' },
+  deleteBtn: { ...btnSecondary, color: 'var(--negative)', width: 40, height: 40, padding: 0, flexShrink: 0, cursor: 'pointer' },
 
   cardList: { display: 'flex', flexDirection: 'column', gap: 10 },
-  card: {
-    background: 'var(--bg-elevated)',
-    border: '1px solid var(--border-neutral)',
-    borderRadius: 16,
-    padding: 14,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 10,
-  },
+  card: { ...card, padding: 14, display: 'flex', flexDirection: 'column', gap: 10 },
   cardHead: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 },
-  cardTitle: { fontWeight: 700, fontSize: 16, letterSpacing: '-0.03em' },
+  cardTitle: { fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, letterSpacing: '-0.02em' },
   cardSub: { color: 'var(--content-secondary)', fontSize: 13, marginTop: 2 },
-  // Quatre colonnes fixes écrasaient « Manquants » sur un écran étroit. En
-  // auto-fit à 120 px, un téléphone courant donne un carré 2 × 2 et les grands
-  // écrans retrouvent les quatre de front. Un seuil plus bas donnerait un
+  // Quatre colonnes fixes Ã©crasaient Â« Manquants Â» sur un Ã©cran Ã©troit. En
+  // auto-fit Ã  120 px, un tÃ©lÃ©phone courant donne un carrÃ© 2 Ã— 2 et les grands
+  // Ã©crans retrouvent les quatre de front. Un seuil plus bas donnerait un
   // 3 + 1 bancal sur 375 px.
   cardMeta: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 8 },
   cardActions: { display: 'flex', gap: 8, alignItems: 'center' },
   meta: { display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 },
-  metaLabel: { color: 'var(--content-secondary)', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.4, fontWeight: 600 },
-  metaValue: { fontSize: 14, fontWeight: 600 },
+  metaLabel: { ...eyebrow, margin: 0 },
+  metaValue: { fontSize: 14, fontWeight: 600, fontVariantNumeric: 'tabular-nums' },
 
   overlay: { ...modalOverlay },
   modal: {
@@ -591,38 +555,28 @@ const s: Record<string, CSSProperties> = {
     maxHeight: '90vh',
     overflowY: 'auto',
   },
-  modalMobile: { width: '100%', padding: 16, gap: 12, maxHeight: '92vh', borderRadius: 18 },
+  modalMobile: { width: '100%', padding: 16, gap: 12, maxHeight: '92vh' },
   modalHead: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  // 40 px de côté : une croix de 18 px avec 4 px de marge est intouchable au pouce.
+  modalTitle: {
+    margin: 0,
+    fontFamily: 'var(--font-display)',
+    fontWeight: 700,
+    letterSpacing: '-0.02em',
+    lineHeight: 1.2,
+    color: 'var(--content-primary)',
+  },
+  // 40 px de cÃ´tÃ© : une croix de 18 px avec 4 px de marge est intouchable au pouce.
   modalClose: { background: 'transparent', border: 'none', color: 'var(--content-secondary)', display: 'grid', placeItems: 'center', width: 40, height: 40, flexShrink: 0, cursor: 'pointer' },
   modalText: { margin: 0, color: 'var(--content-secondary)', fontSize: 14, lineHeight: 1.5 },
-  lossList: { margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6, borderTop: '1px solid var(--border-neutral)', paddingTop: 14 },
+  lossList: { margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6, borderTop: '1px solid var(--divider)', paddingTop: 14 },
   lossItem: { fontSize: 14, color: 'var(--content-primary)' },
-  blocked: { background: 'var(--warning-bg)', color: 'var(--warning-content)', borderRadius: 12, padding: '12px 14px', fontSize: 14, lineHeight: 1.5 },
+  blocked: { background: 'var(--warning-bg)', color: 'var(--warning-content)', borderRadius: 8, padding: '12px 14px', fontSize: 14, lineHeight: 1.5 },
   // row-reverse : l'ordre du DOM place l'action destructrice en premier pour
-  // qu'elle arrive en haut de la pile sur téléphone, mais à droite en desktop,
-  // où la convention reste « Annuler » puis l'action.
+  // qu'elle arrive en haut de la pile sur tÃ©lÃ©phone, mais Ã  droite en desktop,
+  // oÃ¹ la convention reste Â« Annuler Â» puis l'action.
   modalActions: { display: 'flex', flexDirection: 'row-reverse', justifyContent: 'flex-start', gap: 10, marginTop: 4 },
   modalActionsMobile: { flexDirection: 'column', gap: 8 },
-  fullWidthBtn: { width: '100%', padding: '13px 18px' },
-  cancelBtn: {
-    background: 'transparent',
-    border: '1px solid var(--border-neutral)',
-    color: 'var(--content-primary)',
-    borderRadius: 9999,
-    padding: '10px 18px',
-    fontWeight: 600,
-    fontSize: 14,
-    cursor: 'pointer',
-  },
-  confirmDelete: {
-    background: 'var(--negative)',
-    border: 'none',
-    color: '#fff',
-    borderRadius: 9999,
-    padding: '10px 18px',
-    fontWeight: 600,
-    fontSize: 14,
-    cursor: 'pointer',
-  },
+  fullWidthBtn: { width: '100%' },
+  cancelBtn: { ...btnSecondary, cursor: 'pointer' },
+  confirmDelete: { ...btnSecondary, color: 'var(--negative)', cursor: 'pointer' },
 };

@@ -1,8 +1,12 @@
 'use client';
 
 import { useEffect } from 'react';
+import { btnPrimary, btnSecondary } from '@/ui/theme';
+// Cette frontiÃ¨re remplace le layout racine, donc sa feuille de style : on
+// rÃ©importe les tokens pour que les primitives aient leurs variables.
+import './globals.css';
 
-/** Frontière d'erreur racine (remplace tout le document si le layout plante). */
+/** FrontiÃ¨re d'erreur racine (remplace tout le document si le layout plante). */
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
     const msg = `${error?.name ?? ''} ${error?.message ?? ''}`;
@@ -17,17 +21,15 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
 
   return (
     <html lang="fr">
-      <body style={{ margin: 0, minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#FFFFFF', color: '#0E0F0C', fontFamily: 'Inter, system-ui, sans-serif', padding: 24 }}>
+      <body style={body}>
         <div style={{ textAlign: 'center', maxWidth: 420 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.03em', margin: '0 0 8px' }}>Une erreur est survenue</h1>
-          <p style={{ color: '#454745', fontSize: 14, lineHeight: 1.5, margin: '0 0 18px' }}>
-            Rechargez la page pour réessayer.
-          </p>
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-            <button onClick={() => reset()} style={{ background: '#9FE870', color: '#163300', border: 'none', borderRadius: 9999, padding: '10px 22px', fontWeight: 600, cursor: 'pointer' }}>
-              Réessayer
+          <h1 style={title}>Une erreur est survenue</h1>
+          <p style={text}>Rechargez la page pour rÃ©essayer.</p>
+          <div style={row}>
+            <button onClick={() => reset()} style={btnPrimary}>
+              RÃ©essayer
             </button>
-            <button onClick={() => window.location.reload()} style={{ background: '#fff', color: '#163300', borderWidth: 1, borderStyle: 'solid', borderColor: '#163300', borderRadius: 9999, padding: '10px 22px', fontWeight: 600, cursor: 'pointer' }}>
+            <button onClick={() => window.location.reload()} style={btnSecondary}>
               Recharger
             </button>
           </div>
@@ -36,3 +38,24 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
     </html>
   );
 }
+
+const body: React.CSSProperties = {
+  margin: 0,
+  minHeight: '100vh',
+  display: 'grid',
+  placeItems: 'center',
+  background: 'var(--bg-screen)',
+  color: 'var(--content-primary)',
+  fontFamily: 'var(--font-body)',
+  padding: 24,
+};
+const title: React.CSSProperties = {
+  margin: '0 0 8px',
+  fontFamily: 'var(--font-display)',
+  fontSize: 22,
+  fontWeight: 700,
+  letterSpacing: '-0.02em',
+  lineHeight: 'var(--lh-title)',
+};
+const text: React.CSSProperties = { margin: '0 0 18px', color: 'var(--content-secondary)', fontSize: 14, lineHeight: 1.5 };
+const row: React.CSSProperties = { display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' };

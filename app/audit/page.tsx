@@ -20,7 +20,7 @@ import {
   type MovementKind,
 } from '@police/shared';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { badge, card, input, sectionHeading } from '@/ui/theme';
+import { badge, btnSecondary, card, input, label, sectionHeading } from '@/ui/theme';
 
 export default function AuditPage() {
   return (
@@ -30,12 +30,15 @@ export default function AuditPage() {
   );
 }
 
-/** Une seule touche de couleur par famille, appliquée au texte de la pastille. */
-const FAMILY_COLOR: Record<MovementFamily, string> = {
-  passenger: 'var(--content-secondary)',
-  baggage: 'var(--brand-forest)',
-  fraud: 'var(--negative)',
-  dispute: 'var(--warning-content)',
+/**
+ * Pastille par famille de mouvement : neutre pour l'exploitation courante,
+ * paire sÃ©mantique quand le mouvement est un statut (fraude, litige).
+ */
+const FAMILY_STYLE: Record<MovementFamily, CSSProperties> = {
+  passenger: { ...badge },
+  baggage: { ...badge, color: 'var(--content-primary)' },
+  fraud: { ...badge, background: 'var(--negative-bg)', color: 'var(--negative)' },
+  dispute: { ...badge, background: 'var(--warning-bg)', color: 'var(--warning-content)' },
 };
 
 function AuditView() {
@@ -61,7 +64,7 @@ function AuditView() {
   const { from, to } = resolveRange(period, customFrom, customTo, today);
   const isAdmin = profile?.role === 'admin';
 
-  // `kinds` est un tableau recréé à chaque rendu : on le fige en clé stable pour
+  // `kinds` est un tableau recrÃ©Ã© Ã  chaque rendu : on le fige en clÃ© stable pour
   // que l'effet ne se relance pas en boucle.
   const kindsKey = kinds.join(',');
 
@@ -80,7 +83,7 @@ function AuditView() {
       setRows(res.rows);
       setTotal(res.total);
     } catch {
-      setError('Le journal n’a pas pu être chargé. Réessayez dans un instant.');
+      setError('Le journal nâ€™a pas pu Ãªtre chargÃ©. RÃ©essayez dans un instant.');
       setRows([]);
       setTotal(0);
     }
@@ -95,8 +98,8 @@ function AuditView() {
     if (isAdmin) void loadActors().then(setActors);
   }, [isAdmin]);
 
-  // Tout changement de filtre ramène à la première page, sinon on reste sur une
-  // page qui n'existe plus dans le nouveau résultat.
+  // Tout changement de filtre ramÃ¨ne Ã  la premiÃ¨re page, sinon on reste sur une
+  // page qui n'existe plus dans le nouveau rÃ©sultat.
   useEffect(() => {
     setPage(0);
   }, [from, to, kindsKey, actorId, search]);
@@ -104,9 +107,9 @@ function AuditView() {
   if (profile && !isAdmin) {
     return (
       <div data-rv-auto style={isMobile ? { ...s.content, ...s.contentMobile } : s.content}>
-        <h1 style={s.title}>Journal d’audit</h1>
+        <h1 style={s.title}>Journal dâ€™audit</h1>
         <p style={s.denied}>
-          Cette page est réservée aux administrateurs. Votre compte est enregistré comme{' '}
+          Cette page est rÃ©servÃ©e aux administrateurs. Votre compte est enregistrÃ© comme{' '}
           {profile.role === 'supervisor' ? 'superviseur' : 'agent'}.
         </p>
       </div>
@@ -125,11 +128,11 @@ function AuditView() {
     <div style={isMobile ? { ...s.content, ...s.contentMobile } : s.content}>
       <div style={s.head}>
         <div>
-          <h1 style={s.title}>Journal d’audit</h1>
+          <h1 style={s.title}>Journal dâ€™audit</h1>
           <div style={s.sub}>{rangeLabel(period, from, to)}</div>
         </div>
         <div style={s.countBox}>
-          <div style={s.countValue}>{loading ? '…' : total.toLocaleString('fr-FR')}</div>
+          <div style={s.countValue}>{loading ? 'â€¦' : total.toLocaleString('fr-FR')}</div>
           <div style={s.countLabel}>mouvement{total > 1 ? 's' : ''}</div>
         </div>
       </div>
@@ -145,12 +148,12 @@ function AuditView() {
       {period === 'perso' ? (
         <div style={isMobile ? { ...s.customRow, flexDirection: 'column', alignItems: 'stretch' } : s.customRow}>
           <label style={s.field}>
-            <span style={s.fieldLabel}>Du</span>
-            <input type="date" max={today} style={s.dateInput} value={customFrom} onChange={(e) => setCustomFrom(e.target.value || today)} />
+            <span style={label}>Du</span>
+            <input type="date" max={today} style={input} value={customFrom} onChange={(e) => setCustomFrom(e.target.value || today)} />
           </label>
           <label style={s.field}>
-            <span style={s.fieldLabel}>Au</span>
-            <input type="date" max={today} style={s.dateInput} value={customTo} onChange={(e) => setCustomTo(e.target.value || today)} />
+            <span style={label}>Au</span>
+            <input type="date" max={today} style={input} value={customTo} onChange={(e) => setCustomTo(e.target.value || today)} />
           </label>
         </div>
       ) : null}
@@ -159,16 +162,16 @@ function AuditView() {
 
       <div style={isMobile ? { ...s.filterRow, gridTemplateColumns: '1fr' } : s.filterRow}>
         <label style={s.field}>
-          <span style={s.fieldLabel}>Recherche</span>
+          <span style={label}>Recherche</span>
           <input
             style={input}
-            placeholder="Passager, PNR, étiquette ou vol"
+            placeholder="Passager, PNR, Ã©tiquette ou vol"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </label>
         <label style={s.field}>
-          <span style={s.fieldLabel}>Auteur</span>
+          <span style={label}>Auteur</span>
           <select style={input} value={actorId} onChange={(e) => setActorId(e.target.value)}>
             <option value="">Tous les auteurs</option>
             {actors.map((a) => (
@@ -198,9 +201,9 @@ function AuditView() {
       {error ? <div style={s.error}>{error}</div> : null}
 
       {loading ? (
-        <div style={s.empty}>Chargement…</div>
+        <div style={s.empty}>Chargementâ€¦</div>
       ) : rows.length === 0 ? (
-        <div style={s.empty}>Aucun mouvement pour ces critères.</div>
+        <div style={s.empty}>Aucun mouvement pour ces critÃ¨res.</div>
       ) : isMobile ? (
         <div style={s.cards}>
           {rows.map((m, i) => (
@@ -217,8 +220,8 @@ function AuditView() {
                 <th style={s.th}>Auteur</th>
                 <th style={s.th}>Vol</th>
                 <th style={s.th}>Passager</th>
-                <th style={s.th}>Étiquette</th>
-                <th style={s.th}>Détail</th>
+                <th style={s.th}>Ã‰tiquette</th>
+                <th style={s.th}>DÃ©tail</th>
               </tr>
             </thead>
             <tbody>
@@ -226,15 +229,15 @@ function AuditView() {
                 <tr key={`${m.at}-${m.kind}-${i}`} style={s.tr}>
                   <td style={{ ...s.td, whiteSpace: 'nowrap', color: 'var(--content-secondary)' }}>{stamp(m.at)}</td>
                   <td style={s.td}>
-                    <span style={{ ...badge, color: FAMILY_COLOR[MOVEMENT_FAMILY[m.kind]] }}>
+                    <span style={FAMILY_STYLE[MOVEMENT_FAMILY[m.kind]]}>
                       {MOVEMENT_LABEL[m.kind]}
                     </span>
                   </td>
-                  <td style={s.td}>{m.actor_name ?? <span style={s.system}>Système</span>}</td>
+                  <td style={s.td}>{m.actor_name ?? <span style={s.system}>SystÃ¨me</span>}</td>
                   <td style={s.td}>{m.flight_number ?? 'N/A'}</td>
                   <td style={s.td}>
                     {m.passenger_name ?? 'N/A'}
-                    {m.pnr ? <span style={s.muted}> · {m.pnr}</span> : null}
+                    {m.pnr ? <span style={s.muted}> Â· {m.pnr}</span> : null}
                   </td>
                   <td style={{ ...s.td, fontVariantNumeric: 'tabular-nums' }}>{m.tag_number ?? 'N/A'}</td>
                   <td style={{ ...s.td, color: 'var(--content-secondary)' }}>{m.detail ?? ''}</td>
@@ -248,20 +251,16 @@ function AuditView() {
       {total > 0 ? (
         <div style={s.pager}>
           <span style={s.pagerInfo}>
-            {firstShown} à {lastShown} sur {total.toLocaleString('fr-FR')}
+            {firstShown} Ã  {lastShown} sur {total.toLocaleString('fr-FR')}
           </span>
           <div style={s.pagerBtns}>
-            <button style={{ ...s.pagerBtn, ...(page === 0 ? s.pagerBtnOff : {}) }} disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
-              Précédent
+            <button style={s.pagerBtn} disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
+              PrÃ©cÃ©dent
             </button>
             <span style={s.pagerPage}>
               Page {page + 1} sur {pageCount}
             </span>
-            <button
-              style={{ ...s.pagerBtn, ...(page + 1 >= pageCount ? s.pagerBtnOff : {}) }}
-              disabled={page + 1 >= pageCount}
-              onClick={() => setPage((p) => p + 1)}
-            >
+            <button style={s.pagerBtn} disabled={page + 1 >= pageCount} onClick={() => setPage((p) => p + 1)}>
               Suivant
             </button>
           </div>
@@ -275,12 +274,12 @@ function MovementCard({ m }: { m: Movement }) {
   return (
     <div style={s.cardItem}>
       <div style={s.cardTop}>
-        <span style={{ ...badge, color: FAMILY_COLOR[MOVEMENT_FAMILY[m.kind]] }}>{MOVEMENT_LABEL[m.kind]}</span>
+        <span style={FAMILY_STYLE[MOVEMENT_FAMILY[m.kind]]}>{MOVEMENT_LABEL[m.kind]}</span>
         <span style={s.cardStamp}>{stamp(m.at)}</span>
       </div>
       <div style={s.cardMain}>{m.passenger_name ?? m.tag_number ?? m.flight_number ?? 'N/A'}</div>
       <div style={s.cardMeta}>
-        <span>{m.actor_name ?? 'Système'}</span>
+        <span>{m.actor_name ?? 'SystÃ¨me'}</span>
         <span>{m.flight_number ?? 'N/A'}</span>
         {m.pnr ? <span>{m.pnr}</span> : null}
         {m.tag_number && m.passenger_name ? <span>{m.tag_number}</span> : null}
@@ -304,14 +303,31 @@ const s: Record<string, CSSProperties> = {
   contentMobile: { padding: '16px 14px' },
 
   head: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 20, flexWrap: 'wrap' },
-  title: { margin: 0, fontSize: 26, fontWeight: 600, letterSpacing: '-0.03em', color: 'var(--content-primary)' },
+  title: {
+    margin: 0,
+    fontFamily: 'var(--font-display)',
+    fontSize: 26,
+    fontWeight: 700,
+    letterSpacing: '-0.02em',
+    lineHeight: 'var(--lh-title)',
+    color: 'var(--content-primary)',
+  },
   sub: { color: 'var(--content-secondary)', fontSize: 14, marginTop: 4 },
   countBox: { textAlign: 'right' },
-  countValue: { fontSize: 26, fontWeight: 700, letterSpacing: '-0.03em', color: 'var(--content-primary)', lineHeight: 1.1 },
+  countValue: {
+    fontFamily: 'var(--font-display)',
+    fontSize: 26,
+    fontWeight: 700,
+    letterSpacing: '-0.02em',
+    fontVariantNumeric: 'tabular-nums',
+    color: 'var(--content-primary)',
+    lineHeight: 1.1,
+  },
   countLabel: { color: 'var(--content-secondary)', fontSize: 13 },
 
   denied: { color: 'var(--content-secondary)', fontSize: 15, marginTop: 12, maxWidth: 560, lineHeight: 1.5 },
 
+  // Puces de pÃ©riode et de type : filet gris au repos, encre pleine en actif.
   tabs: { display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' },
   tab: {
     flex: '1 1 auto',
@@ -320,40 +336,48 @@ const s: Record<string, CSSProperties> = {
     borderWidth: 1,
     borderStyle: 'solid',
     borderColor: 'var(--border-neutral)',
-    color: 'var(--content-secondary)',
+    color: 'var(--content-primary)',
     borderRadius: 9999,
     padding: '10px 16px',
-    fontWeight: 600,
+    fontWeight: 500,
     fontSize: 14,
   },
-  tabActive: { background: 'var(--interactive-primary)', borderColor: 'var(--interactive-primary)', color: '#fff' },
+  tabActive: {
+    background: 'var(--interactive-accent)',
+    borderColor: 'var(--interactive-accent)',
+    color: 'var(--interactive-control)',
+  },
 
   customRow: { display: 'flex', gap: 12, marginBottom: 18, alignItems: 'flex-end', flexWrap: 'wrap' },
   filterRow: { display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12, marginBottom: 14 },
   field: { display: 'flex', flexDirection: 'column', gap: 6 },
-  fieldLabel: { fontSize: 13, color: 'var(--content-secondary)', fontWeight: 600 },
-  dateInput: {
-    background: 'var(--bg-elevated)',
-    border: '1px solid var(--border-neutral)',
-    color: 'var(--content-primary)',
-    borderRadius: 10,
-    padding: '10px 13px',
-    fontSize: 14,
-  },
 
   kindRow: { display: 'flex', gap: 7, flexWrap: 'wrap', marginBottom: 20 },
   kindChip: {
     background: 'transparent',
-    border: '1px solid var(--border-neutral)',
-    color: 'var(--content-secondary)',
+    borderWidth: 1,
+    borderStyle: 'solid',
+    borderColor: 'var(--border-neutral)',
+    color: 'var(--content-primary)',
     borderRadius: 9999,
     padding: '6px 13px',
-    fontSize: 12.5,
-    fontWeight: 600,
+    fontSize: 13,
+    fontWeight: 500,
   },
-  kindChipActive: { borderColor: 'var(--interactive-primary)', color: 'var(--brand-forest)' },
+  kindChipActive: {
+    background: 'var(--interactive-accent)',
+    borderColor: 'var(--interactive-accent)',
+    color: 'var(--interactive-control)',
+  },
 
-  error: { color: 'var(--negative)', fontSize: 14, marginBottom: 14 },
+  error: {
+    background: 'var(--negative-bg)',
+    color: 'var(--negative)',
+    borderRadius: 8,
+    padding: '10px 14px',
+    fontSize: 14,
+    marginBottom: 14,
+  },
   empty: { ...card, color: 'var(--content-secondary)', textAlign: 'center', padding: 36 },
 
   tableWrap: { ...card, padding: 0, overflowX: 'auto' },
@@ -363,13 +387,13 @@ const s: Record<string, CSSProperties> = {
     padding: '13px 16px',
     color: 'var(--content-tertiary)',
     fontSize: 11,
-    fontWeight: 700,
+    fontWeight: 600,
     textTransform: 'uppercase',
-    letterSpacing: 0.7,
-    borderBottom: '1px solid var(--border-neutral)',
+    letterSpacing: 0.5,
+    borderBottom: '1px solid var(--divider)',
     whiteSpace: 'nowrap',
   },
-  tr: { borderBottom: '1px solid var(--border-neutral)' },
+  tr: { borderBottom: '1px solid var(--divider)' },
   td: { padding: '12px 16px', color: 'var(--content-primary)', verticalAlign: 'top' },
   muted: { color: 'var(--content-tertiary)' },
   system: { color: 'var(--content-tertiary)', fontStyle: 'italic' },
@@ -380,20 +404,12 @@ const s: Record<string, CSSProperties> = {
   cardStamp: { color: 'var(--content-tertiary)', fontSize: 12, whiteSpace: 'nowrap' },
   cardMain: { fontWeight: 600, fontSize: 14.5, color: 'var(--content-primary)' },
   cardMeta: { display: 'flex', gap: 10, flexWrap: 'wrap', color: 'var(--content-secondary)', fontSize: 12.5, marginTop: 5 },
-  cardDetail: { color: 'var(--content-secondary)', fontSize: 12.5, marginTop: 7, paddingTop: 7, borderTop: '1px solid var(--border-neutral)' },
+  cardDetail: { color: 'var(--content-secondary)', fontSize: 12.5, marginTop: 7, paddingTop: 7, borderTop: '1px solid var(--divider)' },
 
   pager: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginTop: 16, flexWrap: 'wrap' },
-  pagerInfo: { color: 'var(--content-secondary)', fontSize: 13 },
+  pagerInfo: { color: 'var(--content-secondary)', fontSize: 13, fontVariantNumeric: 'tabular-nums' },
   pagerBtns: { display: 'flex', alignItems: 'center', gap: 10 },
-  pagerPage: { color: 'var(--content-secondary)', fontSize: 13, whiteSpace: 'nowrap' },
-  pagerBtn: {
-    background: 'transparent',
-    border: '1px solid var(--border-neutral)',
-    color: 'var(--content-primary)',
-    borderRadius: 9999,
-    padding: '8px 18px',
-    fontWeight: 600,
-    fontSize: 13.5,
-  },
-  pagerBtnOff: { opacity: 0.4 },
+  pagerPage: { color: 'var(--content-secondary)', fontSize: 13, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' },
+  // Petit bouton secondaire ; l'Ã©tat dÃ©sactivÃ© est rendu par button:disabled.
+  pagerBtn: { ...btnSecondary, height: 36, padding: '0 16px', fontSize: 13.5 },
 };

@@ -4,14 +4,14 @@ import { SITE_APPS } from '@/lib/site-apps';
 import { IconHome, IconHelp, IconBag, IconPlane, IconLogin } from './icons';
 
 /**
- * Barre du haut des pages publiques (vitrine, FAQ, pages légales).
+ * Barre du haut des pages publiques (vitrine, FAQ, pages lÃ©gales).
  *
- * Deux états, échangés en CSS d'après `data-scrolled` (voir globals.css) :
- *  - en haut de page, la barre complète : marque, hub, connexion ;
- *  - sur téléphone dès qu'on défile, une rangée de raccourcis en icônes.
+ * Deux Ã©tats, Ã©changÃ©s en CSS d'aprÃ¨s `data-scrolled` (voir globals.css) :
+ *  - en haut de page, la barre complÃ¨te : marque, hub, connexion ;
+ *  - sur tÃ©lÃ©phone dÃ¨s qu'on dÃ©file, une rangÃ©e de raccourcis en icÃ´nes.
  *
- * Sur écran large la barre complète reste en place : la rangée d'icônes ne
- * répondrait à aucun besoin, la navigation y est déjà entièrement visible.
+ * Sur Ã©cran large la barre complÃ¨te reste en place : la rangÃ©e d'icÃ´nes ne
+ * rÃ©pondrait Ã  aucun besoin, la navigation y est dÃ©jÃ  entiÃ¨rement visible.
  */
 
 const HUB = process.env.NEXT_PUBLIC_HUB ?? 'FIH';
@@ -22,7 +22,7 @@ const VOLS = SITE_APPS.find((a) => a.label === 'Vols du jour');
 export function PublicTopbar({ hub = false }: { hub?: boolean }) {
   return (
     <header className="lp-topbar">
-      {/* État haut de page */}
+      {/* Ã‰tat haut de page */}
       <div className="lp-topbar-inner pb-full">
         <Link href="/" style={s.brandBox}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -41,12 +41,12 @@ export function PublicTopbar({ hub = false }: { hub?: boolean }) {
         </nav>
       </div>
 
-      {/* État défilé, téléphone seulement */}
+      {/* Ã‰tat dÃ©filÃ©, tÃ©lÃ©phone seulement */}
       <nav className="lp-topbar-icons pb-icons" aria-label="Raccourcis">
         <Link href="/" className="pb-icon" aria-label="Accueil">
           <IconHome size={21} />
         </Link>
-        <Link href="/faq" className="pb-icon" aria-label="Questions fréquentes">
+        <Link href="/faq" className="pb-icon" aria-label="Questions frÃ©quentes">
           <IconHelp size={21} />
         </Link>
         {TRACKING ? (
@@ -84,19 +84,25 @@ export function PublicTopbar({ hub = false }: { hub?: boolean }) {
 const s: Record<string, CSSProperties> = {
   brandBox: { display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' },
   brandLogo: { width: 32, height: 32, borderRadius: 8, objectFit: 'cover' as const, display: 'block', flexShrink: 0 },
-  brandName: { fontWeight: 700, fontSize: 16, letterSpacing: -0.2, color: 'var(--content-primary)', whiteSpace: 'nowrap' },
+  brandName: {
+    fontFamily: 'var(--font-display)',
+    fontWeight: 700,
+    fontSize: 16,
+    letterSpacing: '-0.02em',
+    color: 'var(--content-primary)',
+    whiteSpace: 'nowrap',
+  },
   topNav: { display: 'flex', alignItems: 'center', gap: 12 },
-  // `display` volontairement absent : il est porté par la classe .hub-chip, afin
+  // `display` volontairement absent : il est portÃ© par la classe .hub-chip, afin
   // que la media query mobile puisse masquer la pastille (un style inline
-  // l'emporterait sur la classe et empêcherait le display:none).
+  // l'emporterait sur la classe et empÃªcherait le display:none).
   hubChip: {
     alignItems: 'center',
     background: 'var(--bg-neutral)',
     borderRadius: 9999,
     padding: '6px 14px',
     fontSize: 13,
-    fontWeight: 600,
+    fontWeight: 500,
     color: 'var(--content-primary)',
-    letterSpacing: 0.2,
   },
 };

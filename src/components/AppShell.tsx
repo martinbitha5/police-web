@@ -7,11 +7,12 @@ import type { Profile } from '@police/shared';
 import { createClient } from '@/supabase/client';
 import { partnerBrand } from '@/lib/partner';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import { btnSecondary } from '@/ui/theme';
 import { IconDashboard, IconUsers, IconLogout, IconReport, IconBag, IconUser, IconPlane, IconAudit, IconMenu } from './icons';
 import { Footer } from './Footer';
 import { PartnerCtx, SessionCtx } from './session';
 
-// Réexport : les pages importent ces hooks depuis '@/components/AppShell'.
+// RÃ©export : les pages importent ces hooks depuis '@/components/AppShell'.
 export { useSession, usePartner } from './session';
 
 function formatToday(): string {
@@ -19,17 +20,17 @@ function formatToday(): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-// Compagnie du dernier profil chargé, mémorisée sur l'appareil : au
-// rechargement, le bon logo s'affiche dès le premier rendu, sans attendre le
-// retour réseau du profil. Sans ce cache, un superviseur CAA voyait Air Congo
+// Compagnie du dernier profil chargÃ©, mÃ©morisÃ©e sur l'appareil : au
+// rechargement, le bon logo s'affiche dÃ¨s le premier rendu, sans attendre le
+// retour rÃ©seau du profil. Sans ce cache, un superviseur CAA voyait Air Congo
 // pendant le chargement.
 const AIRLINE_CACHE_KEY = 'pb.airline';
 
-// Raccourcis de la barre compacte sur téléphone, entre le menu et les rapports.
-// Trois entrées seulement : les écrans consultés en cours d'exploitation. Le
-// reste (profil, audit, comptes) vit dans le tiroir, ouvert par la première
-// cellule. Aucun raccourci réservé aux admins : la rangée est la même pour
-// tous, elle ne doit pas changer de découpage selon le rôle.
+// Raccourcis de la barre compacte sur tÃ©lÃ©phone, entre le menu et les rapports.
+// Trois entrÃ©es seulement : les Ã©crans consultÃ©s en cours d'exploitation. Le
+// reste (profil, audit, comptes) vit dans le tiroir, ouvert par la premiÃ¨re
+// cellule. Aucun raccourci rÃ©servÃ© aux admins : la rangÃ©e est la mÃªme pour
+// tous, elle ne doit pas changer de dÃ©coupage selon le rÃ´le.
 const QUICK_NAV = [
   { href: '/dashboard', label: 'Tableau de bord', icon: IconDashboard },
   { href: '/vols', label: 'Vols', icon: IconPlane },
@@ -46,8 +47,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   // null = compagnie pas encore connue (ni cache, ni profil) : aucun logo.
   const [airline, setAirline] = useState<string | null>(null);
 
-  // Avant la première peinture (useLayoutEffect, pas useEffect) : reprend la
-  // compagnie mémorisée pour que le logo soit juste dès le premier affichage.
+  // Avant la premiÃ¨re peinture (useLayoutEffect, pas useEffect) : reprend la
+  // compagnie mÃ©morisÃ©e pour que le logo soit juste dÃ¨s le premier affichage.
   useLayoutEffect(() => {
     try {
       const cached = localStorage.getItem(AIRLINE_CACHE_KEY);
@@ -66,8 +67,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', auth.user.id).single();
       const p = (prof as Profile | null) ?? null;
       setProfile(p);
-      // Le profil fait foi : il met à jour l'affichage et le cache. Une
-      // compagnie absente vide les deux, plutôt que d'afficher un logo hérité.
+      // Le profil fait foi : il met Ã  jour l'affichage et le cache. Une
+      // compagnie absente vide les deux, plutÃ´t que d'afficher un logo hÃ©ritÃ©.
       const code = (p?.airline_code ?? '').trim().toUpperCase();
       setAirline(code);
       try {
@@ -80,23 +81,23 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [router]);
 
   async function logout() {
-    // Oublie la compagnie mémorisée : le prochain utilisateur de cet appareil
-    // ne doit pas voir le logo du précédent pendant son chargement de profil.
-    try { localStorage.removeItem(AIRLINE_CACHE_KEY); } catch { /* sans conséquence */ }
+    // Oublie la compagnie mÃ©morisÃ©e : le prochain utilisateur de cet appareil
+    // ne doit pas voir le logo du prÃ©cÃ©dent pendant son chargement de profil.
+    try { localStorage.removeItem(AIRLINE_CACHE_KEY); } catch { /* sans consÃ©quence */ }
     await createClient().auth.signOut();
     router.replace('/login');
   }
 
   // Logo partenaire : cache local d'abord, profil ensuite. Null tant que la
-  // compagnie est inconnue — on n'affiche alors AUCUN logo, jamais un défaut.
+  // compagnie est inconnue â€” on n'affiche alors AUCUN logo, jamais un dÃ©faut.
   const partner = partnerBrand(airline);
-  // Sous-titre du logo : rien tant que le profil n'est pas chargé, plutôt
-  // qu'un « ET » par défaut qui serait faux pour un profil d'une autre compagnie.
-  const hubLine = profile ? `${profile.airport_code ?? 'N/A'} · ${profile.airline_code ?? 'N/A'}` : '';
+  // Sous-titre du logo : rien tant que le profil n'est pas chargÃ©, plutÃ´t
+  // qu'un Â« ET Â» par dÃ©faut qui serait faux pour un profil d'une autre compagnie.
+  const hubLine = profile ? `${profile.airport_code ?? 'N/A'} Â· ${profile.airline_code ?? 'N/A'}` : '';
 
-  // Les pages Comptes et Journal d'audit sont RÉSERVÉES aux admins. Les
-  // superviseurs ne les voient pas. Masquer l'entrée ne suffit pas : la page
-  // refuse l'accès, et la vue `movement_log` ne renvoie rien à un non-admin.
+  // Les pages Comptes et Journal d'audit sont RÃ‰SERVÃ‰ES aux admins. Les
+  // superviseurs ne les voient pas. Masquer l'entrÃ©e ne suffit pas : la page
+  // refuse l'accÃ¨s, et la vue `movement_log` ne renvoie rien Ã  un non-admin.
   const isAdmin = profile?.role === 'admin';
   const nav = [
     { href: '/dashboard', label: 'Tableau de bord', icon: IconDashboard, show: true },
@@ -108,18 +109,18 @@ export function AppShell({ children }: { children: ReactNode }) {
     { href: '/admin',     label: 'Comptes',          icon: IconUsers,     show: isAdmin },
   ].filter((n) => n.show);
 
-  // ── Layout mobile ────────────────────────────────────────────
+  // â”€â”€ Layout mobile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (isMobile) {
     return (
       <SessionCtx.Provider value={profile}>
         <PartnerCtx.Provider value={partner}>
         <div style={m.root}>
-          {/* Barre du haut — blanche, collante, deux états : la marque en haut
-              de page, une rangée de raccourcis dès qu'on défile. L'échange est
-              fait en CSS (globals.css, .pb-full / .pb-icons) d'après
-              `data-scrolled`, sans état React qui se rejouerait à chaque pixel.
-              Les deux états font 60 px, la hauteur sur laquelle le tiroir
-              s'ouvre : une barre qui rétrécit décalerait la page en défilant. */}
+          {/* Barre du haut â€” blanche, collante, deux Ã©tats : la marque en haut
+              de page, une rangÃ©e de raccourcis dÃ¨s qu'on dÃ©file. L'Ã©change est
+              fait en CSS (globals.css, .pb-full / .pb-icons) d'aprÃ¨s
+              `data-scrolled`, sans Ã©tat React qui se rejouerait Ã  chaque pixel.
+              Les deux Ã©tats font 60 px, la hauteur sur laquelle le tiroir
+              s'ouvre : une barre qui rÃ©trÃ©cit dÃ©calerait la page en dÃ©filant. */}
           <header className="app-topbar" style={m.topBar}>
             <div className="pb-bar pb-full" style={m.topBarInner}>
               <div style={m.topBrand}>
@@ -195,23 +196,28 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <Link
                     key={n.href}
                     href={n.href}
+                    className="nav-item"
+                    aria-current={active ? 'page' : undefined}
                     style={{ ...m.drawerItem, ...(active ? m.drawerItemActive : {}) }}
                     onClick={() => setMenuOpen(false)}
                   >
-                    <Icon size={18} />
+                    {/* L'icÃ´ne seule porte l'accent : le libellÃ© reste noir. */}
+                    <span style={{ display: 'inline-flex', color: active ? 'var(--accent)' : 'inherit' }}>
+                      <Icon size={18} />
+                    </span>
                     <span>{n.label}</span>
                   </Link>
                 );
               })}
               <button style={m.drawerLogout} onClick={logout}>
-                <IconLogout size={16} /> Déconnexion
+                <IconLogout size={16} /> DÃ©connexion
               </button>
             </div>
           ) : null}
 
           {/* Contenu principal */}
           <main style={m.main}>
-            {authed ? children : <div style={m.loading}>Chargement…</div>}
+            {authed ? children : <div style={m.loading}>Chargementâ€¦</div>}
             <Footer variant="app" />
           </main>
         </div>
@@ -220,7 +226,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     );
   }
 
-  // ── Layout desktop ───────────────────────────────────────────
+  // â”€â”€ Layout desktop â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   return (
     <SessionCtx.Provider value={profile}>
       <PartnerCtx.Provider value={partner}>
@@ -235,14 +241,21 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </div>
 
-          <div style={d.navLabel}>Navigation</div>
-          <nav style={d.nav}>
+          <nav style={d.nav} aria-label="Navigation principale">
             {nav.map((n) => {
               const active = n.href === '/' ? pathname === '/' : pathname.startsWith(n.href);
               const Icon = n.icon;
               return (
-                <Link key={n.href} href={n.href} style={{ ...d.navItem, ...(active ? d.navItemActive : {}) }}>
-                  <Icon size={17} />
+                <Link
+                  key={n.href}
+                  href={n.href}
+                  className="nav-item"
+                  aria-current={active ? 'page' : undefined}
+                  style={{ ...d.navItem, ...(active ? d.navItemActive : {}) }}
+                >
+                  <span style={{ display: 'inline-flex', color: active ? 'var(--accent)' : 'inherit' }}>
+                    <Icon size={18} />
+                  </span>
                   <span>{n.label}</span>
                 </Link>
               );
@@ -251,7 +264,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           <div style={d.dateBox}>{formatToday()}</div>
 
-          {/* Partenaire — logo de la compagnie du profil connecté. Rien tant
+          {/* Partenaire â€” logo de la compagnie du profil connectÃ©. Rien tant
               qu'elle est inconnue : jamais le logo d'une autre compagnie. */}
           {partner ? (
             <div style={d.partnerBox}>
@@ -272,7 +285,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </div>
             </div>
             <button onClick={logout} style={d.logout}>
-              <IconLogout size={16} /> Déconnexion
+              <IconLogout size={16} /> DÃ©connexion
             </button>
           </div>
         </aside>
@@ -280,7 +293,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <main style={d.main}>
           <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
             <div style={{ flex: 1 }}>
-              {authed ? children : <div style={d.centered}>Chargement…</div>}
+              {authed ? children : <div style={d.centered}>Chargementâ€¦</div>}
             </div>
             <Footer variant="app" />
           </div>
@@ -291,9 +304,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 }
 
-/** Icône hamburger / croix animée. */
+/** IcÃ´ne hamburger / croix animÃ©e. */
 function HamburgerIcon({ open }: { open: boolean }) {
-  const bar: CSSProperties = { width: 22, height: 2.5, borderRadius: 2, background: 'var(--content-primary)', transition: 'all 0.2s' };
+  const bar: CSSProperties = { width: 22, height: 2, borderRadius: 2, background: 'var(--content-primary)', transition: 'all 0.2s' };
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 5, padding: 2 }}>
       <span style={{ ...bar, transform: open ? 'rotate(45deg) translate(5px, 5px)' : 'none' }} />
@@ -303,39 +316,69 @@ function HamburgerIcon({ open }: { open: boolean }) {
   );
 }
 
-// ── Styles mobile ───────────────────────────────────────────────
+// EntrÃ©e de navigation : pilule pleine largeur. Au repos texte gris poids
+// 500 ; active fond gris soutenu, texte noir poids 600 (en monochrome, deux
+// gris voisins ne suffisent pas Ã  distinguer Â« sÃ©lectionnÃ© Â» de Â« survolÃ© Â»,
+// la graisse fait la diffÃ©rence). Le survol (fond --bg-neutral) est portÃ© par
+// la classe .nav-item dans globals.css : un style inline ne sait pas survoler.
+const NAV_ITEM: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 12,
+  padding: '10px 14px',
+  borderRadius: 9999,
+  color: 'var(--content-secondary)',
+  fontSize: 14,
+  fontWeight: 500,
+  textDecoration: 'none',
+};
+
+const NAV_ITEM_ACTIVE: CSSProperties = {
+  background: 'var(--bg-neutral-hover)',
+  color: 'var(--content-primary)',
+  fontWeight: 600,
+};
+
+// â”€â”€ Styles mobile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const m: Record<string, CSSProperties> = {
   root: { display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--bg-screen)' },
 
-  // L'enveloppe ne porte plus la mise en page : elle accueille deux rangées
-  // dont une seule est visible à la fois. Le `display` reste aux classes
-  // .pb-full / .pb-icons, qu'un style inline empêcherait de masquer.
+  // L'enveloppe ne porte plus la mise en page : elle accueille deux rangÃ©es
+  // dont une seule est visible Ã  la fois. Le `display` reste aux classes
+  // .pb-full / .pb-icons, qu'un style inline empÃªcherait de masquer.
   topBar: {
     position: 'sticky',
     top: 0,
     zIndex: 20,
     background: 'var(--bg-screen)',
-    borderBottom: '1px solid var(--border-neutral)',
+    borderBottom: '1px solid var(--divider)',
   },
   topBarInner: {
     height: 60,
     justifyContent: 'space-between',
     padding: '0 16px',
   },
-  // Pas de marge latérale : les cellules vont d'un bord à l'autre, séparées
-  // par des filets, comme une rangée d'onglets.
+  // Pas de marge latÃ©rale : les cellules vont d'un bord Ã  l'autre, sÃ©parÃ©es
+  // par des filets, comme une rangÃ©e d'onglets.
   topBarIcons: { height: 60 },
   topBrand: { display: 'flex', alignItems: 'center', gap: 1 },
-  topLogo: { width: 30, height: 30, borderRadius: 7, objectFit: 'cover' as const, display: 'block', flexShrink: 0 },
-  topBrandName: { display: 'block', fontWeight: 700, fontSize: 15, letterSpacing: '-0.03em', color: 'var(--content-primary)' },
-  topBrandHub: { display: 'block', color: 'var(--content-secondary)', fontSize: 11, fontWeight: 600 },
+  topLogo: { width: 30, height: 30, borderRadius: 8, objectFit: 'cover' as const, display: 'block', flexShrink: 0 },
+  topBrandName: {
+    display: 'block',
+    fontFamily: 'var(--font-display)',
+    fontWeight: 700,
+    fontSize: 15,
+    letterSpacing: '-0.02em',
+    color: 'var(--content-primary)',
+  },
+  topBrandHub: { display: 'block', color: 'var(--content-secondary)', fontSize: 12, fontWeight: 500 },
   topRight: { display: 'flex', alignItems: 'center', gap: 10 },
   topAvatar: {
     width: 34,
     height: 34,
     borderRadius: '50%',
     background: 'var(--bg-neutral)',
-    color: 'var(--brand-forest)',
+    color: 'var(--content-primary)',
     display: 'grid',
     placeItems: 'center',
     fontWeight: 700,
@@ -354,42 +397,42 @@ const m: Record<string, CSSProperties> = {
     flexDirection: 'column',
     gap: 4,
     background: 'var(--bg-screen)',
-    borderBottom: '1px solid var(--border-neutral)',
+    borderBottom: '1px solid var(--divider)',
     boxShadow: 'var(--shadow-card)',
-    // Petits écrans (SE, écrans courts) : le menu défile au lieu de déborder.
+    // Petits Ã©crans (SE, Ã©crans courts) : le menu dÃ©file au lieu de dÃ©border.
     maxHeight: 'calc(100vh - 61px)',
     overflowY: 'auto',
   },
-  drawerUser: { display: 'flex', alignItems: 'center', gap: 12, padding: '6px 6px 14px', borderBottom: '1px solid var(--border-neutral)', marginBottom: 6 },
+  drawerUser: { display: 'flex', alignItems: 'center', gap: 12, padding: '6px 6px 14px', borderBottom: '1px solid var(--divider)', marginBottom: 6 },
   drawerAvatar: {
     width: 42,
     height: 42,
     borderRadius: '50%',
     background: 'var(--bg-neutral)',
-    color: 'var(--brand-forest)',
+    color: 'var(--content-primary)',
     display: 'grid',
     placeItems: 'center',
     fontWeight: 700,
     fontSize: 16,
     flexShrink: 0,
   },
-  drawerName: { fontWeight: 700, fontSize: 15, color: 'var(--content-primary)' },
+  drawerName: { fontWeight: 600, fontSize: 15, color: 'var(--content-primary)' },
   drawerRole: { color: 'var(--content-secondary)', fontSize: 12, textTransform: 'capitalize', marginTop: 2 },
-  drawerItem: { display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 9999, color: 'var(--content-secondary)', fontSize: 15, fontWeight: 600, textDecoration: 'none' },
-  drawerItemActive: { background: 'var(--bg-neutral-hover)', color: 'var(--brand-forest)' },
-  drawerLogout: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'transparent', border: '1px solid var(--border-neutral)', color: 'var(--negative)', borderRadius: 9999, padding: '11px', fontWeight: 600, fontSize: 14, marginTop: 8 },
+  drawerItem: { ...NAV_ITEM, padding: '12px 16px', fontSize: 15 },
+  drawerItemActive: NAV_ITEM_ACTIVE,
+  drawerLogout: { ...btnSecondary, width: '100%', marginTop: 8, fontSize: 14 },
 
   main: { flex: 1, padding: '0 0 24px' },
   loading: { color: 'var(--content-secondary)', display: 'grid', placeItems: 'center', height: '60vh' },
 };
 
-// ── Styles desktop ──────────────────────────────────────────────
+// â”€â”€ Styles desktop â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const d: Record<string, CSSProperties> = {
   layout: { display: 'flex', minHeight: '100vh', background: 'var(--bg-screen)' },
   sidebar: {
     width: 260,
     background: 'var(--bg-screen)',
-    borderRight: '1px solid var(--border-neutral)',
+    borderRight: '1px solid var(--divider)',
     padding: '20px 12px 16px',
     display: 'flex',
     flexDirection: 'column',
@@ -407,69 +450,44 @@ const d: Record<string, CSSProperties> = {
     display: 'block',
     flexShrink: 0,
   },
-  brand: { fontWeight: 700, fontSize: 15, letterSpacing: '-0.03em', color: 'var(--content-primary)' },
-  brandSub: { color: 'var(--content-secondary)', fontSize: 11.5, marginTop: 1, fontWeight: 600 },
-
-  navLabel: {
-    color: 'var(--content-tertiary)',
-    fontSize: 10.5,
+  brand: {
+    fontFamily: 'var(--font-display)',
     fontWeight: 700,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    padding: '0 16px 8px',
+    fontSize: 15,
+    letterSpacing: '-0.02em',
+    color: 'var(--content-primary)',
   },
-  nav: { display: 'flex', flexDirection: 'column', gap: 2 },
-  navItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 11,
-    padding: '10px 16px',
-    borderRadius: 9999,
-    color: 'var(--content-secondary)',
-    fontSize: 14,
-    fontWeight: 500,
-    textDecoration: 'none',
-  },
-  navItemActive: { background: 'var(--bg-neutral-hover)', color: 'var(--brand-forest)', fontWeight: 600 },
+  brandSub: { color: 'var(--content-secondary)', fontSize: 12, marginTop: 1, fontWeight: 500 },
 
-  dateBox: { marginTop: 'auto', color: 'var(--content-tertiary)', fontSize: 12, padding: '0 16px 12px' },
-  user: { display: 'flex', flexDirection: 'column', gap: 10, borderTop: '1px solid var(--border-neutral)', paddingTop: 14 },
+  nav: { display: 'flex', flexDirection: 'column', gap: 2 },
+  navItem: NAV_ITEM,
+  navItemActive: NAV_ITEM_ACTIVE,
+
+  dateBox: { marginTop: 'auto', color: 'var(--content-tertiary)', fontSize: 12, padding: '0 14px 12px' },
+  user: { display: 'flex', flexDirection: 'column', gap: 10, borderTop: '1px solid var(--divider)', paddingTop: 14 },
   userRow: { display: 'flex', alignItems: 'center', gap: 10, padding: '0 4px' },
   avatar: {
     width: 36,
     height: 36,
     borderRadius: '50%',
     background: 'var(--bg-neutral)',
-    boxShadow: 'inset 0 0 0 1px var(--border-neutral)',
-    color: 'var(--brand-forest)',
+    color: 'var(--content-primary)',
     display: 'grid',
     placeItems: 'center',
     fontWeight: 700,
     fontSize: 14,
     flexShrink: 0,
   },
-  userName: { fontWeight: 600, fontSize: 13.5, color: 'var(--content-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-  userRole: { color: 'var(--content-secondary)', fontSize: 11.5, textTransform: 'capitalize' },
-  logout: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    background: 'transparent',
-    border: '1px solid var(--border-neutral)',
-    color: 'var(--content-secondary)',
-    borderRadius: 9999,
-    padding: '8px 10px',
-    fontWeight: 600,
-    fontSize: 13,
-  },
+  userName: { fontWeight: 600, fontSize: 14, color: 'var(--content-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+  userRole: { color: 'var(--content-secondary)', fontSize: 12, textTransform: 'capitalize' },
+  logout: { ...btnSecondary, width: '100%', height: 40, fontSize: 14 },
 
   main: { flex: 1, overflow: 'auto', minWidth: 0, background: 'var(--bg-screen)' },
   centered: { color: 'var(--content-secondary)', display: 'grid', placeItems: 'center', height: '60vh' },
 
-  // Libellé et logo sur la MÊME ligne : le libellé à gauche, le logo à droite.
+  // LibellÃ© et logo sur la MÃŠME ligne : le libellÃ© Ã  gauche, le logo Ã  droite.
   partnerBox: {
-    borderTop: '1px solid var(--border-neutral)',
+    borderTop: '1px solid var(--divider)',
     padding: '12px 12px 10px',
     display: 'flex',
     alignItems: 'center',
@@ -477,16 +495,17 @@ const d: Record<string, CSSProperties> = {
     gap: 10,
   },
   partnerLabel: {
-    fontSize: 10,
-    fontWeight: 700,
+    fontSize: 12,
+    fontWeight: 600,
     textTransform: 'uppercase' as const,
-    letterSpacing: 1.2,
+    letterSpacing: 0.5,
     color: 'var(--content-tertiary)',
   },
   partnerPill: {
     display: 'inline-flex',
     alignItems: 'center',
-    background: 'var(--bg-neutral)',
+    background: 'var(--bg-elevated)',
+    border: '1px solid var(--divider)',
     borderRadius: 9999,
     padding: '7px 13px',
     flexShrink: 0,

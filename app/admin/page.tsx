@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation';
 import type { Profile, UserRole } from '@police/shared';
 import { AppShell, useSession } from '@/components/AppShell';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { card, btnPrimary, btnGhost, input, label, sectionHeading, badge, modalOverlay, modalPanel, ROLE_COLOR, ROLE_LABEL } from '@/ui/theme';
-import { IconPlus, IconUser, IconClose, IconTrash } from '@/components/icons';
+import { card, btnPrimary, btnSecondary, input, label, sectionHeading, badge, modalOverlay, modalPanel, ROLE_LABEL } from '@/ui/theme';
+import { IconPlus, IconClose, IconTrash } from '@/components/icons';
 
-/** Profil enrichi de l'email (renvoyé par /api/admin/list-users). */
+/** Profil enrichi de l'email (renvoyÃ© par /api/admin/list-users). */
 type AdminUser = Profile & { email?: string | null };
 
 export default function AdminPage() {
@@ -19,13 +19,13 @@ export default function AdminPage() {
   );
 }
 
-/** Bloque l'accès si l'utilisateur n'est pas admin. */
+/** Bloque l'accÃ¨s si l'utilisateur n'est pas admin. */
 function AdminGuard() {
   const profile = useSession();
   const router  = useRouter();
 
   useEffect(() => {
-    // profile est null pendant le chargement — on attend qu'il soit défini.
+    // profile est null pendant le chargement : on attend qu'il soit dÃ©fini.
     if (profile !== null && profile.role !== 'admin') {
       router.replace('/');
     }
@@ -44,9 +44,9 @@ function AccountManager() {
   const isMobile = useIsMobile();
   const [form, setForm] = useState(EMPTY);
 
-  // Compagnie pré-remplie avec celle de l'admin connecté (un admin CAA crée des
-  // comptes CAA par défaut). Modifiable : saisir un autre code sert à amorcer
-  // une nouvelle compagnie, dont les comptes sortent aussitôt de ce périmètre.
+  // Compagnie prÃ©-remplie avec celle de l'admin connectÃ© (un admin CAA crÃ©e des
+  // comptes CAA par dÃ©faut). Modifiable : saisir un autre code sert Ã  amorcer
+  // une nouvelle compagnie, dont les comptes sortent aussitÃ´t de ce pÃ©rimÃ¨tre.
   useEffect(() => {
     if (me?.airline_code) {
       setForm((f) => (f.airline_code ? f : { ...f, airline_code: me.airline_code ?? '' }));
@@ -65,7 +65,7 @@ function AccountManager() {
       const json = await res.json();
       if (res.ok) setUsers((json.users as AdminUser[]) ?? []);
     } catch {
-      // silencieux — la liste reste vide
+      // silencieux : la liste reste vide
     }
     setLoading(false);
   }, []);
@@ -80,7 +80,7 @@ function AccountManager() {
     if (res.ok) {
       setSelected(null);
       setUsers((list) => list.filter((u) => u.id !== id));
-      setMessage({ text: 'Compte supprimé.', ok: true });
+      setMessage({ text: 'Compte supprimÃ©.', ok: true });
       return { ok: true };
     }
     return { ok: false, error: json.error ?? 'Suppression impossible.' };
@@ -99,7 +99,7 @@ function AccountManager() {
     const airport = form.airport_code.trim();
     const airline = form.airline_code.trim();
     if (!airport || !airline) {
-      setMessage({ text: 'Aéroport et compagnie sont obligatoires : ils définissent ce que le compte pourra voir.', ok: false });
+      setMessage({ text: 'AÃ©roport et compagnie sont obligatoires : ils dÃ©finissent ce que le compte pourra voir.', ok: false });
       return;
     }
     setBusy(true);
@@ -112,14 +112,14 @@ function AccountManager() {
       });
       const json = await res.json();
       if (res.ok) {
-        setMessage({ text: `Compte créé : ${form.email}`, ok: true });
+        setMessage({ text: `Compte crÃ©Ã© : ${form.email}`, ok: true });
         setForm(EMPTY);
         void loadUsers();
       } else {
         setMessage({ text: json.error ?? 'Erreur', ok: false });
       }
     } catch {
-      setMessage({ text: 'Connexion impossible. Réessayez.', ok: false });
+      setMessage({ text: 'Connexion impossible. RÃ©essayez.', ok: false });
     }
     setBusy(false);
   }
@@ -129,13 +129,13 @@ function AccountManager() {
       <header style={s.head}>
         <div>
           <h1 style={s.title}>Gestion des comptes</h1>
-          <p style={s.subtitle}>Créer et consulter les comptes agents, superviseurs et administrateurs.</p>
+          <p style={s.subtitle}>CrÃ©er et consulter les comptes agents, superviseurs et administrateurs.</p>
         </div>
       </header>
 
       <div style={isMobile ? { ...s.grid, gridTemplateColumns: '1fr' } : s.grid}>
         <section style={s.formCard}>
-          <div style={sectionHeading}>Créer un compte</div>
+          <div style={sectionHeading}>CrÃ©er un compte</div>
           <form onSubmit={onSubmit} style={s.form}>
             <Field label="Nom complet">
               <input style={input} placeholder="Jean Mukeba" value={form.full_name} onChange={(e) => update('full_name', e.target.value)} />
@@ -144,9 +144,9 @@ function AccountManager() {
               <input style={input} type="email" placeholder="agent@airport.com" value={form.email} onChange={(e) => update('email', e.target.value)} />
             </Field>
             <Field label="Mot de passe">
-              <input style={input} type="text" placeholder="••••••••" value={form.password} onChange={(e) => update('password', e.target.value)} />
+              <input style={input} type="text" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" value={form.password} onChange={(e) => update('password', e.target.value)} />
             </Field>
-            <Field label="Rôle">
+            <Field label="RÃ´le">
               <select style={input} value={form.role} onChange={(e) => update('role', e.target.value as UserRole)}>
                 <option value="agent">Agent</option>
                 <option value="supervisor">Superviseur</option>
@@ -154,27 +154,35 @@ function AccountManager() {
               </select>
             </Field>
             {form.role === 'agent' ? (
-              <Field label="Comptoir assigné">
+              <Field label="Comptoir assignÃ©">
                 <input style={input} placeholder="Comptoir 3" value={form.gate} onChange={(e) => update('gate', e.target.value)} />
               </Field>
             ) : null}
-            {/* Aéroport et compagnie s'appliquent à TOUS les rôles, agents compris :
-                ils déterminent le périmètre de données du compte. Un agent sans
+            {/* AÃ©roport et compagnie s'appliquent Ã  TOUS les rÃ´les, agents compris :
+                ils dÃ©terminent le pÃ©rimÃ¨tre de donnÃ©es du compte. Un agent sans
                 ces codes ne verrait aucun vol sur son PDA. */}
-            <Field label="Aéroport (code IATA)">
-              <input style={input} placeholder="FIH, FBM, GMN…" value={form.airport_code} onChange={(e) => update('airport_code', e.target.value.toUpperCase())} maxLength={4} required />
+            <Field label="AÃ©roport (code IATA)">
+              <input style={input} placeholder="FIH, FBM, GMNâ€¦" value={form.airport_code} onChange={(e) => update('airport_code', e.target.value.toUpperCase())} maxLength={4} required />
             </Field>
             <Field label="Compagnie (code IATA)">
-              <input style={input} placeholder="ET, BU… (préfixe des numéros de vol)" value={form.airline_code} onChange={(e) => update('airline_code', e.target.value.toUpperCase())} maxLength={3} required />
+              <input style={input} placeholder="ET, BUâ€¦ (prÃ©fixe des numÃ©ros de vol)" value={form.airline_code} onChange={(e) => update('airline_code', e.target.value.toUpperCase())} maxLength={3} required />
             </Field>
 
             {message ? (
-              <p style={{ ...s.msg, color: message.ok ? 'var(--positive)' : 'var(--negative)' }}>{message.text}</p>
+              <p
+                style={{
+                  ...s.msg,
+                  background: message.ok ? 'var(--positive-bg)' : 'var(--negative-bg)',
+                  color: message.ok ? 'var(--positive)' : 'var(--negative)',
+                }}
+              >
+                {message.text}
+              </p>
             ) : null}
 
-            <button style={{ ...btnPrimary, justifyContent: 'center', opacity: busy ? 0.7 : 1 }} disabled={busy} type="submit">
+            <button style={{ ...btnPrimary, width: '100%' }} disabled={busy} type="submit">
               <IconPlus size={16} />
-              {busy ? 'Création…' : 'Créer le compte'}
+              {busy ? 'CrÃ©ationâ€¦' : 'CrÃ©er le compte'}
             </button>
           </form>
         </section>
@@ -186,7 +194,7 @@ function AccountManager() {
           </div>
 
           {loading ? (
-            <div style={s.empty}>Chargement…</div>
+            <div style={s.empty}>Chargementâ€¦</div>
           ) : users.length === 0 ? (
             <div style={s.empty}>Aucun compte pour le moment.</div>
           ) : (
@@ -226,22 +234,28 @@ function formatDate(value: string | null): string {
     : 'N/A';
 }
 
+/** Initiales d'un nom complet, deux lettres au plus, pour l'avatar. */
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const letters = parts.length >= 2 ? parts[0][0] + parts[parts.length - 1][0] : (parts[0] ?? '').slice(0, 2);
+  return letters.toUpperCase() || '?';
+}
+
 function UserRow({ user, onSelect }: { user: AdminUser; onSelect: () => void }) {
-  const color = ROLE_COLOR[user.role] ?? 'var(--content-secondary)';
   return (
-    <button type="button" onClick={onSelect} style={s.userRow} title="Voir le détail du compte">
-      <div style={{ ...s.userAvatar, background: color }}>
-        <IconUser size={18} />
+    <button type="button" onClick={onSelect} style={s.userRow} title="Voir le dÃ©tail du compte">
+      <div style={s.userAvatar} aria-hidden>
+        {initials(user.full_name)}
       </div>
       <div style={s.userMain}>
         <div style={s.userName}>{user.full_name}</div>
         <div style={s.userMeta}>
-          {user.airport_code ? `${user.airport_code}${user.airline_code ? ' · ' + user.airline_code : ''} · ` : ''}
-          {user.gate ? `${user.gate} · ` : ''}
-          Créé le {formatDate(user.created_at)}
+          {user.airport_code ? `${user.airport_code}${user.airline_code ? ' Â· ' + user.airline_code : ''} Â· ` : ''}
+          {user.gate ? `${user.gate} Â· ` : ''}
+          CrÃ©Ã© le {formatDate(user.created_at)}
         </div>
       </div>
-      <span style={{ ...badge, color }}>{ROLE_LABEL[user.role] ?? user.role}</span>
+      <span style={badge}>{ROLE_LABEL[user.role] ?? user.role}</span>
     </button>
   );
 }
@@ -260,15 +274,14 @@ function DetailsModal({
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const color = ROLE_COLOR[user.role] ?? 'var(--content-secondary)';
 
   const rows: { label: string; value: string }[] = [
     { label: 'Email', value: user.email ?? 'N/A' },
-    { label: 'Rôle', value: ROLE_LABEL[user.role] ?? user.role },
+    { label: 'RÃ´le', value: ROLE_LABEL[user.role] ?? user.role },
     { label: 'Comptoir', value: user.gate || 'N/A' },
-    { label: 'Aéroport', value: user.airport_code || 'N/A' },
+    { label: 'AÃ©roport', value: user.airport_code || 'N/A' },
     { label: 'Compagnie', value: user.airline_code || 'N/A' },
-    { label: 'Créé le', value: formatDate(user.created_at) },
+    { label: 'CrÃ©Ã© le', value: formatDate(user.created_at) },
     { label: 'Identifiant', value: user.id },
   ];
 
@@ -287,12 +300,12 @@ function DetailsModal({
       <div style={{ ...modalPanel, ...s.modal }} onClick={(e) => e.stopPropagation()}>
         <div style={s.modalHead}>
           <div style={s.modalUser}>
-            <div style={{ ...s.userAvatar, width: 44, height: 44, background: color }}>
-              <IconUser size={22} />
+            <div style={{ ...s.userAvatar, width: 44, height: 44, fontSize: 15 }} aria-hidden>
+              {initials(user.full_name)}
             </div>
             <div>
               <div style={s.modalName}>{user.full_name}</div>
-              <span style={{ ...badge, color }}>{ROLE_LABEL[user.role] ?? user.role}</span>
+              <span style={badge}>{ROLE_LABEL[user.role] ?? user.role}</span>
             </div>
           </div>
           <button type="button" onClick={onClose} style={s.iconBtn} aria-label="Fermer">
@@ -309,20 +322,22 @@ function DetailsModal({
           ))}
         </dl>
 
-        {error ? <p style={{ ...s.msg, color: 'var(--negative)' }}>{error}</p> : null}
+        {error ? (
+          <p style={{ ...s.msg, background: 'var(--negative-bg)', color: 'var(--negative)', marginTop: 12 }}>{error}</p>
+        ) : null}
 
         <div style={s.modalActions}>
           {isSelf ? (
             <span style={s.selfNote}>Vous ne pouvez pas supprimer votre propre compte.</span>
           ) : confirming ? (
             <>
-              <span style={s.confirmNote}>Supprimer définitivement ce compte ?</span>
-              <button type="button" style={btnGhost} onClick={() => setConfirming(false)} disabled={busy}>
+              <span style={s.confirmNote}>Supprimer dÃ©finitivement ce compte ?</span>
+              <button type="button" style={btnSecondary} onClick={() => setConfirming(false)} disabled={busy}>
                 Annuler
               </button>
-              <button type="button" style={{ ...s.dangerBtn, opacity: busy ? 0.7 : 1 }} onClick={confirmDelete} disabled={busy}>
+              <button type="button" style={s.dangerBtn} onClick={confirmDelete} disabled={busy}>
                 <IconTrash size={16} />
-                {busy ? 'Suppression…' : 'Confirmer'}
+                {busy ? 'Suppressionâ€¦' : 'Confirmer'}
               </button>
             </>
           ) : (
@@ -340,14 +355,24 @@ function DetailsModal({
 const s: Record<string, CSSProperties> = {
   page: { padding: '28px 32px', maxWidth: 1100, margin: '0 auto' },
   head: { marginBottom: 22 },
-  title: { fontSize: 24, fontWeight: 600, letterSpacing: '-0.03em', margin: 0, color: 'var(--content-primary)' },
+  title: {
+    fontFamily: 'var(--font-display)',
+    fontSize: 24,
+    fontWeight: 700,
+    letterSpacing: '-0.02em',
+    lineHeight: 'var(--lh-title)',
+    margin: 0,
+    color: 'var(--content-primary)',
+  },
   subtitle: { color: 'var(--content-secondary)', fontSize: 14, margin: '6px 0 0' },
 
   grid: { display: 'grid', gridTemplateColumns: 'minmax(300px, 360px) 1fr', gap: 20, alignItems: 'start' },
   formCard: { ...card },
   form: { display: 'flex', flexDirection: 'column', gap: 14 },
   field: { display: 'flex', flexDirection: 'column', gap: 6 },
-  msg: { fontSize: 14, margin: 0 },
+  // Retour de formulaire : bandeau rayon 8, la paire sÃ©mantique est posÃ©e par
+  // l'appelant.
+  msg: { fontSize: 14, margin: 0, padding: '10px 14px', borderRadius: 8 },
 
   listCard: { ...card },
   listHead: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
@@ -359,7 +384,8 @@ const s: Record<string, CSSProperties> = {
     background: 'var(--bg-neutral)',
     color: 'var(--content-primary)',
     fontSize: 13,
-    fontWeight: 700,
+    fontWeight: 600,
+    fontVariantNumeric: 'tabular-nums',
     display: 'grid',
     placeItems: 'center',
   },
@@ -371,19 +397,25 @@ const s: Record<string, CSSProperties> = {
     alignItems: 'center',
     gap: 12,
     padding: '12px 14px',
-    borderRadius: 12,
-    border: '1px solid var(--border-neutral)',
+    borderRadius: 8,
+    border: '1px solid var(--divider)',
     background: 'var(--bg-elevated)',
     width: '100%',
     textAlign: 'left',
     font: 'inherit',
     cursor: 'pointer',
   },
+  // Avatar : disque gris, initiales noires. Le rÃ´le se lit dans la pastille.
   userAvatar: {
     width: 38,
     height: 38,
     borderRadius: '50%',
-    color: '#fff',
+    background: 'var(--bg-neutral)',
+    color: 'var(--content-primary)',
+    fontFamily: 'var(--font-display)',
+    fontSize: 13,
+    fontWeight: 700,
+    letterSpacing: '-0.02em',
     display: 'grid',
     placeItems: 'center',
     flexShrink: 0,
@@ -392,11 +424,18 @@ const s: Record<string, CSSProperties> = {
   userName: { fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--content-primary)' },
   userMeta: { color: 'var(--content-secondary)', fontSize: 12, marginTop: 2 },
 
-  // Modale de détail du compte
+  // Modale de dÃ©tail du compte
   modal: { width: '100%', maxWidth: 460, padding: 22 },
   modalHead: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 18 },
   modalUser: { display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 },
-  modalName: { fontSize: 17, fontWeight: 600, color: 'var(--content-primary)', marginBottom: 6, letterSpacing: '-0.02em' },
+  modalName: {
+    fontFamily: 'var(--font-display)',
+    fontSize: 17,
+    fontWeight: 700,
+    color: 'var(--content-primary)',
+    marginBottom: 6,
+    letterSpacing: '-0.02em',
+  },
   iconBtn: {
     display: 'grid',
     placeItems: 'center',
@@ -405,7 +444,7 @@ const s: Record<string, CSSProperties> = {
     borderRadius: 9999,
     border: 'none',
     background: 'var(--bg-neutral)',
-    color: 'var(--content-secondary)',
+    color: 'var(--content-primary)',
     cursor: 'pointer',
     flexShrink: 0,
   },
@@ -416,9 +455,9 @@ const s: Record<string, CSSProperties> = {
     alignItems: 'baseline',
     gap: 16,
     padding: '10px 0',
-    borderTop: '1px solid var(--border-neutral)',
+    borderTop: '1px solid var(--divider)',
   },
-  detailLabel: { color: 'var(--content-secondary)', fontSize: 13, fontWeight: 600, flexShrink: 0 },
+  detailLabel: { color: 'var(--content-secondary)', fontSize: 13, fontWeight: 500, flexShrink: 0 },
   detailValue: {
     color: 'var(--content-primary)',
     fontSize: 13.5,
@@ -428,19 +467,8 @@ const s: Record<string, CSSProperties> = {
   },
   modalActions: { display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 10, marginTop: 20 },
   selfNote: { color: 'var(--content-tertiary)', fontSize: 13, textAlign: 'right' },
-  confirmNote: { color: 'var(--content-secondary)', fontSize: 13, fontWeight: 600, marginRight: 'auto' },
-  dangerBtn: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    background: 'var(--negative-bg)',
-    color: 'var(--negative)',
-    border: 'none',
-    borderRadius: 9999,
-    padding: '10px 20px',
-    fontWeight: 600,
-    fontSize: 14,
-    cursor: 'pointer',
-  },
+  confirmNote: { color: 'var(--content-secondary)', fontSize: 13, fontWeight: 500, marginRight: 'auto' },
+  // Suppression : le bouton secondaire, encre rouge. Pas de fond rouge, la
+  // couleur du texte suffit Ã  dire le risque.
+  dangerBtn: { ...btnSecondary, color: 'var(--negative)' },
 };
