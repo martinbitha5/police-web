@@ -506,11 +506,14 @@ export async function workbookResponse(
   filename: string,
 ): Promise<{ buffer: ArrayBuffer; headers: Record<string, string> }> {
   const buffer = (await wb.xlsx.writeBuffer()) as ArrayBuffer;
+  // Défense en profondeur : neutraliser tout guillemet / caractère de contrôle
+  // dans le nom de fichier avant de l'injecter dans l'en-tête Content-Disposition.
+  const safeName = filename.replace(/[\x00-\x1f"]/g, '');
   return {
     buffer,
     headers: {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Disposition': `attachment; filename="${safeName}"`,
     },
   };
 }
