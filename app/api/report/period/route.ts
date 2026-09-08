@@ -18,7 +18,6 @@ import {
   type Tone,
   type Cell,
 } from '@/lib/report-xlsx';
-import { injectNativeCharts, type ChartSpec } from '@/lib/report-charts';
 import { LOGO_ATS, LOGO_CSI } from '@/lib/report-logos';
 
 const HUB = process.env.NEXT_PUBLIC_HUB ?? 'FIH';
@@ -43,20 +42,33 @@ const PAGE = 1000;
  */
 async function fetchAll<T>(supabase: SupabaseClient, tableName: string, from: string, to: string): Promise<T[]> {
   let out: T[] = [];
-  for (let offset = 0; ; offset += PAGE) {
-    const { data } = await supabase
+  let lastId = '';
+  // Pagination par curseur sur `id` (keyset), et NON par offset/range.
+  //
+  // Avec un filtre sur ressource jointe (`flights!inner`), une page pouvait
+  // renvoyer moins de PAGE lignes AVANT la fin du jeu de données. L'ancien
+  // `if (rows.length < PAGE) break` coupait alors la boucle trop tôt et faisait
+  // manquer environ un tiers des lignes : le rapport sous-comptait passagers et
+  // bagages par rapport à l'écran. En avançant strictement par `id`, on ne
+  // s'arrête qu'à une page réellement vide.
+  for (;;) {
+    let query = supabase
       .from(tableName)
       .select('*, flights!inner(date)')
       .gte('flights.date', from)
       .lte('flights.date', to)
-      .order('id')
-      .range(offset, offset + PAGE - 1);
-    const rows = (data as (T & { flights?: unknown })[] | null) ?? [];
+      .order('id', { ascending: true })
+      .limit(PAGE);
+    if (lastId) query = query.gt('id', lastId);
+    const { data, error } = await query;
+    if (error) throw new Error(`Lecture de ${tableName} échouée: ${error.message}`);
+    const rows = (data as (T & { id: string; flights?: unknown })[] | null) ?? [];
+    if (rows.length === 0) break;
     // La jointure ne sert qu'au filtre : on retire l'embed pour que les lignes
     // gardent exactement la forme de la table.
     for (const r of rows) delete r.flights;
     out = out.concat(rows as T[]);
-    if (rows.length < PAGE) break;
+    lastId = rows[rows.length - 1]!.id;
   }
   return out;
 }
@@ -103,9 +115,21 @@ export async function GET(request: NextRequest) {
   const sp = request.nextUrl.searchParams;
   const from = sp.get('from') ?? '';
   const to = sp.get('to') ?? '';
-  const label = sp.get('label') ?? 'Période';
+  // M-02 : le label finit dans le nom de fichier (Content-Disposition). On retire
+  // guillemets, sauts de ligne et caractères de contrôle pour empêcher toute
+  // injection d'en-tête / usurpation de nom de fichier, et on borne la longueur.
+  const label = (sp.get('label') ?? 'Période').replace(/[^\p{L}\p{N} _.-]/gu, '').slice(0, 60) || 'Période';
   if (!DATE_RE.test(from) || !DATE_RE.test(to)) {
     return NextResponse.json({ error: 'from et to (YYYY-MM-DD) requis' }, { status: 400 });
+  }
+  // M-03 : borner la plage. Sans limite, une plage démesurée (ex. 1900→2100)
+  // pagine des milliers de lignes sur 4 tables et sature la mémoire.
+  const spanDays = (Date.parse(to) - Date.parse(from)) / 86_400_000;
+  if (Number.isNaN(spanDays) || spanDays < 0) {
+    return NextResponse.json({ error: 'Plage de dates invalide.' }, { status: 400 });
+  }
+  if (spanDays > 366) {
+    return NextResponse.json({ error: 'Plage trop large (365 jours maximum).' }, { status: 400 });
   }
 
   const supabase = await createClient();
@@ -157,9 +181,13 @@ export async function GET(request: NextRequest) {
   for (const p of activePassengers) {
     paxByFlight.set(p.flight_id, (paxByFlight.get(p.flight_id) ?? 0) + 1);
     if (p.boarded) boardedByFlight.set(p.flight_id, (boardedByFlight.get(p.flight_id) ?? 0) + 1);
-    declaredByFlight.set(p.flight_id, (declaredByFlight.get(p.flight_id) ?? 0) + p.declared_baggage_count);
   }
   for (const b of paxBags) {
+    // « Déclarés » = nombre d'étiquettes bagage pré-enregistrées (kind passager,
+    // hors annulées), même définition que l'écran (vue flight_stats.bag_declared).
+    // Auparavant on sommait passenger.declared_baggage_count, ce qui donnait un
+    // total différent de l'écran et un « écart » qui ne correspondait pas.
+    declaredByFlight.set(b.flight_id, (declaredByFlight.get(b.flight_id) ?? 0) + 1);
     if (b.is_confirmed && b.passenger_id) {
       confirmedByFlight.set(b.flight_id, (confirmedByFlight.get(b.flight_id) ?? 0) + 1);
       confirmedByPax.set(b.passenger_id, (confirmedByPax.get(b.passenger_id) ?? 0) + 1);
@@ -172,7 +200,9 @@ export async function GET(request: NextRequest) {
   // Totaux période.
   const totPax = activePassengers.length;
   const totBoarded = activePassengers.reduce((s, p) => s + (p.boarded ? 1 : 0), 0);
-  const totDeclared = activePassengers.reduce((s, p) => s + p.declared_baggage_count, 0);
+  // Déclarés = étiquettes bagage passager non annulées (comme l'écran), et non
+  // la somme du champ declared_baggage_count du boarding pass.
+  const totDeclared = paxBags.length;
   const totConfirmed = paxBags.reduce((s, b) => s + (b.is_confirmed ? 1 : 0), 0);
   const totInHold = paxBags.reduce((s, b) => s + (b.in_hold ? 1 : 0), 0);
   const totOnDolly = paxBags.reduce((s, b) => s + (b.on_dolly ? 1 : 0), 0);
@@ -485,110 +515,6 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // FEUILLE 6 — GRAPHIQUES (périodes de plus d'un jour uniquement)
-  // Un export d'une seule journée n'a pas de tendance à tracer : la feuille et
-  // les graphiques natifs ne sont ajoutés que si la période couvre ≥ 2 jours.
-  let chartSpecs: ChartSpec[] = [];
-  if (from !== to) {
-    // Jours de la période, continus (les jours sans vol comptent zéro).
-    const days: string[] = [];
-    const end = new Date(`${to}T00:00:00Z`);
-    for (let d = new Date(`${from}T00:00:00Z`); d <= end && days.length < 1000; d.setUTCDate(d.getUTCDate() + 1)) {
-      days.push(d.toISOString().slice(0, 10));
-    }
-
-    // Agrégats par jour (via la date du vol de rattachement).
-    const zero = () => new Map<string, number>(days.map((d) => [d, 0]));
-    const add = (m: Map<string, number>, day: string | undefined, n: number) => {
-      if (day !== undefined && m.has(day)) m.set(day, (m.get(day) ?? 0) + n);
-    };
-    const flightsByDay = zero();
-    const paxByDay = zero();
-    const declaredByDay = zero();
-    const confirmedByDay = zero();
-    const alertsByDay = zero();
-    for (const f of flights) add(flightsByDay, f.date, 1);
-    for (const p of passengers) {
-      const day = flightById.get(p.flight_id)?.date;
-      add(paxByDay, day, 1);
-      add(declaredByDay, day, p.declared_baggage_count);
-    }
-    for (const b of baggage) {
-      if (b.is_confirmed) add(confirmedByDay, flightById.get(b.flight_id)?.date, 1);
-    }
-    for (const a of alerts) {
-      add(alertsByDay, a.flight_id ? flightById.get(a.flight_id)?.date : undefined, 1);
-    }
-
-    const dayLabels = days.map((d) => `${d.slice(8, 10)}/${d.slice(5, 7)}`);
-    const of = (m: Map<string, number>) => days.map((d) => m.get(d) ?? 0);
-
-    const ws = addSheet(wb, 'Graphiques', 'info');
-    const hr = titleBand(
-      ws,
-      { title: 'Graphiques', subtitle: periodStr, meta: [['Période', periodStr]] },
-      6,
-    );
-    const rows: Cell[][] = days.map((d, i) => [
-      dayLabels[i]!,
-      flightsByDay.get(d) ?? 0,
-      paxByDay.get(d) ?? 0,
-      declaredByDay.get(d) ?? 0,
-      confirmedByDay.get(d) ?? 0,
-      alertsByDay.get(d) ?? 0,
-    ]);
-    table(
-      ws,
-      hr,
-      [
-        { header: 'Jour', width: 10 },
-        { header: 'Vols', width: 9, align: 'right' },
-        { header: 'Passagers', width: 12, align: 'right' },
-        { header: 'Bag. déclarés', width: 14, align: 'right' },
-        { header: 'Bag. confirmés', width: 15, align: 'right' },
-        { header: 'Alertes', width: 10, align: 'right' },
-      ],
-      rows,
-      { emptyLabel: 'Aucune donnée sur la période' },
-    );
-
-    // Références des plages (lignes 1-based : données sous l'en-tête).
-    const r0 = hr + 1;
-    const r1 = hr + days.length;
-    const col = (letter: string) => `Graphiques!$${letter}$${r0}:$${letter}$${r1}`;
-    const cats = { ref: col('A'), labels: dayLabels };
-
-    // Ancrage sous la table (indices 0-based), pleine largeur d'impression.
-    const top = r1 + 2;
-    chartSpecs = [
-      {
-        type: 'line',
-        title: 'Activité par jour',
-        categories: cats,
-        anchor: { fromCol: 0, fromRow: top, toCol: 12, toRow: top + 20 },
-        series: [
-          { name: 'Passagers', color: '163300', ref: col('C'), values: of(paxByDay) },
-          { name: 'Bagages confirmés', color: '65CF21', ref: col('E'), values: of(confirmedByDay) },
-          { name: 'Alertes fraude', color: 'CB272F', ref: col('F'), values: of(alertsByDay) },
-        ],
-      },
-      {
-        type: 'column',
-        title: 'Bagages par jour : déclarés vs confirmés',
-        categories: cats,
-        anchor: { fromCol: 0, fromRow: top + 22, toCol: 12, toRow: top + 42 },
-        series: [
-          { name: 'Déclarés', color: 'A8ABA6', ref: col('D'), values: of(declaredByDay) },
-          { name: 'Confirmés', color: '163300', ref: col('E'), values: of(confirmedByDay) },
-        ],
-      },
-    ];
-  }
-
   const { buffer, headers } = await workbookResponse(wb, `rapport-${label.toLowerCase()}-${from}_${to}.xlsx`);
-  if (chartSpecs.length > 0) {
-    const withCharts = await injectNativeCharts(buffer, 'Graphiques', chartSpecs);
-    return new NextResponse(new Uint8Array(withCharts), { headers });
-  }
   return new NextResponse(buffer, { headers });
 }
