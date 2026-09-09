@@ -129,6 +129,7 @@ export default function IsoPage() {
   const [open, setOpen] = useState<string | null>(null);
   return (
     <AdminOnly>
+      <style>{ISO_CSS}</style>
       <div style={s.page}>
         <AdminTabs />
 
@@ -158,36 +159,38 @@ export default function IsoPage() {
             {DOCS.map((d) => {
               const isOpen = open === d.ref;
               return (
-                <div key={d.ref} style={s.docItem}>
-                  <div style={s.docRow}>
-                    <span style={s.docRef}>{d.ref}</span>
-                    <span style={s.docBody}>
-                      <span style={s.docTitle}>{d.title}</span>
-                      <span style={s.docDesc}>{d.desc}</span>
+                <div key={d.ref} className="isoItem">
+                  <div className="isoRow">
+                    <span className="isoRef">{d.ref}</span>
+                    <span className="isoBody">
+                      <span className="isoTitle">{d.title}</span>
+                      <span className="isoDesc">{d.desc}</span>
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => setOpen(isOpen ? null : d.ref)}
-                      style={s.guideBtn}
-                      aria-expanded={isOpen}
-                    >
-                      {isOpen ? 'Masquer' : 'Comment l’utiliser'}
-                    </button>
-                    <a href={`/iso/${d.file}`} download style={s.download}>
-                      Télécharger
-                    </a>
+                    <div className="isoActions">
+                      <button
+                        type="button"
+                        onClick={() => setOpen(isOpen ? null : d.ref)}
+                        className="isoGuideBtn"
+                        aria-expanded={isOpen}
+                      >
+                        {isOpen ? 'Masquer' : 'Comment l’utiliser'}
+                      </button>
+                      <a href={`/iso/${d.file}`} download className="isoDownload">
+                        Télécharger
+                      </a>
+                    </div>
                   </div>
                   {isOpen && (
-                    <div style={s.guide}>
-                      <p style={s.guidePurpose}>{d.purpose}</p>
-                      <div style={s.guideLabel}>À faire</div>
-                      <ul style={s.guideList}>
+                    <div className="isoGuide">
+                      <p className="isoGuidePurpose">{d.purpose}</p>
+                      <div className="isoGuideLabel">À faire</div>
+                      <ul className="isoGuideList">
                         {d.todo.map((t) => (
                           <li key={t}>{t}</li>
                         ))}
                       </ul>
-                      <p style={s.guideNext}>
-                        <span style={s.guideNextLabel}>Prochaine étape : </span>
+                      <p className="isoGuideNext">
+                        <span className="isoGuideNextLabel">Prochaine étape : </span>
                         {d.next}
                       </p>
                     </div>
@@ -238,42 +241,36 @@ const s: Record<string, CSSProperties> = {
   h2: { fontSize: 16, fontWeight: 600, color: 'var(--content-primary)', margin: '0 0 12px' },
   note: { fontSize: 14, color: 'var(--content-secondary)', lineHeight: 1.55, margin: '0 0 12px' },
   docs: { display: 'flex', flexDirection: 'column', gap: 0 },
-  docItem: { borderBottom: '1px solid var(--divider)' },
-  docRow: { display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0' },
-  docRef: { fontFamily: 'monospace', fontSize: 12.5, fontWeight: 700, color: 'var(--content-primary)', width: 64, flexShrink: 0 },
-  docBody: { display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 },
-  docTitle: { fontSize: 14, fontWeight: 600, color: 'var(--content-primary)' },
-  docDesc: { fontSize: 13, color: 'var(--content-secondary)' },
-  guideBtn: {
-    fontSize: 12.5,
-    fontWeight: 600,
-    color: 'var(--content-secondary)',
-    background: 'transparent',
-    border: 'none',
-    padding: '5px 4px',
-    cursor: 'pointer',
-    flexShrink: 0,
-    whiteSpace: 'nowrap',
-  },
-  guide: { padding: '2px 0 14px 76px', display: 'flex', flexDirection: 'column', gap: 8 },
-  guidePurpose: { margin: 0, fontSize: 13.5, color: 'var(--content-secondary)', lineHeight: 1.5 },
-  guideLabel: { fontSize: 11, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', color: 'var(--content-primary)' },
-  guideList: { margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 5, fontSize: 13.5, color: 'var(--content-secondary)', lineHeight: 1.5 },
-  guideNext: { margin: 0, fontSize: 13.5, color: 'var(--content-secondary)', lineHeight: 1.5, borderLeft: '3px solid var(--accent)', paddingLeft: 10 },
-  guideNextLabel: { fontWeight: 700, color: 'var(--content-primary)' },
-  download: {
-    fontSize: 12.5,
-    fontWeight: 600,
-    color: 'var(--content-primary)',
-    textDecoration: 'none',
-    background: 'var(--bg-neutral)',
-    border: '1px solid var(--divider)',
-    padding: '5px 12px',
-    borderRadius: 9999,
-    flexShrink: 0,
-    whiteSpace: 'nowrap',
-  },
   list: { margin: 0, paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 14, color: 'var(--content-secondary)', lineHeight: 1.5 },
   inline: { fontFamily: 'monospace', fontSize: 13, background: 'var(--bg-neutral)', padding: '1px 5px', borderRadius: 4 },
   callout: { marginTop: 12, padding: 12, borderRadius: 8, background: 'var(--bg-neutral)', borderLeft: '3px solid var(--accent)', fontSize: 13.5, color: 'var(--content-secondary)', lineHeight: 1.5 },
 };
+
+// Liste des documents : classes CSS (plutôt qu'inline) pour permettre une media
+// query. Sur mobile, la ligne s'empile — ref + titre, puis les actions dessous —
+// au lieu de tout tasser sur une seule ligne.
+const ISO_CSS = `
+.isoItem { border-bottom: 1px solid var(--divider); }
+.isoRow { display: flex; align-items: center; gap: 12px; padding: 12px 0; }
+.isoRef { font-family: monospace; font-size: 12.5px; font-weight: 700; color: var(--content-primary); width: 64px; flex-shrink: 0; }
+.isoBody { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.isoTitle { font-size: 14px; font-weight: 600; color: var(--content-primary); }
+.isoDesc { font-size: 13px; color: var(--content-secondary); }
+.isoActions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.isoGuideBtn { font-size: 12.5px; font-weight: 600; color: var(--content-secondary); background: transparent; border: none; padding: 6px 4px; cursor: pointer; white-space: nowrap; }
+.isoDownload { font-size: 12.5px; font-weight: 600; color: var(--content-primary); text-decoration: none; background: var(--bg-neutral); border: 1px solid var(--divider); padding: 6px 14px; border-radius: 9999px; white-space: nowrap; }
+.isoGuide { padding: 2px 0 14px 76px; display: flex; flex-direction: column; gap: 8px; }
+.isoGuidePurpose { margin: 0; font-size: 13.5px; color: var(--content-secondary); line-height: 1.5; }
+.isoGuideLabel { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--content-primary); }
+.isoGuideList { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; font-size: 13.5px; color: var(--content-secondary); line-height: 1.5; }
+.isoGuideNext { margin: 0; font-size: 13.5px; color: var(--content-secondary); line-height: 1.5; border-left: 3px solid var(--accent); padding-left: 10px; }
+.isoGuideNextLabel { font-weight: 700; color: var(--content-primary); }
+
+@media (max-width: 560px) {
+  .isoRow { flex-wrap: wrap; row-gap: 10px; }
+  .isoActions { width: 100%; }
+  .isoGuideBtn { flex: 1; text-align: left; padding-left: 0; }
+  .isoDownload { flex-shrink: 0; }
+  .isoGuide { padding-left: 0; }
+}
+`;
