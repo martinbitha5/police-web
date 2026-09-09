@@ -19,6 +19,7 @@ import {
   ROLE_LABEL,
 } from '@/ui/theme';
 import { IconPlus, IconClose, IconTrash } from '@/components/icons';
+import { AdminTabs } from '@/components/AdminTabs';
 
 /** Profil enrichi de l'email (renvoyé par /api/admin/list-users). */
 type AdminUser = Profile & { email?: string | null };
@@ -171,6 +172,7 @@ function AccountManager() {
 
   return (
     <div data-rv-auto style={isMobile ? { ...s.page, ...s.pageMobile } : s.page}>
+      <AdminTabs />
       <header style={s.head}>
         <div style={s.headText}>
           <h1 style={s.title}>Comptes</h1>

@@ -21,6 +21,7 @@ import {
 } from '@police/shared';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { badge, btnSecondary, card, input, label, sectionHeading } from '@/ui/theme';
+import { AdminTabs } from '@/components/AdminTabs';
 
 export default function AuditPage() {
   return (
@@ -126,6 +127,7 @@ function AuditView() {
 
   return (
     <div style={isMobile ? { ...s.content, ...s.contentMobile } : s.content}>
+      <AdminTabs />
       <div style={s.head}>
         <div>
           <h1 style={s.title}>Journal d’audit</h1>

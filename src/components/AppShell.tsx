@@ -8,7 +8,7 @@ import { createClient } from '@/supabase/client';
 import { partnerBrand } from '@/lib/partner';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { btnSecondary } from '@/ui/theme';
-import { IconDashboard, IconUsers, IconLogout, IconReport, IconBag, IconUser, IconPlane, IconAudit, IconMenu } from './icons';
+import { IconDashboard, IconUsers, IconLogout, IconReport, IconBag, IconUser, IconPlane, IconMenu } from './icons';
 import { Footer } from './Footer';
 import { PartnerCtx, SessionCtx } from './session';
 
@@ -99,14 +99,16 @@ export function AppShell({ children }: { children: ReactNode }) {
   // superviseurs ne les voient pas. Masquer l'entrée ne suffit pas : la page
   // refuse l'accès, et la vue `movement_log` ne renvoie rien à un non-admin.
   const isAdmin = profile?.role === 'admin';
+  // Le hub Administration regroupe Comptes, Sauvegarde, Journal d'audit et
+  // Documents ISO (onglets internes). `also` : autres préfixes d'URL qui gardent
+  // l'entrée active (le Journal d'audit vit sous /audit).
   const nav = [
-    { href: '/dashboard', label: 'Tableau de bord', icon: IconDashboard, show: true },
-    { href: '/vols',      label: 'Vols',             icon: IconPlane,     show: true },
-    { href: '/bagages',   label: 'Bagages',          icon: IconBag,       show: true },
-    { href: '/rapport',   label: 'Rapports',         icon: IconReport,    show: true },
-    { href: '/profil',    label: 'Profil',           icon: IconUser,      show: true },
-    { href: '/audit',     label: "Journal d'audit",  icon: IconAudit,     show: isAdmin },
-    { href: '/admin',     label: 'Comptes',          icon: IconUsers,     show: isAdmin },
+    { href: '/dashboard', label: 'Tableau de bord', icon: IconDashboard, show: true,    also: [] as string[] },
+    { href: '/vols',      label: 'Vols',             icon: IconPlane,     show: true,    also: [] as string[] },
+    { href: '/bagages',   label: 'Bagages',          icon: IconBag,       show: true,    also: [] as string[] },
+    { href: '/rapport',   label: 'Rapports',         icon: IconReport,    show: true,    also: [] as string[] },
+    { href: '/profil',    label: 'Profil',           icon: IconUser,      show: true,    also: [] as string[] },
+    { href: '/admin',     label: 'Administration',   icon: IconUsers,     show: isAdmin, also: ['/audit'] },
   ].filter((n) => n.show);
 
   // ── Layout mobile ────────────────────────────────────────────
@@ -190,7 +192,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </div>
               </div>
               {nav.map((n) => {
-                const active = n.href === '/' ? pathname === '/' : pathname.startsWith(n.href);
+                const active = n.href === '/' ? pathname === '/' : (pathname.startsWith(n.href) || n.also.some((p) => pathname.startsWith(p)));
                 const Icon = n.icon;
                 return (
                   <Link
@@ -243,7 +245,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           <nav style={d.nav} aria-label="Navigation principale">
             {nav.map((n) => {
-              const active = n.href === '/' ? pathname === '/' : pathname.startsWith(n.href);
+              const active = n.href === '/' ? pathname === '/' : (pathname.startsWith(n.href) || n.also.some((p) => pathname.startsWith(p)));
               const Icon = n.icon;
               return (
                 <Link

@@ -1,14 +1,20 @@
 /**
- * Lecture du journal d'audit (vue `movement_log`).
+ * Lecture du journal d'audit (vue `activity_view`, sur la table indexée
+ * `activity_log`).
  *
- * Le journal compte environ 1 200 mouvements par jour d'exploitation, donc
- * plusieurs centaines de milliers sur une année. Il n'est jamais chargé en
- * entier : la base filtre, trie, compte et découpe en pages. La page n'affiche
- * qu'une tranche à la fois et connaît le total exact par `count: 'exact'`,
- * jamais par la longueur du tableau reçu.
+ * Remplace l'ancienne vue `movement_log`, qui recalculait tout à chaque requête
+ * (union de ~20 balayages complets) et dépassait le délai d'exécution de 8 s dès
+ * que les données grossissaient — d'où l'erreur « Le journal n'a pas pu être
+ * chargé ». La nouvelle source est une table indexée, alimentée par déclencheurs
+ * et inaltérable : le même comptage passe de ~11 s à ~40 ms.
+ *
+ * Le journal compte environ 1 500 mouvements par jour d'exploitation. Il n'est
+ * jamais chargé en entier : la base filtre, trie, compte et découpe en pages. La
+ * page connaît le total exact par `count: 'exact'`, jamais par la longueur du
+ * tableau reçu.
  *
  * L'accès admin est vérifié deux fois, ici pour l'affichage et dans la vue
- * elle-même, qui ne renvoie rien à un profil non admin.
+ * elle-même (RLS admin sur activity_log), qui ne renvoie rien à un non-admin.
  */
 
 import type { Movement, MovementKind } from '@police/shared';
@@ -51,7 +57,7 @@ export async function loadMovements(filters: MovementFilters, page: number): Pro
   //    écrans Vols et Rapports, donc les trois pages restent comparables.
   // Le tri, lui, reste chronologique sur l'instant réel du mouvement.
   let q = supabase
-    .from('movement_log')
+    .from('activity_view')
     .select('*', { count: 'exact' })
     .gte('flight_date', filters.from)
     .lte('flight_date', filters.to);
