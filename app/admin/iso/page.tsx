@@ -23,6 +23,19 @@ type Doc = {
 
 const DOCS: Doc[] = [
   {
+    ref: 'PC-00',
+    title: 'Périmètre et contexte',
+    desc: 'Le périmètre de la certification (option A), le contexte, les parties intéressées.',
+    file: 'PC-00-Perimetre-et-contexte.docx',
+    purpose:
+      "Le document fondateur : sur quoi porte la certification (le périmètre ATS, dont Police Bagage), dans quel contexte et pour qui. Tous les autres s'y rattachent.",
+    todo: [
+      'Faire valider le périmètre et le contexte par la direction.',
+      "S'y référer dans tous les autres documents.",
+    ],
+    next: 'approuver le périmètre, puis vérifier que les autres documents sont bien alignés dessus.',
+  },
+  {
     ref: 'PSI-01',
     title: 'Politique de sécurité',
     desc: 'Engagement, périmètre, principes, rôles.',
@@ -137,9 +150,10 @@ export default function IsoPage() {
           <span style={eyebrow}>Administration</span>
           <h1 style={s.title}>Conformité ISO 27001</h1>
           <p style={s.lead}>
-            Police Bagage n’est <b>pas</b> certifié ISO/IEC 27001. Ce dossier décrit un état de
-            préparation (readiness) en vue d’un audit par un organisme accrédité. La certification
-            elle-même passe par cet organisme, après mise en œuvre effective et tenue des preuves.
+            La certification ISO/IEC 27001 porte sur <b>ATS</b> (African Transport Systems), pas sur
+            une application : Police Bagage est l’un des systèmes couverts. La direction a retenu un
+            périmètre centré sur les systèmes d’information numériques d’ATS (option A, voir PC-00).
+            Ce dossier décrit l’état de préparation en vue d’un audit par un organisme accrédité.
           </p>
         </div>
 
