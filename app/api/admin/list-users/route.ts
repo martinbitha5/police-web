@@ -39,11 +39,17 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  // Associe l'email de chaque profil (l'email vit dans auth.users, pas dans profiles).
+  // Associe l'email et l'état de la double authentification de chaque profil
+  // (l'un et l'autre vivent dans auth.users, pas dans profiles). `mfa` est vrai
+  // dès qu'un facteur vérifié existe.
   const emailById = new Map<string, string | null>();
+  const mfaById = new Map<string, boolean>();
   try {
     const { data: authList } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-    for (const u of authList?.users ?? []) emailById.set(u.id, u.email ?? null);
+    for (const u of authList?.users ?? []) {
+      emailById.set(u.id, u.email ?? null);
+      mfaById.set(u.id, (u.factors ?? []).some((f) => f.status === 'verified'));
+    }
   } catch {
     // si l'inventaire auth échoue, on renvoie quand même les profils sans email
   }
@@ -51,6 +57,7 @@ export async function GET() {
   const users = ((data ?? []) as Profile[]).map((p) => ({
     ...p,
     email: emailById.get(p.id) ?? null,
+    mfa: mfaById.get(p.id) ?? false,
   }));
 
   return NextResponse.json({ users });

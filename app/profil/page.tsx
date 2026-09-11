@@ -52,6 +52,11 @@ function Profil() {
   const [savingPassword, setSavingPassword] = useState(false);
   const [pwFeedback, setPwFeedback] = useState<Feedback>(null);
 
+  // Bloc Double authentification : identifiant du facteur vérifié, null si aucun.
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [mfaBusy, setMfaBusy] = useState(false);
+  const [mfaFeedback, setMfaFeedback] = useState<Feedback>(null);
+
   useEffect(() => {
     const supabase = createClient();
     (async () => {
@@ -63,6 +68,8 @@ function Profil() {
       const p = (prof as Profile | null) ?? null;
       setProfile(p);
       setFullName(p?.full_name ?? '');
+      const { data: factors } = await supabase.auth.mfa.listFactors();
+      setMfaFactorId(factors?.totp.find((f) => f.status === 'verified')?.id ?? null);
       setLoaded(true);
     })();
   }, []);
@@ -108,6 +115,21 @@ function Profil() {
     setPassword('');
     setConfirm('');
     setPwFeedback({ kind: 'success', text: 'Mot de passe modifié.' });
+  }
+
+  // Retire l'application enrôlée ; la page se recharge et la porte MFA propose
+  // aussitôt un nouvel enrôlement (nouveau téléphone, application réinstallée).
+  async function reconfigureMfa() {
+    if (!mfaFactorId) return;
+    setMfaBusy(true);
+    setMfaFeedback(null);
+    const { error } = await createClient().auth.mfa.unenroll({ factorId: mfaFactorId });
+    if (error) {
+      setMfaFeedback({ kind: 'error', text: error.message });
+      setMfaBusy(false);
+      return;
+    }
+    window.location.reload();
   }
 
   if (!loaded) {
@@ -214,6 +236,26 @@ function Profil() {
           </div>
         </form>
       </div>
+
+      {/* Bloc Double authentification : état, et reconfiguration en cas de
+          changement de téléphone. L'activation elle-même se fait à la
+          connexion, par la porte MFA ; elle est obligatoire sur le portail. */}
+      <div style={{ ...card, marginTop: 16 }}>
+        <h2 style={sectionHeading}>Double authentification</h2>
+        <p style={s.help}>
+          {mfaFactorId
+            ? "Activée. À chaque connexion, un code à usage unique généré par votre application d'authentification est demandé en plus du mot de passe."
+            : "Non activée. Elle vous sera demandée à votre prochaine connexion au portail."}
+        </p>
+        {mfaFeedback ? <Pill feedback={mfaFeedback} /> : null}
+        {mfaFactorId ? (
+          <div style={{ ...s.actions, marginTop: 14 }}>
+            <button type="button" style={btnSecondary} onClick={reconfigureMfa} disabled={mfaBusy}>
+              {mfaBusy ? 'Réinitialisation…' : "Reconfigurer l'application"}
+            </button>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -283,6 +325,7 @@ const s: Record<string, CSSProperties> = {
   form: { display: 'flex', flexDirection: 'column', gap: 14 },
   field: { display: 'flex', flexDirection: 'column', gap: 6 },
   actions: { display: 'flex', justifyContent: 'flex-end' },
+  help: { margin: 0, color: 'var(--content-secondary)', fontSize: 14, lineHeight: 1.55 },
 
   // Retour de formulaire : bandeau rayon 8, la paire sémantique est posée
   // par Pill.

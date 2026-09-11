@@ -10,6 +10,7 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import { btnSecondary } from '@/ui/theme';
 import { IconDashboard, IconUsers, IconLogout, IconReport, IconBag, IconUser, IconPlane, IconMenu } from './icons';
 import { Footer } from './Footer';
+import { MfaGate } from './MfaGate';
 import { PartnerCtx, SessionCtx } from './session';
 
 // Réexport : les pages importent ces hooks depuis '@/components/AppShell'.
@@ -219,7 +220,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           {/* Contenu principal */}
           <main style={m.main}>
-            {authed ? children : <div style={m.loading}>Chargement…</div>}
+            {authed ? <MfaGate>{children}</MfaGate> : <div style={m.loading}>Chargement…</div>}
             <Footer variant="app" />
           </main>
         </div>
@@ -295,7 +296,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <main style={d.main}>
           <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
             <div style={{ flex: 1 }}>
-              {authed ? children : <div style={d.centered}>Chargement…</div>}
+              {authed ? <MfaGate>{children}</MfaGate> : <div style={d.centered}>Chargement…</div>}
             </div>
             <Footer variant="app" />
           </div>

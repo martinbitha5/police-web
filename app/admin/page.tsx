@@ -21,8 +21,8 @@ import {
 import { IconPlus, IconClose, IconTrash } from '@/components/icons';
 import { AdminTabs } from '@/components/AdminTabs';
 
-/** Profil enrichi de l'email (renvoyé par /api/admin/list-users). */
-type AdminUser = Profile & { email?: string | null };
+/** Profil enrichi de l'email et de l'état MFA (renvoyés par /api/admin/list-users). */
+type AdminUser = Profile & { email?: string | null; mfa?: boolean };
 
 export default function AdminPage() {
   return (
@@ -115,6 +115,25 @@ function AccountManager() {
       return { ok: true };
     }
     return { ok: false, error: json.error ?? 'Suppression impossible.' };
+  }
+
+  // Retire la double authentification d'un compte (téléphone perdu, application
+  // réinstallée) : le portail lui redemandera un enrôlement à sa prochaine
+  // connexion. Le mot de passe n'est pas modifié.
+  async function resetMfa(id: string): Promise<{ ok: boolean; error?: string }> {
+    const res = await fetch('/api/admin/reset-mfa', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (res.ok) {
+      setUsers((list) => list.map((u) => (u.id === id ? { ...u, mfa: false } : u)));
+      setSelected((u) => (u && u.id === id ? { ...u, mfa: false } : u));
+      setMessage({ text: 'Double authentification réinitialisée. Un nouvel enrôlement sera demandé à la prochaine connexion.', ok: true });
+      return { ok: true };
+    }
+    return { ok: false, error: json.error ?? 'Réinitialisation impossible.' };
   }
 
   // Effectifs par rôle, calculés sur la liste entière : ce sont les chiffres du
@@ -306,6 +325,7 @@ function AccountManager() {
           isSelf={selected.id === me?.id}
           onClose={() => setSelected(null)}
           onDelete={deleteUser}
+          onResetMfa={resetMfa}
         />
       ) : null}
     </div>
@@ -618,22 +638,30 @@ function DetailsModal({
   isSelf,
   onClose,
   onDelete,
+  onResetMfa,
 }: {
   user: AdminUser;
   isSelf: boolean;
   onClose: () => void;
   onDelete: (id: string) => Promise<{ ok: boolean; error?: string }>;
+  onResetMfa: (id: string) => Promise<{ ok: boolean; error?: string }>;
 }) {
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [mfaBusy, setMfaBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+
+  // La double authentification ne concerne que le portail web : un agent n'a
+  // que le PDA, la ligne n'a pas de sens pour lui.
+  const webUser = user.role !== 'agent';
 
   const rows: { label: string; value: string; copy?: boolean }[] = [
     { label: 'Matricule', value: user.staff_code ?? 'N/A', copy: Boolean(user.staff_code) },
     { label: 'Email', value: user.email ?? 'N/A', copy: Boolean(user.email) },
     { label: 'Rôle', value: ROLE_LABEL[user.role] ?? user.role },
     { label: 'Accès', value: ROLE_HINT[user.role] ?? 'N/A' },
+    ...(webUser ? [{ label: 'Double authentification', value: user.mfa ? 'Activée' : 'Non activée' }] : []),
     { label: 'Comptoir', value: user.gate || 'N/A' },
     { label: 'Escale', value: user.airport_code || 'N/A' },
     { label: 'Compagnie', value: user.airline_code || 'N/A' },
@@ -658,6 +686,14 @@ function DetailsModal({
       setError(res.error ?? 'Suppression impossible.');
       setBusy(false);
     }
+  }
+
+  async function resetMfa() {
+    setMfaBusy(true);
+    setError(null);
+    const res = await onResetMfa(user.id);
+    if (!res.ok) setError(res.error ?? 'Réinitialisation impossible.');
+    setMfaBusy(false);
   }
 
   return (
@@ -706,6 +742,14 @@ function DetailsModal({
       ) : null}
 
       <div style={s.modalActions}>
+        {/* Déblocage d'un compte web qui a perdu son application d'authentification.
+            Proposé avant la suppression : c'est l'action courante, pas la
+            destructive. */}
+        {webUser && user.mfa && !confirming ? (
+          <button type="button" style={btnSecondary} onClick={resetMfa} disabled={mfaBusy || busy}>
+            {mfaBusy ? 'Réinitialisation…' : 'Réinitialiser la double authentification'}
+          </button>
+        ) : null}
         {isSelf ? (
           <span style={s.selfNote}>Vous ne pouvez pas supprimer votre propre compte.</span>
         ) : confirming ? (
