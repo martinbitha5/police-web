@@ -997,28 +997,17 @@ a.sf-social-item:hover {
   padding-top: 18px;
   border-top: 1px solid var(--border-neutral);
 }
+/* Le badge est une image SVG (sceau bleu « démarche en cours ») : l'ancre ne
+   fait que l'entourer et mener au Trust Center. */
 .sf-cert-badge {
   display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 62px;
-  height: 62px;
+  width: 66px;
+  height: 66px;
   border-radius: 50%;
-  border: 2px solid var(--content-primary);
-  color: var(--content-primary);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  line-height: 1.1;
-  text-decoration: none;
   flex-shrink: 0;
+  text-decoration: none;
 }
-.sf-cert-num {
-  font-family: var(--font-display);
-  font-size: 15px;
-  margin-top: 2px;
-}
+.sf-cert-img { width: 66px; height: 66px; display: block; }
 .sf-cert-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .sf-cert-title { font-size: 13px; font-weight: 600; color: var(--content-primary); }
 .sf-cert-sub { font-size: 12.5px; color: var(--content-secondary); }

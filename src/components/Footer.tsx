@@ -255,8 +255,10 @@ export function Footer({ variant }: { variant: 'public' | 'app' }) {
             mène au Trust Center ; jamais un sceau que l'on n'a pas. */}
         <div className="sf-cert">
           <a href={TRUST_URL} target="_blank" rel="noopener noreferrer" className="sf-cert-badge" aria-label="Trust Center (nouvel onglet)">
-            <span>ISO/IEC</span>
-            <span className="sf-cert-num">27001</span>
+            {/* Sceau maison dans le style d'un sceau officiel, sans en être un : il
+                dit « démarche en cours ». Le vrai sceau le remplacera à la certification. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/iso-27001-en-cours.svg" alt="" className="sf-cert-img" />
           </a>
           <div className="sf-cert-text">
             <span className="sf-cert-title">ISO/IEC 27001:2022, démarche de certification en cours</span>
