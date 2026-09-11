@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactElement } from 'react';
 import Link from 'next/link';
 import { usePartner, useSession } from './session';
-import { SITE_APPS } from '@/lib/site-apps';
+import { SITE_APPS, TRUST_URL } from '@/lib/site-apps';
 import { OVERALL_TEXT, type OverallState } from '@/lib/status';
 
 /**
@@ -66,7 +66,8 @@ const PARTNER_LINKS: FooterLink[] = [
 
 const INFO_LINKS: FooterLink[] = [
   { label: 'État des systèmes', href: '/status' },
-  { label: 'Trust Center', href: '/trust' },
+  // Le Trust Center est une application à part (trust.brsats.com) : nouvel onglet.
+  { label: 'Trust Center', href: TRUST_URL, external: true },
   { label: 'Mentions légales', href: '/legal' },
   { label: 'Conditions d’utilisation', href: '/conditions' },
 ];
@@ -253,15 +254,15 @@ export function Footer({ variant }: { variant: 'public' | 'app' }) {
             certification n'est pas obtenue, le badge dit « en préparation » et
             mène au Trust Center ; jamais un sceau que l'on n'a pas. */}
         <div className="sf-cert">
-          <Link href="/trust" className="sf-cert-badge" aria-label="Trust Center">
+          <a href={TRUST_URL} target="_blank" rel="noopener noreferrer" className="sf-cert-badge" aria-label="Trust Center (nouvel onglet)">
             <span>ISO/IEC</span>
             <span className="sf-cert-num">27001</span>
-          </Link>
+          </a>
           <div className="sf-cert-text">
             <span className="sf-cert-title">ISO/IEC 27001:2022, démarche de certification en cours</span>
             <span className="sf-cert-sub">
               Mesures de sécurité, documents et sous-traitants sur le{' '}
-              <Link href="/trust" className="ft-link">Trust Center</Link>.
+              <a href={TRUST_URL} target="_blank" rel="noopener noreferrer" className="ft-link">Trust Center</a>.
             </span>
           </div>
         </div>

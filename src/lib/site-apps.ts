@@ -19,6 +19,9 @@ function resolve(url: string | undefined, fallback: string): string {
   return (url ?? '').trim() || fallback;
 }
 
+/** Trust Center public, application à part (apps/trust) sur son propre sous-domaine. */
+export const TRUST_URL = resolve(process.env.NEXT_PUBLIC_URL_TRUST, 'https://trust.brsats.com');
+
 export const SITE_APPS: SiteApp[] = [
   { label: 'Suivi bagage', url: resolve(process.env.NEXT_PUBLIC_URL_TRACKING, 'https://tracking.brsats.com') },
   { label: 'Vols du jour', url: resolve(process.env.NEXT_PUBLIC_URL_VOLS, 'https://vols.brsats.com') },

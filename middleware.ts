@@ -28,27 +28,23 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Sous-domaines dédiés : status.<domaine> et trust.<domaine> servent la
-  // page d'état et le Trust Center à la racine, sans passer par la vitrine.
-  // Les autres chemins de ces hôtes (assets, /api) restent inchangés.
+  // Sous-domaine dédié : status.<domaine> sert la page d'état à la racine,
+  // sans passer par la vitrine. Les autres chemins de cet hôte (assets, /api)
+  // restent inchangés. Le Trust Center est une application à part (apps/trust).
   const host = (request.headers.get('host') ?? '').toLowerCase();
   if (pathname === '/' && host.startsWith('status.')) {
     return NextResponse.rewrite(new URL('/status', request.url));
   }
-  if (pathname === '/' && host.startsWith('trust.')) {
-    return NextResponse.rewrite(new URL('/trust', request.url));
-  }
 
-  // Routes publiques : landing (/), connexion, FAQ, pages légales, état des
-  // systèmes et Trust Center.
+  // Routes publiques : landing (/), connexion, FAQ, pages légales et état des
+  // systèmes.
   const isPublic =
     pathname === '/' ||
     pathname.startsWith('/login') ||
     pathname.startsWith('/faq') ||
     pathname.startsWith('/legal') ||
     pathname.startsWith('/conditions') ||
-    pathname.startsWith('/status') ||
-    pathname.startsWith('/trust');
+    pathname.startsWith('/status');
 
   if (!user && !isPublic) {
     return NextResponse.redirect(new URL('/login', request.url));
