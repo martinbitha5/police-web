@@ -27,13 +27,28 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  // Routes publiques : landing (/), connexion, FAQ et pages légales.
+
+  // Sous-domaines dédiés : status.<domaine> et trust.<domaine> servent la
+  // page d'état et le Trust Center à la racine, sans passer par la vitrine.
+  // Les autres chemins de ces hôtes (assets, /api) restent inchangés.
+  const host = (request.headers.get('host') ?? '').toLowerCase();
+  if (pathname === '/' && host.startsWith('status.')) {
+    return NextResponse.rewrite(new URL('/status', request.url));
+  }
+  if (pathname === '/' && host.startsWith('trust.')) {
+    return NextResponse.rewrite(new URL('/trust', request.url));
+  }
+
+  // Routes publiques : landing (/), connexion, FAQ, pages légales, état des
+  // systèmes et Trust Center.
   const isPublic =
     pathname === '/' ||
     pathname.startsWith('/login') ||
     pathname.startsWith('/faq') ||
     pathname.startsWith('/legal') ||
-    pathname.startsWith('/conditions');
+    pathname.startsWith('/conditions') ||
+    pathname.startsWith('/status') ||
+    pathname.startsWith('/trust');
 
   if (!user && !isPublic) {
     return NextResponse.redirect(new URL('/login', request.url));

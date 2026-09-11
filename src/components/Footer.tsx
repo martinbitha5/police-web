@@ -1,9 +1,34 @@
 'use client';
 
-import type { ReactElement } from 'react';
+import { useEffect, useState, type ReactElement } from 'react';
 import Link from 'next/link';
 import { usePartner, useSession } from './session';
 import { SITE_APPS } from '@/lib/site-apps';
+import { OVERALL_TEXT, type OverallState } from '@/lib/status';
+
+/**
+ * Pastille « état des systèmes » : lit /api/status (mesures pg_cron, cache
+ * d'une minute) et mène à la page /status. Tant que la réponse n'est pas
+ * arrivée, ou en cas d'échec, elle reste neutre : jamais un vert par défaut.
+ */
+function StatusPill() {
+  const [state, setState] = useState<OverallState | 'loading'>('loading');
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/status')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { status?: OverallState } | null) => { if (!cancelled) setState(j?.status ?? 'unknown'); })
+      .catch(() => { if (!cancelled) setState('unknown'); });
+    return () => { cancelled = true; };
+  }, []);
+  const text = state === 'loading' ? 'État des systèmes' : OVERALL_TEXT[state];
+  return (
+    <Link href="/status" className="sf-status" data-state={state} title="Voir l’état détaillé des services">
+      <span className="sf-status-dot" aria-hidden="true" />
+      <span>{text}</span>
+    </Link>
+  );
+}
 
 /**
  * Pied de page unique du site : vitrine, pages légales et back-office.
@@ -40,6 +65,8 @@ const PARTNER_LINKS: FooterLink[] = [
 ];
 
 const INFO_LINKS: FooterLink[] = [
+  { label: 'État des systèmes', href: '/status' },
+  { label: 'Trust Center', href: '/trust' },
   { label: 'Mentions légales', href: '/legal' },
   { label: 'Conditions d’utilisation', href: '/conditions' },
 ];
@@ -207,6 +234,8 @@ export function Footer({ variant }: { variant: 'public' | 'app' }) {
             <span className="sf-brand-name">Police Bagage</span>
           </div>
 
+          <StatusPill />
+
           {partners.length > 0 ? (
             <div className="sf-partners">
               <span className="sf-partner-label">{partners.length > 1 ? 'Partenaires' : 'Partenaire'}</span>
@@ -218,6 +247,23 @@ export function Footer({ variant }: { variant: 'public' | 'app' }) {
               ))}
             </div>
           ) : null}
+        </div>
+
+        {/* Conformité : l'emplacement du certificat ISO/IEC 27001. Tant que la
+            certification n'est pas obtenue, le badge dit « en préparation » et
+            mène au Trust Center ; jamais un sceau que l'on n'a pas. */}
+        <div className="sf-cert">
+          <Link href="/trust" className="sf-cert-badge" aria-label="Trust Center">
+            <span>ISO/IEC</span>
+            <span className="sf-cert-num">27001</span>
+          </Link>
+          <div className="sf-cert-text">
+            <span className="sf-cert-title">ISO/IEC 27001:2022, démarche de certification en cours</span>
+            <span className="sf-cert-sub">
+              Mesures de sécurité, documents et sous-traitants sur le{' '}
+              <Link href="/trust" className="ft-link">Trust Center</Link>.
+            </span>
+          </div>
         </div>
 
         {/* Bloc centré à toutes les largeurs : les icônes, puis la ligne
