@@ -8,6 +8,7 @@ import type { Flight, FraudAlert, Baggage, PassengerLeg } from '@police/shared';
 import {
   FLIGHT_STATUS_LABEL,
   FLIGHT_STATUS_ORDER,
+  FRAUD_REASON,
   formatRoute,
   hasFlightDeparted,
   SOUTE_LABEL,
@@ -19,6 +20,7 @@ import { loadFlightStats, sumFlightStats, type FlightStatsTotals } from '@/lib/f
 import { AppShell, useSession } from '@/components/AppShell';
 import { Gauge } from '@/components/Gauge';
 import { RushPanel } from '@/components/RushPanel';
+import { AttachBaggageModal } from '@/components/AttachBaggageModal';
 import {
   card,
   btnPrimary,
@@ -231,7 +233,7 @@ function Overview({
       {/* Chaque jauge rapporte le chiffre du centre à une référence dite en
           clair dessous : un « 8 » seul ne dit rien, « 8 dont 3 fermés » dit où
           en est la journée. */}
-      <div style={isMobile ? { ...s.statGrid, gridTemplateColumns: '1fr' } : s.statGrid}>
+      <div style={isMobile ? { ...s.statGrid, gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 } : s.statGrid}>
         <Gauge
           label="Vols du jour"
           value={flights.length}
@@ -401,6 +403,12 @@ function FlightDetail({
   // Passager dont on affiche la fiche. Le tableau ne montre qu'un compteur
   // « 1/2 » : savoir QUEL bagage manque demande d'ouvrir le détail.
   const [detailPax, setDetailPax] = useState<PassengerRow | null>(null);
+  // Jauge « Passagers embarqués » cliquée : qui manque encore à la porte.
+  const [showNotBoarded, setShowNotBoarded] = useState(false);
+  const notBoarded = useMemo(
+    () => passengers.filter((p) => !p.boarded && !p.offloaded),
+    [passengers],
+  );
 
   async function changeStatus(status: Flight['status']) {
     await createClient().from('flights').update({ status }).eq('id', flight.id);
@@ -440,12 +448,17 @@ function FlightDetail({
         </div>
       </div>
 
-      <div style={isMobile ? { ...s.statGrid, gridTemplateColumns: '1fr' } : s.statGrid}>
+      <div style={isMobile ? { ...s.statGrid, gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 } : s.statGrid}>
         <Gauge
           label="Passagers embarqués"
           value={boardedCount}
           total={activePax}
-          caption={`sur ${activePax} enregistré${activePax > 1 ? 's' : ''}`}
+          caption={
+            notBoarded.length > 0
+              ? `sur ${activePax} enregistré${activePax > 1 ? 's' : ''} · ${notBoarded.length} à embarquer`
+              : `sur ${activePax} enregistré${activePax > 1 ? 's' : ''}`
+          }
+          onClick={() => setShowNotBoarded(true)}
         />
         <Gauge
           label="Bagages confirmés"
@@ -513,7 +526,16 @@ function FlightDetail({
 
       {toPull.length > 0 ? <PullBanner bags={toPull} /> : null}
 
-      {alerts.length > 0 ? <FraudAlerts alerts={alerts} active={activeAlerts} /> : null}
+      {alerts.length > 0 ? (
+        <FraudAlerts
+          alerts={alerts}
+          active={activeAlerts}
+          flight={flight}
+          passengers={passengers}
+          canManage={canManage}
+          onChanged={reload}
+        />
+      ) : null}
 
       <RushPanel flightId={flight.id} bags={rushForward} canManage={canManage} onChanged={reload} mode="compact" />
 
@@ -570,6 +592,16 @@ function FlightDetail({
         </div>
       )}
 
+      {showNotBoarded ? (
+        <NotBoardedModal
+          passengers={notBoarded}
+          registered={activePax}
+          isMobile={isMobile}
+          onOpen={(p) => { setShowNotBoarded(false); setDetailPax(p); }}
+          onClose={() => setShowNotBoarded(false)}
+        />
+      ) : null}
+
       {detailPax ? (
         <PassengerDetailModal
           p={detailPax}
@@ -583,6 +615,97 @@ function FlightDetail({
   );
 }
 
+/**
+ * Passagers enregistrés mais pas encore passés à la porte. Ouverte depuis la
+ * jauge « Passagers embarqués » : le chiffre dit combien manquent, la liste
+ * dit qui. Un clic sur un nom ouvre sa fiche.
+ */
+function NotBoardedModal({
+  passengers,
+  registered,
+  isMobile,
+  onOpen,
+  onClose,
+}: {
+  passengers: PassengerRow[];
+  registered: number;
+  isMobile: boolean;
+  onOpen: (p: PassengerRow) => void;
+  onClose: () => void;
+}) {
+  const [search, setSearch] = useState('');
+  const q = search.trim().toLowerCase();
+  const rows = q
+    ? passengers.filter(
+        (p) => p.full_name.toLowerCase().includes(q) || p.pnr.toLowerCase().includes(q) || (p.seat ?? '').toLowerCase().includes(q),
+      )
+    : passengers;
+
+  return (
+    <div style={s.overlay} onClick={onClose}>
+      <div style={isMobile ? { ...s.paxModal, ...s.paxModalMobile } : s.paxModal} onClick={(e) => e.stopPropagation()}>
+        <div style={s.modalHead}>
+          <div style={{ minWidth: 0 }}>
+            <h2 style={{ ...sectionHeading, margin: 0, fontSize: isMobile ? 17 : 20 }}>Reste à embarquer</h2>
+            <div style={s.paxModalSub}>
+              {passengers.length} passager{passengers.length > 1 ? 's' : ''} sur {registered} enregistré{registered > 1 ? 's' : ''}
+            </div>
+          </div>
+          <button type="button" style={s.modalClose} onClick={onClose} aria-label="Fermer">
+            <IconClose size={18} />
+          </button>
+        </div>
+
+        {passengers.length === 0 ? (
+          <div style={{ ...s.paxSection, color: 'var(--content-secondary)' }}>
+            Tous les passagers enregistrés sont embarqués.
+          </div>
+        ) : (
+          <>
+            {passengers.length > 8 ? (
+              <input
+                style={s.input}
+                placeholder="Nom, PNR ou siège"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                autoFocus
+              />
+            ) : null}
+            <div style={s.notBoardedList}>
+              {rows.length === 0 ? (
+                <div style={{ padding: '20px 4px', color: 'var(--content-secondary)', textAlign: 'center' }}>Aucun passager ne correspond.</div>
+              ) : (
+                rows.map((p) => (
+                  <button key={p.id} type="button" style={s.notBoardedRow} onClick={() => onOpen(p)}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontWeight: 600, fontSize: 14, overflowWrap: 'anywhere' }}>{p.full_name}</div>
+                      <div style={{ color: 'var(--content-secondary)', fontSize: 13, marginTop: 2 }}>
+                        PNR {p.pnr} · Siège {p.seat ?? 'N/A'} · Classe {p.class ?? 'N/A'}
+                      </div>
+                    </div>
+                    {/* Ses bagages sont-ils déjà en soute ? Un passager absent à la
+                        porte avec un bagage chargé, c'est le cas à traiter en premier. */}
+                    <span
+                      style={{
+                        ...badge,
+                        ...(p.confirmedCount > 0
+                          ? { background: 'var(--warning-bg)', color: 'var(--warning-content)' }
+                          : {}),
+                      }}
+                    >
+                      {p.confirmedCount}/{p.quota} bagage{p.quota > 1 ? 's' : ''}
+                    </span>
+                  </button>
+                ))
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function PassengerCardMobile({
   p,
   fallbackRoute,
@@ -592,8 +715,9 @@ function PassengerCardMobile({
   fallbackRoute: string;
   onOpen: () => void;
 }) {
-  const complete = p.declared_baggage_count > 0 && p.confirmedCount >= p.declared_baggage_count;
-  const bagColor = p.declared_baggage_count === 0 ? 'var(--content-secondary)' : complete ? 'var(--positive)' : 'var(--warning-content)';
+  // Quota = boarding pass + étiquettes rattachées par le superviseur.
+  const complete = p.quota > 0 && p.confirmedCount >= p.quota;
+  const bagColor = p.quota === 0 ? 'var(--content-secondary)' : complete ? 'var(--positive)' : 'var(--warning-content)';
   return (
     <div style={{ ...s.paxCard, cursor: 'pointer', ...(p.offloaded ? { opacity: 0.6 } : {}) }} onClick={onOpen}>
       <div style={s.paxCardHead}>
@@ -621,7 +745,7 @@ function PassengerCardMobile({
         <PaxMeta label="Siège" value={p.seat ?? 'N/A'} />
         <PaxMeta label="Classe" value={p.class ?? 'N/A'} />
         <PaxMeta label="PNR" value={p.pnr} />
-        <PaxMeta label="Bagages" value={`${p.confirmedCount}/${p.declared_baggage_count}`} color={bagColor} />
+        <PaxMeta label="Bagages" value={`${p.confirmedCount}/${p.quota}`} color={bagColor} />
       </div>
     </div>
   );
@@ -645,8 +769,9 @@ function PassengerRowView({
   fallbackRoute: string;
   onOpen: () => void;
 }) {
-  const complete = p.declared_baggage_count > 0 && p.confirmedCount >= p.declared_baggage_count;
-  const color = p.declared_baggage_count === 0 ? 'var(--content-secondary)' : complete ? 'var(--positive)' : 'var(--warning-content)';
+  // Quota = boarding pass + étiquettes rattachées par le superviseur.
+  const complete = p.quota > 0 && p.confirmedCount >= p.quota;
+  const color = p.quota === 0 ? 'var(--content-secondary)' : complete ? 'var(--positive)' : 'var(--warning-content)';
   return (
     // Toute la ligne est cliquable pour le confort, mais le nom reste un vrai
     // bouton : c'est lui qui rend la fiche atteignable au clavier.
@@ -664,8 +789,8 @@ function PassengerRowView({
       <td style={s.td}>{p.class ?? 'N/A'}</td>
       <td style={s.td}>{p.route ?? fallbackRoute}</td>
       <td style={s.td}>{p.pnr}</td>
-      <td style={{ ...s.td, color, fontWeight: 600 }}>
-        {p.confirmedCount}/{p.declared_baggage_count}
+      <td style={{ ...s.td, color, fontWeight: 600 }} title={p.attachedCount > 0 ? `dont ${p.attachedCount} rattaché${p.attachedCount > 1 ? 's' : ''} par le superviseur` : undefined}>
+        {p.confirmedCount}/{p.quota}
       </td>
       <td style={s.td}>
         {p.offloaded ? (
@@ -714,13 +839,39 @@ function PullBanner({ bags }: { bags: Baggage[] }) {
   );
 }
 
-function FraudAlerts({ alerts, active }: { alerts: FraudAlert[]; active: FraudAlert[] }) {
+function FraudAlerts({
+  alerts,
+  active,
+  flight,
+  passengers,
+  canManage,
+  onChanged,
+}: {
+  alerts: FraudAlert[];
+  active: FraudAlert[];
+  flight: Flight;
+  passengers: PassengerRow[];
+  canManage: boolean;
+  onChanged: () => void;
+}) {
   // Repliée par défaut : une vingtaine de rejets empilés remplissaient l'écran
   // et repoussaient la liste des passagers hors de vue. Le détail reste à un
   // clic : sur un système anti-fraude, on ne masque pas un rejet sans recours.
   const [open, setOpen] = useState(false);
+  // Alerte règle 1 en cours de rattachement à un passager (modale).
+  const [attaching, setAttaching] = useState<FraudAlert | null>(null);
   const cleared = alerts.filter((a) => a.resolved);
   const last = active[0] ?? alerts[0];
+
+  // Rattachable : règle 1 (étiquette orpheline), non résolue, vol encore au
+  // sol. Les règles 2 et 3 nomment déjà un passager : elles restent le cœur
+  // anti-fraude, sans recours depuis cet écran.
+  const attachable = (a: FraudAlert) =>
+    canManage &&
+    !a.resolved &&
+    (a.reason === FRAUD_REASON.UNLINKED_TAG || a.reason === FRAUD_REASON.PASSENGER_NOT_REGISTERED) &&
+    !hasFlightDeparted(flight.status) &&
+    flight.status !== 'cancelled';
 
   return (
     <div style={s.alertsBox}>
@@ -744,18 +895,31 @@ function FraudAlerts({ alerts, active }: { alerts: FraudAlert[]; active: FraudAl
       {open ? (
         <>
           {active.map((a) => (
-            <AlertRow key={a.id} alert={a} />
+            <AlertRow key={a.id} alert={a} onAttach={attachable(a) ? () => setAttaching(a) : undefined} />
           ))}
           {cleared.map((a) => (
             <AlertRow key={a.id} alert={a} />
           ))}
         </>
       ) : null}
+
+      {attaching ? (
+        <AttachBaggageModal
+          alert={attaching}
+          flightId={flight.id}
+          passengers={passengers}
+          onClose={() => setAttaching(null)}
+          onDone={() => {
+            setAttaching(null);
+            onChanged();
+          }}
+        />
+      ) : null}
     </div>
   );
 }
 
-function AlertRow({ alert: a }: { alert: FraudAlert }) {
+function AlertRow({ alert: a, onAttach }: { alert: FraudAlert; onAttach?: () => void }) {
   // Règle 1 : l'étiquette n'est rattachée à aucun boarding pass, donc ni nom ni
   // PNR à afficher. Prétendre « Passager inconnu · PNR N/A » n'aide personne ;
   // c'est la note de diagnostic qui porte l'information exploitable.
@@ -780,6 +944,13 @@ function AlertRow({ alert: a }: { alert: FraudAlert }) {
         </div>
         {a.note ? <div style={{ color: 'var(--content-secondary)', marginTop: 4 }}>{a.note}</div> : null}
       </div>
+      {onAttach ? (
+        // Étiquette imprimée après le boarding pass (excédent encaissé, pass non
+        // réimprimé) : le superviseur la rattache à son passager, avec motif.
+        <button type="button" style={s.alertAction} onClick={onAttach}>
+          Rattacher à un passager
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -831,8 +1002,10 @@ function PassengerDetailModal({
       setLegs((legRows as PassengerLeg[] | null) ?? []);
       setBags((bagRows as Baggage[] | null) ?? []);
 
-      // Nom des agents qui ont scanné, plutôt qu'un UUID illisible.
-      const ids = [p.scanned_by, p.boarded_by].filter((v): v is string => Boolean(v));
+      // Nom des agents qui ont scanné (et du superviseur qui a rattaché une
+      // étiquette), plutôt qu'un UUID illisible.
+      const bagList = (bagRows as Baggage[] | null) ?? [];
+      const ids = [...new Set([p.scanned_by, p.boarded_by, ...bagList.map((b) => b.attached_by)].filter((v): v is string => Boolean(v)))];
       if (ids.length > 0) {
         const { data: profs } = await supabase.from('profiles').select('id, full_name').in('id', ids);
         if (cancelled) return;
@@ -849,6 +1022,11 @@ function PassengerDetailModal({
   const route = legs.length > 0 ? null : (p.route ?? fallbackRoute);
   const confirmed = bags.filter((b) => b.is_confirmed && !b.cancelled).length;
   const activeBags = bags.filter((b) => !b.cancelled).length;
+  // Étiquettes rattachées par un superviseur, hors annulées : elles s'ajoutent
+  // à celles du boarding pass. Calculé sur les lignes chargées ici plutôt que
+  // sur la photographie `p`, pour suivre une annulation faite dans la fiche.
+  const attached = bags.filter((b) => b.attached && !b.cancelled).length;
+  const quota = offloaded ? activeBags : p.declared_baggage_count + attached;
 
   function agentName(id: string | null): string {
     if (!id) return 'agent inconnu';
@@ -980,8 +1158,11 @@ function PassengerDetailModal({
 
         <section style={s.paxSection}>
           <h3 style={s.paxSectionTitle}>
-            Bagages · {confirmed} au tapis sur {offloaded ? activeBags : p.declared_baggage_count} déclaré
-            {(offloaded ? activeBags : p.declared_baggage_count) > 1 ? 's' : ''}
+            Bagages · {confirmed} au tapis sur {quota} {attached > 0 && !offloaded ? 'autorisé' : 'déclaré'}
+            {quota > 1 ? 's' : ''}
+            {attached > 0 && !offloaded
+              ? ` (${p.declared_baggage_count} boarding pass + ${attached} superviseur)`
+              : ''}
           </h3>
           {loading ? (
             <div style={s.paxLineLabel}>Chargement…</div>
@@ -993,6 +1174,7 @@ function PassengerDetailModal({
                 key={b.id}
                 b={b}
                 isMobile={isMobile}
+                attachedBy={b.attached_by ? agentName(b.attached_by) : null}
                 onCancel={
                   canManage && !b.cancelled && !offloaded
                     ? () => { setConfirm({ kind: 'bag', bag: b }); setReason(''); }
@@ -1064,8 +1246,24 @@ function PassengerDetailModal({
 }
 
 /** Une étiquette et son parcours réel, étape par étape. */
-function BaggageDetailRow({ b, isMobile, onCancel }: { b: Baggage; isMobile: boolean; onCancel?: () => void }) {
+function BaggageDetailRow({
+  b,
+  isMobile,
+  attachedBy,
+  onCancel,
+}: {
+  b: Baggage;
+  isMobile: boolean;
+  /** Nom du superviseur qui a rattaché l'étiquette, quand elle ne vient pas du boarding pass. */
+  attachedBy?: string | null;
+  onCancel?: () => void;
+}) {
   const steps: string[] = [];
+  // Étiquette hors boarding pass, rattachée à la main : on le dit en premier,
+  // c'est ce qui explique un « 3/3 » sur un pass à deux bagages.
+  if (b.attached_at) {
+    steps.push(`Rattachée ${formatTime(b.attached_at)} par ${attachedBy ?? 'un superviseur'}${b.attach_reason ? ` (${b.attach_reason})` : ''}`);
+  }
   if (b.is_confirmed) steps.push(`Au tapis ${formatTime(b.scanned_at)}`);
   if (b.on_dolly) steps.push(`Dolly ${formatTime(b.on_dolly_at)}`);
   if (b.soute) steps.push(`${SOUTE_LABEL[b.soute]} ${formatTime(b.soute_at)}`);
@@ -1098,7 +1296,8 @@ function BaggageDetailRow({ b, isMobile, onCancel }: { b: Baggage; isMobile: boo
         // Le cas qui n'apparaît nulle part ailleurs : déclaré au comptoir, mais
         // jamais présenté au tapis. Ni le compteur ni les alertes ne le disent.
         <span style={{ ...s.paxLineValue, color: 'var(--warning-content)' }}>
-          Déclaré au comptoir, jamais scanné au tapis
+          {steps.length > 0 ? `${steps.join(' · ')} · ` : ''}
+          {b.attached_at ? 'À repasser au tapis' : 'Déclaré au comptoir, jamais scanné au tapis'}
         </span>
       )}
       {onCancel ? (
@@ -1328,6 +1527,9 @@ const s: Record<string, CSSProperties> = {
   alertTag: { display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--interactive-control)', background: 'var(--negative)', borderRadius: 9999, padding: '4px 12px', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 },
   // Alerte levée : la pastille passe en gris, le libellé suffit.
   alertTagCleared: { background: 'var(--bg-neutral-hover)', color: 'var(--content-primary)' },
+  // Action d'une alerte (« Rattacher à un passager ») : bouton secondaire
+  // ramené à 36 px, sur fond blanc pour se détacher de l'aplat rouge pâle.
+  alertAction: { ...btnSecondary, height: 36, padding: '0 14px', fontSize: 13, background: 'var(--bg-elevated)', flexShrink: 0, cursor: 'pointer' },
   alertSummary: { display: 'flex', alignItems: 'center', gap: 12, width: '100%', background: 'var(--negative-bg)', border: 'none', borderRadius: 8, padding: 14, font: 'inherit', color: 'var(--content-primary)', cursor: 'pointer', textAlign: 'left' },
   alertSummaryText: { flex: 1, minWidth: 0, fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
   alertSummaryAction: { color: 'var(--content-primary)', fontSize: 13, fontWeight: 600, textDecoration: 'underline', textUnderlineOffset: '0.3em', whiteSpace: 'nowrap', flexShrink: 0 },
@@ -1363,6 +1565,9 @@ const s: Record<string, CSSProperties> = {
   // de la ligne.
   paxModalMobile: { width: '100%', padding: 16, gap: 16, maxHeight: '92vh' },
   paxModalSub: { color: 'var(--content-secondary)', fontSize: 13, marginTop: 4 },
+  // Liste « reste à embarquer » : lignes séparées par un filet, elle défile seule.
+  notBoardedList: { display: 'flex', flexDirection: 'column', overflowY: 'auto', borderTop: '1px solid var(--divider)' },
+  notBoardedRow: { display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '10px 4px', background: 'transparent', border: 'none', borderBottom: '1px solid var(--divider)', font: 'inherit', color: 'var(--content-primary)', textAlign: 'left', cursor: 'pointer' },
   paxSection: { display: 'flex', flexDirection: 'column', gap: 8, borderTop: '1px solid var(--divider)', paddingTop: 16 },
   paxSectionTitle: { ...eyebrow, margin: 0 },
   // Question de confirmation : une vraie phrase, pas un eyebrow en capitales.

@@ -2,10 +2,15 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { Flight, Passenger, Baggage, FraudAlert, PassengerLeg } from '@police/shared';
+import { baggageQuota } from '@police/shared';
 import { createClient } from '@/supabase/client';
 
 export interface PassengerRow extends Passenger {
   confirmedCount: number;
+  /** Étiquettes rattachées à la main par un superviseur (hors annulées). */
+  attachedCount: number;
+  /** Bagages que le passager peut passer au tapis : boarding pass + rattachés. */
+  quota: number;
   route: string | null;
 }
 
@@ -59,6 +64,7 @@ export function useFlightData(flightId: string | null): FlightData {
 
     const baggage = (bags as Baggage[] | null) ?? [];
     const confirmedByPax = new Map<string, number>();
+    const attachedByPax = new Map<string, number>();
     let confirmedTotal = 0;
     let inHoldTotal = 0;
     let rushTotal = 0;
@@ -77,6 +83,9 @@ export function useFlightData(flightId: string | null): FlightData {
       if (b.is_confirmed && b.passenger_id) {
         confirmedByPax.set(b.passenger_id, (confirmedByPax.get(b.passenger_id) ?? 0) + 1);
         confirmedTotal += 1;
+      }
+      if (b.attached && b.passenger_id) {
+        attachedByPax.set(b.passenger_id, (attachedByPax.get(b.passenger_id) ?? 0) + 1);
       }
       if (b.in_hold) inHoldTotal += 1;
       if (b.rush) rushTotal += 1;
@@ -108,11 +117,16 @@ export function useFlightData(flightId: string | null): FlightData {
       }
     }
 
-    const rows = paxRows.map((p) => ({
-      ...p,
-      confirmedCount: confirmedByPax.get(p.id) ?? 0,
-      route: routeByPax.get(p.id) ?? null,
-    }));
+    const rows = paxRows.map((p) => {
+      const attachedCount = attachedByPax.get(p.id) ?? 0;
+      return {
+        ...p,
+        confirmedCount: confirmedByPax.get(p.id) ?? 0,
+        attachedCount,
+        quota: baggageQuota(p, attachedCount),
+        route: routeByPax.get(p.id) ?? null,
+      };
+    });
 
     setPassengers(rows);
     setAlerts((fraud as FraudAlert[] | null) ?? []);
@@ -125,7 +139,9 @@ export function useFlightData(flightId: string | null): FlightData {
     // (barré) dans la liste.
     const active = rows.filter((p) => !p.offloaded);
     setOffloaded(rows.length - active.length);
-    setDeclared(active.reduce((sum, p) => sum + p.declared_baggage_count, 0));
+    // « Déclarés » = ce que les passagers actifs peuvent charger, rattachements
+    // superviseur compris : sinon un 3e sac accepté affichait 3 confirmés sur 2.
+    setDeclared(active.reduce((sum, p) => sum + p.quota, 0));
     setBoarded(active.reduce((sum, p) => sum + (p.boarded ? 1 : 0), 0));
   }, [flightId]);
 
@@ -138,7 +154,9 @@ export function useFlightData(flightId: string | null): FlightData {
       .channel(`flight-${flightId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'passengers', filter: `flight_id=eq.${flightId}` }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'baggage', filter: `flight_id=eq.${flightId}` }, load)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'fraud_alerts', filter: `flight_id=eq.${flightId}` }, load)
+      // INSERT et UPDATE : une alerte résolue depuis un autre poste (ou par
+      // l'API, fausse alerte refermée au check-in) doit disparaître des écartés.
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'fraud_alerts', filter: `flight_id=eq.${flightId}` }, load)
       .subscribe();
 
     return () => {

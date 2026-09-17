@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import type { Flight, Baggage, Passenger, SoutePosition } from '@police/shared';
-import { SOUTE_LABEL, todayAtAirport } from '@police/shared';
+import { baggageQuota, SOUTE_LABEL, todayAtAirport } from '@police/shared';
 import { flightScope, scopeFlightQuery } from '@/lib/scope';
 import { createClient } from '@/supabase/client';
 import { AppShell, useSession } from '@/components/AppShell';
@@ -96,14 +96,23 @@ function BagagesContent() {
       ),
     );
 
-    const rows: BagRow[] = ((bagData as Baggage[] | null) ?? []).map((b) => {
+    const allBags = (bagData as Baggage[] | null) ?? [];
+    // Étiquettes rattachées par un superviseur (hors annulées) : elles
+    // s'ajoutent à celles du boarding pass dans le quota du passager.
+    const attachedByPax = new Map<string, number>();
+    for (const b of allBags) {
+      if (b.attached && !b.cancelled && b.passenger_id) {
+        attachedByPax.set(b.passenger_id, (attachedByPax.get(b.passenger_id) ?? 0) + 1);
+      }
+    }
+    const rows: BagRow[] = allBags.map((b) => {
       const pax = b.passenger_id ? paxById.get(b.passenger_id) : undefined;
       return {
         ...b,
         passengerName:
           pax?.full_name ?? (b.kind === 'rush_forward' ? 'Expédition rush (sans passager)' : 'N/A'),
         pnr: pax?.pnr ?? 'N/A',
-        declaredCount: pax?.declared_baggage_count ?? 0,
+        declaredCount: pax ? baggageQuota(pax, attachedByPax.get(pax.id) ?? 0) : 0,
       };
     });
 

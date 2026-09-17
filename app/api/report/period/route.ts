@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import type { Flight, Passenger, Baggage, FraudAlert, Profile } from '@police/shared';
-import { formatRoute, FLIGHT_STATUS_LABEL } from '@police/shared';
+import { baggageQuota, formatRoute, FLIGHT_STATUS_LABEL } from '@police/shared';
 import { createClient } from '@/supabase/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
@@ -169,6 +169,8 @@ export async function GET(request: NextRequest) {
   const declaredByFlight = new Map<string, number>();
   const confirmedByFlight = new Map<string, number>();
   const confirmedByPax = new Map<string, number>();
+  // Étiquettes rattachées à la main par un superviseur : quota = boarding pass + rattachées.
+  const attachedByPax = new Map<string, number>();
   const alertsByFlight = new Map<string, number>();
   // Mêmes exclusions que partout : passagers hors débarqués, bagages passagers
   // hors annulés. L'expédition rush est comptée à part.
@@ -191,6 +193,9 @@ export async function GET(request: NextRequest) {
     if (b.is_confirmed && b.passenger_id) {
       confirmedByFlight.set(b.flight_id, (confirmedByFlight.get(b.flight_id) ?? 0) + 1);
       confirmedByPax.set(b.passenger_id, (confirmedByPax.get(b.passenger_id) ?? 0) + 1);
+    }
+    if (b.attached && b.passenger_id) {
+      attachedByPax.set(b.passenger_id, (attachedByPax.get(b.passenger_id) ?? 0) + 1);
     }
   }
   for (const a of alerts) {
@@ -396,7 +401,9 @@ export async function GET(request: NextRequest) {
     const rows: Cell[][] = sorted.map((p) => {
       const f = flightById.get(p.flight_id);
       const conf = confirmedByPax.get(p.id) ?? 0;
-      const manque = conf < p.declared_baggage_count;
+      const attached = attachedByPax.get(p.id) ?? 0;
+      const quota = baggageQuota(p, attached);
+      const manque = conf < quota;
       return [
         f?.date ?? 'N/A',
         f?.flight_number ?? 'N/A',
@@ -404,7 +411,7 @@ export async function GET(request: NextRequest) {
         p.pnr,
         p.seat ?? 'N/A',
         p.class ?? 'N/A',
-        { value: `${conf} / ${p.declared_baggage_count}`, pill: manque ? 'warning' : 'positive' },
+        { value: `${conf} / ${quota}${attached > 0 ? ` (dont ${attached} superviseur)` : ''}`, pill: manque ? 'warning' : 'positive' },
         { value: p.boarded ? 'Oui' : 'Non', pill: p.boarded ? 'positive' : 'neutral' },
         new Date(p.scanned_at),
       ];

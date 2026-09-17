@@ -321,6 +321,29 @@ export interface Baggage {
   pulled: boolean;
   pulled_at: string | null;
   pulled_by: string | null;
+  /**
+   * true = étiquette orpheline rattachée à ce passager par un superviseur,
+   * hors boarding pass (excédent encaissé après l'impression du pass, sans
+   * réimpression). Étend le quota du passager d'un bagage : voir
+   * `baggageQuota`. Repassé à false si un boarding pass réimprimé finit par
+   * porter cette étiquette.
+   */
+  attached: boolean;
+  attached_by: string | null;
+  attached_at: string | null;
+  attach_reason: string | null;
+}
+
+/**
+ * Nombre de bagages qu'un passager peut passer au tapis : les étiquettes de
+ * son boarding pass, plus celles qu'un superviseur lui a rattachées à la main.
+ * `attachedCount` = lignes `baggage` attached et non annulées du passager.
+ */
+export function baggageQuota(
+  passenger: Pick<Passenger, 'declared_baggage_count'>,
+  attachedCount: number,
+): number {
+  return passenger.declared_baggage_count + attachedCount;
 }
 
 export interface FraudAlert {
@@ -639,6 +662,7 @@ export type MovementKind =
   | 'passenger_boarded'
   | 'passenger_offloaded'
   | 'baggage_declared'
+  | 'baggage_attached'
   | 'baggage_belt'
   | 'rush_announced'
   | 'baggage_rush_in'
@@ -662,6 +686,7 @@ export const MOVEMENT_ORDER: MovementKind[] = [
   'passenger_boarded',
   'passenger_offloaded',
   'baggage_declared',
+  'baggage_attached',
   'baggage_belt',
   'rush_announced',
   'baggage_rush_in',
@@ -685,6 +710,7 @@ export const MOVEMENT_LABEL: Record<MovementKind, string> = {
   passenger_boarded: 'Passager embarqué',
   passenger_offloaded: 'Passager débarqué',
   baggage_declared: 'Bagage déclaré au check-in',
+  baggage_attached: 'Bagage rattaché par le superviseur',
   baggage_belt: 'Bagage enregistré au tapis',
   rush_announced: 'Bagage rush annoncé par le superviseur',
   baggage_rush_in: 'Bagage expédié (rush) enregistré',
@@ -711,6 +737,7 @@ export const MOVEMENT_FAMILY: Record<MovementKind, MovementFamily> = {
   passenger_boarded: 'passenger',
   passenger_offloaded: 'passenger',
   baggage_declared: 'baggage',
+  baggage_attached: 'baggage',
   baggage_belt: 'baggage',
   rush_announced: 'baggage',
   baggage_rush_in: 'baggage',

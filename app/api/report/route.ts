@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import type { Flight, Passenger, Baggage, FraudAlert, PassengerLeg, Profile } from '@police/shared';
-import { formatRoute, FLIGHT_STATUS_LABEL } from '@police/shared';
+import { baggageQuota, formatRoute, FLIGHT_STATUS_LABEL } from '@police/shared';
 import { createClient } from '@/supabase/server';
 import {
   newWorkbook,
@@ -114,12 +114,18 @@ export async function GET(request: NextRequest) {
   const offloadedTotal = passengers.length - activePax.length;
 
   const confirmedByPax = new Map<string, number>();
+  // Étiquettes rattachées à la main par un superviseur (excédent encaissé après
+  // l'impression du pass) : elles s'ajoutent à celles du boarding pass.
+  const attachedByPax = new Map<string, number>();
   const paxById = new Map(passengers.map((p) => [p.id, p]));
   for (const b of paxBags) {
     if (b.is_confirmed && b.passenger_id)
       confirmedByPax.set(b.passenger_id, (confirmedByPax.get(b.passenger_id) ?? 0) + 1);
+    if (b.attached && b.passenger_id)
+      attachedByPax.set(b.passenger_id, (attachedByPax.get(b.passenger_id) ?? 0) + 1);
   }
-  const declaredTotal = activePax.reduce((s, p) => s + p.declared_baggage_count, 0);
+  const quotaOf = (p: Passenger) => baggageQuota(p, attachedByPax.get(p.id) ?? 0);
+  const declaredTotal = activePax.reduce((s, p) => s + quotaOf(p), 0);
   const confirmedTotal = [...confirmedByPax.values()].reduce((s, n) => s + n, 0);
   const inHoldTotal = paxBags.filter((b) => b.in_hold).length;
   const onDollyTotal = paxBags.filter((b) => b.on_dolly).length;
@@ -322,14 +328,19 @@ export async function GET(request: NextRequest) {
     );
     const rows: Cell[][] = passengers.map((p) => {
       const conf = confirmedByPax.get(p.id) ?? 0;
-      const manque = conf < p.declared_baggage_count;
+      const attached = attachedByPax.get(p.id) ?? 0;
+      const quota = quotaOf(p);
+      const manque = conf < quota;
       return [
         p.full_name,
         p.pnr,
         p.seat ?? 'N/A',
         p.class ?? 'N/A',
         routeByPax.get(p.id) ?? routeStr,
-        { value: `${conf} / ${p.declared_baggage_count}`, pill: p.offloaded ? 'negative' : manque ? 'warning' : 'positive' },
+        {
+          value: `${conf} / ${quota}${attached > 0 ? ` (dont ${attached} superviseur)` : ''}`,
+          pill: p.offloaded ? 'negative' : manque ? 'warning' : 'positive',
+        },
         new Date(p.scanned_at),
         p.offloaded
           ? { value: 'Débarqué', pill: 'negative' }
