@@ -16,6 +16,10 @@ const figtree = Figtree({
 export const metadata = {
   title: 'Boarding Scanner · Superviseur',
   description: 'Dashboard anti-fraude bagages',
+  applicationName: 'Police Bagage',
+  // Ajout à l'écran d'accueil sur iPhone : nom sous l'icône et plein écran.
+  // L'icône elle-même vient de app/apple-icon.png, le manifeste de app/manifest.ts.
+  appleWebApp: { capable: true, title: 'Police Bagage', statusBarStyle: 'default' as const },
 };
 
 // Récupération des chunks obsolètes après un nouveau déploiement : si un script
