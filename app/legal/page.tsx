@@ -69,8 +69,9 @@ export default function LegalPage() {
         <P>
           La plateforme, sa marque, son interface et ses contenus sont la propriété d’African
           Transport Systems. Les marques et logos des compagnies aériennes affichés (notamment
-          Air Congo et CAA, Compagnie Africaine d’Aviation) appartiennent à leurs titulaires
-          respectifs et ne sont utilisés qu’à titre d’identification des vols opérés.
+          Air Congo, CAA, Compagnie Africaine d’Aviation, et Kenya Airways) appartiennent à
+          leurs titulaires respectifs et ne sont utilisés qu’à titre d’identification des vols
+          opérés ou des compagnies avec lesquelles un partenariat est en discussion.
         </P>
       </LegalSection>
 

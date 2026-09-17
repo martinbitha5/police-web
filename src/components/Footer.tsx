@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactElement } from 'react';
 import Link from 'next/link';
 import { usePartner, useSession } from './session';
+import { PARTNER_STATUS_LABEL, PUBLIC_BRANDS, type PartnerBrand } from '@/lib/partner';
 import { SITE_APPS, TRUST_URL } from '@/lib/site-apps';
 import { OVERALL_TEXT, type OverallState } from '@/lib/status';
 
@@ -40,8 +41,8 @@ function StatusPill() {
  *
  * `variant` décide de ce qui est listé :
  *  - `public` : pages ouvertes + entrées de l'espace superviseur (un visiteur
- *    non connecté est renvoyé vers /login par le middleware), et les deux
- *    compagnies opérées.
+ *    non connecté est renvoyé vers /login par le middleware), la compagnie
+ *    opérée et celles en négociation, dans deux groupes distincts.
  *  - `app` : la navigation réelle du profil connecté, et le seul logo de sa
  *    compagnie.
  */
@@ -153,12 +154,22 @@ const PUBLIC_COLUMNS: FooterColumn[] = [
   { title: 'Informations', links: INFO_LINKS },
 ];
 
-// Compagnies opérées par la plateforme — affichées uniquement côté vitrine.
-// Dans l'application, seul le logo de la compagnie du profil est montré.
-const PUBLIC_PARTNERS = [
-  { src: '/air.png', alt: 'Air Congo' },
-  { src: '/caa.png', alt: "CAA - Compagnie Africaine d'Aviation" },
-];
+interface PartnerGroup {
+  label: string;
+  items: PartnerBrand[];
+}
+
+// Côté vitrine, un groupe par statut commercial (voir partner.ts) : la
+// compagnie réellement opérée, puis celles avec qui le marché est en cours de
+// négociation. CAA et Kenya Airways ne sont pas partenaires : ne jamais les
+// faire passer pour tels. Dans l'application, seul le logo de la compagnie du
+// profil est montré, avec son propre statut.
+const PUBLIC_PARTNER_GROUPS: PartnerGroup[] = (['operational', 'negotiating'] as const)
+  .map((status) => ({
+    label: PARTNER_STATUS_LABEL[status],
+    items: PUBLIC_BRANDS.filter((b) => b.status === status),
+  }))
+  .filter((g) => g.items.length > 0);
 
 export function Footer({ variant }: { variant: 'public' | 'app' }) {
   // Hooks appelés dans tous les cas : hors de l'AppShell, les contextes sont
@@ -197,9 +208,14 @@ export function Footer({ variant }: { variant: 'public' | 'app' }) {
           { title: 'Informations', links: [{ label: 'FAQ', href: '/faq' }, ...INFO_LINKS] },
         ];
 
-  // Vitrine : les deux compagnies. Application : celle du profil, ou rien tant
-  // qu'elle est inconnue.
-  const partners = variant === 'public' ? PUBLIC_PARTNERS : partner ? [partner] : [];
+  // Vitrine : partenaire et compagnies en négociation. Application : celle du
+  // profil seulement, ou rien tant qu'elle est inconnue.
+  const partnerGroups: PartnerGroup[] =
+    variant === 'public'
+      ? PUBLIC_PARTNER_GROUPS
+      : partner
+        ? [{ label: PARTNER_STATUS_LABEL[partner.status], items: [partner] }]
+        : [];
 
   return (
     <footer className="sf">
@@ -237,17 +253,17 @@ export function Footer({ variant }: { variant: 'public' | 'app' }) {
 
           <StatusPill />
 
-          {partners.length > 0 ? (
-            <div className="sf-partners">
-              <span className="sf-partner-label">{partners.length > 1 ? 'Partenaires' : 'Partenaire'}</span>
-              {partners.map((p) => (
+          {partnerGroups.map((g) => (
+            <div key={g.label} className="sf-partners">
+              <span className="sf-partner-label">{g.label}</span>
+              {g.items.map((p) => (
                 <span key={p.src} className="sf-partner-pill">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={p.src} alt={p.alt} className="sf-partner-logo" />
                 </span>
               ))}
             </div>
-          ) : null}
+          ))}
         </div>
 
         {/* Conformité : l'emplacement du certificat ISO/IEC 27001. Tant que la

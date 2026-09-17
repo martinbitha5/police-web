@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import type { Profile } from '@police/shared';
 import { createClient } from '@/supabase/client';
-import { partnerBrand } from '@/lib/partner';
+import { partnerBrand, PARTNER_STATUS_LABEL } from '@/lib/partner';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { btnSecondary } from '@/ui/theme';
 import { IconDashboard, IconUsers, IconLogout, IconReport, IconBag, IconUser, IconPlane, IconMenu } from './icons';
@@ -266,11 +266,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           <div style={d.dateBox}>{formatToday()}</div>
 
-          {/* Partenaire — logo de la compagnie du profil connecté. Rien tant
-              qu'elle est inconnue : jamais le logo d'une autre compagnie. */}
+          {/* Compagnie du profil connecté : logo et statut commercial
+              (« Partenaire » ou « En négociation », voir partner.ts). Rien
+              tant qu'elle est inconnue : jamais le logo d'une autre compagnie. */}
           {partner ? (
             <div style={d.partnerBox}>
-              <span style={d.partnerLabel}>Partenaire</span>
+              <span style={d.partnerLabel}>{PARTNER_STATUS_LABEL[partner.status]}</span>
               <span style={d.partnerPill}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={partner.src} alt={partner.alt} style={d.partnerLogo} />

@@ -60,5 +60,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
   // Exclut les assets Next, l'API et tout fichier statique (images, icônes…)
   // pour que /logo.png, /air.png, etc. ne soient pas redirigés vers /login.
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpe?g|gif|webp|ico|avif)$).*)'],
+  // sw.js : le service worker des notifications push est chargé par le
+  // navigateur hors session, il doit être servi tel quel.
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|sw.js|api/|.*\\.(?:svg|png|jpe?g|gif|webp|ico|avif)$).*)'],
 };

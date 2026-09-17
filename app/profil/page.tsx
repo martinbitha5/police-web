@@ -8,8 +8,17 @@ import { AppShell } from '@/components/AppShell';
 import { card, btnPrimary, btnSecondary, input, label, sectionHeading } from '@/ui/theme';
 import { ROLE_LABEL } from '@/ui/theme';
 import { IconUser } from '@/components/icons';
+import { disablePush, enablePush, pushState, type PushState } from '@/lib/push';
 
 const ROLE_TEXT: Record<string, string> = ROLE_LABEL;
+
+/** Texte d'état du bloc Notifications, selon ce que le navigateur permet. */
+const PUSH_TEXT: Record<PushState, string> = {
+  unsupported: 'Ce navigateur ne prend pas en charge les notifications. Utilisez Chrome, Edge ou Firefox, en HTTPS.',
+  denied: 'Les notifications sont bloquées pour ce site. Rétablissez-les dans les réglages du navigateur, puis revenez ici.',
+  off: 'Recevez une alerte sur cet appareil à chaque nouvelle alerte fraude de votre périmètre, même portail fermé.',
+  on: 'Cet appareil reçoit les alertes fraude de votre périmètre, même portail fermé.',
+};
 
 /** Initiales d'un nom complet, deux lettres au plus, pour l'avatar. */
 function initials(name: string): string {
@@ -52,6 +61,11 @@ function Profil() {
   const [savingPassword, setSavingPassword] = useState(false);
   const [pwFeedback, setPwFeedback] = useState<Feedback>(null);
 
+  // Bloc Notifications : état réel du navigateur, jamais supposé.
+  const [push, setPush] = useState<PushState | null>(null);
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushFeedback, setPushFeedback] = useState<Feedback>(null);
+
   useEffect(() => {
     const supabase = createClient();
     (async () => {
@@ -65,7 +79,28 @@ function Profil() {
       setFullName(p?.full_name ?? '');
       setLoaded(true);
     })();
+    pushState().then(setPush).catch(() => setPush('unsupported'));
   }, []);
+
+  async function togglePush() {
+    if (!userId || !push) return;
+    setPushBusy(true);
+    setPushFeedback(null);
+    try {
+      if (push === 'on') {
+        await disablePush();
+        setPushFeedback({ kind: 'success', text: 'Notifications désactivées sur cet appareil.' });
+      } else {
+        await enablePush(userId);
+        setPushFeedback({ kind: 'success', text: 'Notifications activées sur cet appareil.' });
+      }
+    } catch (e) {
+      setPushFeedback({ kind: 'error', text: (e as Error).message });
+    } finally {
+      setPush(await pushState().catch(() => 'unsupported' as const));
+      setPushBusy(false);
+    }
+  }
 
   async function saveName(e: React.FormEvent) {
     e.preventDefault();
@@ -174,6 +209,32 @@ function Profil() {
         </form>
       </div>
 
+      {/* Bloc Notifications : les superviseurs et admins reçoivent les alertes
+          fraude de leur périmètre. Les agents n'ont pas de tableau de bord :
+          le bloc ne leur est pas montré. */}
+      {profile && profile.role !== 'agent' ? (
+        <div style={{ ...card, marginBottom: 16 }}>
+          <h2 style={sectionHeading}>Notifications</h2>
+          <div style={s.pushRow}>
+            <div style={s.pushText}>
+              <span style={s.pushTitle}>Alertes fraude sur cet appareil</span>
+              <span style={s.pushDesc}>{push ? PUSH_TEXT[push] : 'Vérification du navigateur…'}</span>
+            </div>
+            {push === 'on' || push === 'off' ? (
+              <button
+                type="button"
+                style={push === 'on' ? btnSecondary : btnPrimary}
+                onClick={togglePush}
+                disabled={pushBusy}
+              >
+                {pushBusy ? 'Un instant…' : push === 'on' ? 'Désactiver' : 'Activer'}
+              </button>
+            ) : null}
+          </div>
+          {pushFeedback ? <div style={{ marginTop: 12 }}><Pill feedback={pushFeedback} /></div> : null}
+        </div>
+      ) : null}
+
       {/* Bloc Mot de passe */}
       <div style={card}>
         <h2 style={sectionHeading}>Mot de passe</h2>
@@ -279,6 +340,12 @@ const s: Record<string, CSSProperties> = {
   info: { display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 },
   infoLabel: { ...label, fontSize: 13 },
   infoValue: { color: 'var(--content-primary)', fontSize: 15, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis' },
+
+  // Notifications : texte à gauche, bouton à droite, empilés sur écran étroit.
+  pushRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' as const },
+  pushText: { display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 280px', minWidth: 0 },
+  pushTitle: { color: 'var(--content-primary)', fontSize: 15, fontWeight: 600 },
+  pushDesc: { color: 'var(--content-secondary)', fontSize: 14, lineHeight: 1.45 },
 
   form: { display: 'flex', flexDirection: 'column', gap: 14 },
   field: { display: 'flex', flexDirection: 'column', gap: 6 },

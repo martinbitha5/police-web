@@ -132,15 +132,30 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Bande partenaires : les compagnies opérées par la plateforme */}
+      {/* Bande partenaires. Deux groupes distincts : la compagnie réellement
+          opérée par la plateforme, puis celles avec qui les discussions sont
+          en cours. CAA et Kenya Airways ne sont PAS partenaires : les afficher
+          sous « opérationnel » serait faux tant que le marché n'est pas gagné. */}
       <section className="rv" style={s.partnerBand}>
-        <span style={s.partnerLabel}>Partenaires opérationnels</span>
-        <div style={s.partnerDivider} />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/air.png" alt="Air Congo" style={s.partnerLogo} />
-        <div style={s.partnerDivider} />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/caa.png" alt="CAA - Compagnie Africaine d'Aviation" style={s.partnerLogo} />
+        <div style={s.partnerGroup}>
+          <span style={s.partnerLabel}>Partenaire opérationnel</span>
+          <div style={s.partnerDivider} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/air.png" alt="Air Congo" style={s.partnerLogo} />
+        </div>
+        <div style={s.partnerGroup}>
+          <span style={s.partnerLabel}>En cours de négociation</span>
+          <div style={s.partnerDivider} />
+          {/* Les deux logos restent solidaires : sur téléphone ils passent
+              ensemble sous le libellé, jamais un filet orphelin en bout de ligne. */}
+          <div style={s.partnerLogos}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/caa.png" alt="CAA - Compagnie Africaine d'Aviation" style={s.partnerLogo} />
+            <div style={s.partnerDivider} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/kenya-airways.svg" alt="Kenya Airways" style={s.partnerLogo} />
+          </div>
+        </div>
       </section>
 
       {/* Pied de page : bloc commun à tout le site */}
@@ -193,18 +208,33 @@ function IconChart() {
 const s: Record<string, CSSProperties> = {
   page: { minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-screen)' },
 
-  /* Bande partenaires : un filet, un libellé en capitales, les logos sur
-     fond blanc (ils sont dessinés pour le blanc). */
+  /* Bande partenaires : un filet, puis deux groupes (libellé en capitales,
+     logos sur fond blanc car ils sont dessinés pour le blanc). Les groupes
+     s'écartent l'un de l'autre et se replient l'un sous l'autre sur
+     téléphone. */
   partnerBand: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 16,
+    gap: '20px 56px',
     flexWrap: 'wrap' as const,
     padding: '28px 24px',
     background: 'var(--bg-screen)',
     borderTop: '1px solid var(--border-neutral)',
     borderRadius: 0,
+  },
+  partnerGroup: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+    flexWrap: 'wrap' as const,
+  },
+  partnerLogos: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 16,
+    flexWrap: 'nowrap' as const,
   },
   partnerLabel: { ...eyebrow, margin: 0 },
   partnerDivider: {
